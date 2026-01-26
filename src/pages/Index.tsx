@@ -1,11 +1,12 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { channels, Channel } from '@/data/channels';
-import { VideoPlayer } from '@/components/VideoPlayer';
+import { VideoPlayer, VideoPlayerHandle } from '@/components/VideoPlayer';
 import { InfoBar } from '@/components/InfoBar';
 import { ChannelGuide } from '@/components/ChannelGuide';
 import { ChannelSwitcher } from '@/components/ChannelSwitcher';
 import { KeyboardHints } from '@/components/KeyboardHints';
 import { GuideButton } from '@/components/GuideButton';
+import { PlaybackControls } from '@/components/PlaybackControls';
 
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
@@ -22,9 +23,12 @@ export default function Index() {
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
   const [showHints, setShowHints] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(true);
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const playerRef = useRef<VideoPlayerHandle>(null);
 
   // Reset idle timer
   const resetIdleTimer = useCallback(() => {
@@ -91,6 +95,19 @@ export default function Index() {
     resetIdleTimer();
   }, [currentChannel, resetIdleTimer]);
 
+  // Playback controls
+  const toggleMute = useCallback(() => {
+    playerRef.current?.toggleMute();
+    setIsMuted(prev => !prev);
+    resetIdleTimer();
+  }, [resetIdleTimer]);
+
+  const togglePlayPause = useCallback(() => {
+    playerRef.current?.togglePlayPause();
+    setIsPlaying(prev => !prev);
+    resetIdleTimer();
+  }, [resetIdleTimer]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -120,12 +137,21 @@ export default function Index() {
           e.preventDefault();
           resetIdleTimer();
           break;
+        case 'm':
+          e.preventDefault();
+          toggleMute();
+          break;
+        case 'k':
+        case ' ':
+          e.preventDefault();
+          togglePlayPause();
+          break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isGuideOpen, switchChannel, resetIdleTimer]);
+  }, [isGuideOpen, switchChannel, resetIdleTimer, toggleMute, togglePlayPause]);
 
   // Handle channel selection from guide
   const handleChannelSelect = useCallback((channel: Channel) => {
@@ -145,6 +171,7 @@ export default function Index() {
     <div className="relative w-screen h-screen overflow-hidden bg-background crt-effect">
       {/* Video Player */}
       <VideoPlayer 
+        ref={playerRef}
         channel={currentChannel}
         onVideoChange={() => {}}
       />
@@ -153,6 +180,15 @@ export default function Index() {
       <GuideButton 
         onClick={() => setIsGuideOpen(true)} 
         visible={showUI && !isGuideOpen}
+      />
+
+      {/* Playback Controls */}
+      <PlaybackControls
+        visible={showUI && !isGuideOpen}
+        isMuted={isMuted}
+        isPlaying={isPlaying}
+        onToggleMute={toggleMute}
+        onTogglePlayPause={togglePlayPause}
       />
 
       {/* Info Bar */}
