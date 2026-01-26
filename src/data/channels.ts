@@ -192,11 +192,13 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cars, trucks, and everything on wheels',
     videos: [
-      { id: 'iFEVlNsOhJg', title: 'Supercar Test Drive', duration: 1248 },
-      { id: 'csaToKS9dLI', title: 'How Car Engines Work', duration: 456 },
-      { id: 'bPqZf5YPbQQ', title: 'Electric vs Gas Cars', duration: 924 },
-      { id: 'P_6vDLq64gE', title: 'Classic Car Restoration', duration: 1560 },
-      { id: 'lZ59zNNuKLw', title: 'Hypercar Collection', duration: 1140 },
+      // Verified Donut Media & Doug DeMuro videos
+      { id: '9KKfIYch1FE', title: 'Every Part of an Engine Explained', duration: 912 },
+      { id: 'cUm2KM4GKgY', title: 'Every Car Fluid Explained', duration: 918 },
+      { id: '07qbnbx__0g', title: 'Ferrari 296 GTB Review', duration: 1380 },
+      { id: 'GdrBc4Dm0lM', title: 'Lamborghini Revuelto Review', duration: 1260 },
+      { id: 'n5GF7V7rEGU', title: 'Devel Sixteen First Drive', duration: 720 },
+      { id: 'pHoLWEQy_j0', title: 'Ultimate Car Collection Tour', duration: 960 },
     ],
   },
   {
@@ -207,11 +209,13 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cards, coins, toys and collectibles',
     videos: [
-      { id: 'y7l5QHRY_AI', title: 'Rare Pokemon Cards', duration: 1380 },
-      { id: 'IJNR2EpS0jw', title: 'Trading Card Investing', duration: 1020 },
-      { id: 'B9aOFsTIx_A', title: 'Vintage Toy Collection', duration: 1260 },
-      { id: 'bJZnupxCDQU', title: 'Sports Card Hunting', duration: 1140 },
-      { id: '2Tp-kbkw3yw', title: 'Comic Book Collecting', duration: 1320 },
+      // Verified card opening & toy collection videos
+      { id: 'PG_BjB0IZyI', title: 'Opening Every 2024 Pokemon Product', duration: 1800 },
+      { id: 'IIY-xzLiB_M', title: 'Top 10 Pokemon Collection Boxes 2024', duration: 1200 },
+      { id: 'YO521Yi9JTU', title: '300 Pack Opening Special', duration: 2400 },
+      { id: 'mQP4cNSxgg0', title: 'Sports Card Box Opening Marathon', duration: 1800 },
+      { id: 'Yejfq3uJLvc', title: 'Vintage Toy Collection Discovery', duration: 1320 },
+      { id: '3IprJkrrIww', title: 'Vintage Toy Haul', duration: 1140 },
     ],
   },
   {
@@ -336,11 +340,12 @@ export const channels: Channel[] = [
     category: 'family',
     description: 'Content the whole family can enjoy',
     videos: [
-      { id: 'CQ5dRyyHwfM', title: 'Family Fun Time', duration: 624 },
-      { id: 'c1ikJwOx3ro', title: 'Family Craft Projects', duration: 918 },
-      { id: 'F9eLv6qH_qE', title: 'Cooking with Family', duration: 786 },
-      { id: '4TYv2PhG89A', title: 'Family Game Night', duration: 1080 },
-      { id: 'PKffm2hxaB0', title: 'Family Adventures', duration: 1320 },
+      // Verified Art for Kids Hub & family-friendly drawing tutorials
+      { id: 'citvayS_0o4', title: 'How To Draw A Cute Kitten', duration: 720 },
+      { id: 'iuL_cP_Lico', title: 'How To Draw A Winter Deer', duration: 660 },
+      { id: 'P3yDJPoldAQ', title: 'How To Draw A Cozy Winter Seal', duration: 600 },
+      { id: 'SdZbgfDeeCI', title: 'How To Draw A Snow Family', duration: 780 },
+      { id: 'XPcN1ZE_G28', title: 'How To Draw A Family Road Trip', duration: 840 },
     ],
   },
   {
