@@ -2,95 +2,63 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Space+Grotesk:wght@500;600;700&display=swap');
 
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
+    /* Core dark theme for cinematic viewing */
+    --background: 220 20% 4%;
+    --foreground: 0 0% 98%;
 
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
+    --card: 220 18% 8%;
+    --card-foreground: 0 0% 98%;
 
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
+    --popover: 220 18% 10%;
+    --popover-foreground: 0 0% 98%;
 
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
+    --primary: 263 70% 58%;
+    --primary-foreground: 0 0% 100%;
 
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
+    --secondary: 220 18% 14%;
+    --secondary-foreground: 0 0% 98%;
 
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 55%;
 
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
+    --accent: 263 70% 58%;
+    --accent-foreground: 0 0% 100%;
 
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
 
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    --border: 220 15% 18%;
+    --input: 220 15% 18%;
+    --ring: 263 70% 58%;
 
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
-    --sidebar-background: 0 0% 98%;
+    /* Channel accent colors */
+    --channel-tech: 200 95% 55%;
+    --channel-science: 140 70% 50%;
+    --channel-maker: 35 95% 55%;
+    --channel-cooking: 0 80% 60%;
+    --channel-history: 45 90% 55%;
 
-    --sidebar-foreground: 240 5.3% 26.1%;
+    /* Special effects */
+    --glow-primary: 0 0 30px hsl(263 70% 58% / 0.4);
+    --glow-channel: 0 0 40px var(--current-channel-color, hsl(263 70% 58% / 0.3));
+    
+    /* Glass effect */
+    --glass-bg: hsl(220 20% 8% / 0.85);
+    --glass-border: hsl(0 0% 100% / 0.08);
 
-    --sidebar-primary: 240 5.9% 10%;
-
-    --sidebar-primary-foreground: 0 0% 98%;
-
-    --sidebar-accent: 240 4.8% 95.9%;
-
-    --sidebar-accent-foreground: 240 5.9% 10%;
-
-    --sidebar-border: 220 13% 91%;
-
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    /* TV static overlay */
+    --static-opacity: 0.02;
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
-    --foreground: 210 40% 98%;
-
-    --card: 222.2 84% 4.9%;
-    --card-foreground: 210 40% 98%;
-
-    --popover: 222.2 84% 4.9%;
-    --popover-foreground: 210 40% 98%;
-
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-
-    --secondary: 217.2 32.6% 17.5%;
-    --secondary-foreground: 210 40% 98%;
-
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-
-    --destructive: 0 62.8% 30.6%;
-    --destructive-foreground: 210 40% 98%;
-
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
-    --sidebar-background: 240 5.9% 10%;
-    --sidebar-foreground: 240 4.8% 95.9%;
-    --sidebar-primary: 224.3 76.3% 48%;
-    --sidebar-primary-foreground: 0 0% 100%;
-    --sidebar-accent: 240 3.7% 15.9%;
-    --sidebar-accent-foreground: 240 4.8% 95.9%;
-    --sidebar-border: 240 3.7% 15.9%;
-    --sidebar-ring: 217.2 91.2% 59.8%;
+    --background: 220 20% 4%;
+    --foreground: 0 0% 98%;
   }
 }
 
@@ -99,7 +67,177 @@ All colors MUST be HSL.
     @apply border-border;
   }
 
-  body {
-    @apply bg-background text-foreground;
+  html {
+    font-family: 'Inter', system-ui, sans-serif;
   }
+
+  body {
+    @apply bg-background text-foreground antialiased;
+    overflow: hidden;
+  }
+
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Space Grotesk', sans-serif;
+  }
+}
+
+@layer components {
+  /* Info bar styles */
+  .info-bar {
+    @apply fixed bottom-0 left-0 right-0 z-30;
+    background: linear-gradient(to top, hsl(var(--background)) 0%, hsl(var(--background) / 0.95) 40%, transparent 100%);
+    padding-top: 120px;
+  }
+
+  /* Channel guide overlay */
+  .guide-overlay {
+    @apply fixed inset-0 z-40;
+    background: hsl(var(--background) / 0.7);
+    backdrop-filter: blur(8px);
+  }
+
+  .guide-panel {
+    background: var(--glass-bg);
+    border-left: 1px solid var(--glass-border);
+    backdrop-filter: blur(20px);
+  }
+
+  /* Channel card */
+  .channel-card {
+    @apply relative overflow-hidden rounded-xl transition-all duration-300;
+    background: hsl(var(--card));
+    border: 1px solid hsl(var(--border));
+  }
+
+  .channel-card:hover {
+    transform: scale(1.02);
+    border-color: hsl(var(--foreground) / 0.2);
+  }
+
+  .channel-card.active {
+    border-color: var(--current-channel-color);
+    box-shadow: 0 0 30px var(--current-channel-color);
+  }
+
+  /* Progress bar */
+  .progress-bar {
+    @apply h-1 rounded-full overflow-hidden;
+    background: hsl(var(--muted));
+  }
+
+  .progress-bar-fill {
+    @apply h-full rounded-full transition-all duration-1000 ease-linear;
+  }
+
+  /* LIVE badge */
+  .live-badge {
+    @apply inline-flex items-center gap-1.5 px-2 py-0.5 rounded text-xs font-semibold uppercase tracking-wider;
+    background: hsl(0 80% 50%);
+    color: white;
+    animation: pulse-live 2s infinite;
+  }
+
+  @keyframes pulse-live {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+  }
+
+  /* CRT scan line effect */
+  .crt-effect::before {
+    content: '';
+    @apply fixed inset-0 pointer-events-none z-50;
+    background: repeating-linear-gradient(
+      0deg,
+      transparent 0px,
+      hsl(0 0% 0% / 0.03) 1px,
+      transparent 2px
+    );
+  }
+
+  /* Keyboard hint */
+  .kbd {
+    @apply inline-flex items-center justify-center px-2 py-0.5 rounded text-xs font-medium;
+    background: hsl(var(--muted));
+    border: 1px solid hsl(var(--border));
+    color: hsl(var(--muted-foreground));
+  }
+
+  /* Fade animations */
+  .fade-in {
+    animation: fadeIn 0.3s ease-out forwards;
+  }
+
+  .fade-out {
+    animation: fadeOut 0.3s ease-out forwards;
+  }
+
+  @keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+  }
+
+  @keyframes fadeOut {
+    from { opacity: 1; transform: translateY(0); }
+    to { opacity: 0; transform: translateY(10px); }
+  }
+
+  /* Slide in from right */
+  .slide-in-right {
+    animation: slideInRight 0.4s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  .slide-out-right {
+    animation: slideOutRight 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  }
+
+  @keyframes slideInRight {
+    from { transform: translateX(100%); }
+    to { transform: translateX(0); }
+  }
+
+  @keyframes slideOutRight {
+    from { transform: translateX(0); }
+    to { transform: translateX(100%); }
+  }
+
+  /* Channel switch animation */
+  .channel-switch {
+    animation: channelSwitch 0.5s ease-out;
+  }
+
+  @keyframes channelSwitch {
+    0% { opacity: 0; filter: brightness(2) saturate(0); }
+    50% { filter: brightness(1.5) saturate(0.5); }
+    100% { opacity: 1; filter: brightness(1) saturate(1); }
+  }
+
+  /* Gradient text */
+  .gradient-text {
+    @apply bg-clip-text text-transparent;
+    background-image: linear-gradient(135deg, hsl(var(--foreground)) 0%, hsl(var(--muted-foreground)) 100%);
+  }
+}
+
+@layer utilities {
+  .text-shadow-glow {
+    text-shadow: 0 0 20px currentColor;
+  }
+
+  .bg-channel-tech { background-color: hsl(var(--channel-tech)); }
+  .bg-channel-science { background-color: hsl(var(--channel-science)); }
+  .bg-channel-maker { background-color: hsl(var(--channel-maker)); }
+  .bg-channel-cooking { background-color: hsl(var(--channel-cooking)); }
+  .bg-channel-history { background-color: hsl(var(--channel-history)); }
+
+  .text-channel-tech { color: hsl(var(--channel-tech)); }
+  .text-channel-science { color: hsl(var(--channel-science)); }
+  .text-channel-maker { color: hsl(var(--channel-maker)); }
+  .text-channel-cooking { color: hsl(var(--channel-cooking)); }
+  .text-channel-history { color: hsl(var(--channel-history)); }
+
+  .border-channel-tech { border-color: hsl(var(--channel-tech)); }
+  .border-channel-science { border-color: hsl(var(--channel-science)); }
+  .border-channel-maker { border-color: hsl(var(--channel-maker)); }
+  .border-channel-cooking { border-color: hsl(var(--channel-cooking)); }
+  .border-channel-history { border-color: hsl(var(--channel-history)); }
 }
