@@ -124,14 +124,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       });
     }, [channel, isReady, onVideoChange]);
 
-    // Initialize player when API is loaded
+    // Initialize player when API is loaded - only run once
     useEffect(() => {
-      if (!isApiLoaded || !containerRef.current) return;
+      if (!isApiLoaded || !containerRef.current || playerRef.current) return;
       
       const playback = getCurrentPlayback(channel);
       onVideoChange?.(playback.video.title);
 
-      playerRef.current = new window.YT.Player(containerRef.current, {
+      const playerElement = containerRef.current;
+      
+      playerRef.current = new window.YT.Player(playerElement, {
         videoId: playback.video.id,
         playerVars: {
           autoplay: 1,
@@ -173,8 +175,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
         }
-        playerRef.current?.destroy();
-        playerRef.current = null;
+        if (playerRef.current) {
+          playerRef.current.destroy();
+          playerRef.current = null;
+        }
         setIsReady(false);
       };
     }, [isApiLoaded]);
