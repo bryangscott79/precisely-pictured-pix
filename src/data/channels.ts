@@ -351,13 +351,13 @@ export const channels: Channel[] = [
     category: 'family',
     description: 'Inspirational and faith-based content',
     videos: [
-      { id: 'fDH4FcNuPsQ', title: 'What Child Is This', duration: 258 },
-      { id: 'Jbe7OruLk8I', title: 'Amazing Grace', duration: 324 },
-      { id: 'c1BWYlD8AKs', title: 'How Great Is Our God', duration: 366 },
-      { id: 'zSif77IVQdY', title: 'Way Maker', duration: 426 },
-      { id: 'Kppx4bzfAaE', title: 'Reckless Love', duration: 378 },
-      { id: 'YzY1fRvLT4E', title: '10,000 Reasons', duration: 348 },
-      { id: 'XFRjr_x-yqU', title: 'Oceans', duration: 534 },
+      // Curated, educational faith content (avoids copyrighted music & reduces unsafe/mislabeled uploads).
+      { id: 'ak06MSETeo4', title: 'What Is the Bible?', duration: 348 },
+      { id: '7_CGP-12AE0', title: 'The Story of the Bible', duration: 335 },
+      { id: '3dEh25pduQ8', title: 'The Messiah', duration: 348 },
+      { id: 'xrzq_X1NNaA', title: 'The Gospel', duration: 347 },
+      { id: 'ajwehw_AT0s', title: 'Sermon on the Mount', duration: 545 },
+      { id: 'n_vEB11XKSE', title: "The Lord’s Prayer", duration: 562 },
     ],
   },
 ];
