@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { X, Shield, Lock } from 'lucide-react';
+import { X, Shield, Lock, Clock, Grid3X3 } from 'lucide-react';
 import { 
   channels, 
   Channel, 
@@ -9,9 +9,13 @@ import {
   getCurrentPlayback, 
   getNextVideo, 
   formatTime,
-  getAvailableChannels 
+  formatTimeSlot,
+  getChannelSchedule,
+  getAvailableChannels,
+  ScheduleItem
 } from '@/data/channels';
 import { useParentalControls } from '@/hooks/useParentalControls';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChannelGuideProps {
   isOpen: boolean;
@@ -43,6 +47,8 @@ const colorClasses: Record<ChannelColor, { bg: string; border: string; text: str
   travel: { bg: 'bg-channel-travel', border: 'border-channel-travel', text: 'text-channel-travel' },
   art: { bg: 'bg-channel-art', border: 'border-channel-art', text: 'text-channel-art' },
 };
+
+type ViewMode = 'grid' | 'schedule';
 
 function ChannelCard({ 
   channel, 
@@ -118,6 +124,115 @@ function ChannelCard({
   );
 }
 
+// Schedule row component for time-based view
+function ScheduleRow({
+  channel,
+  schedule,
+  isActive,
+  onClick,
+}: {
+  channel: Channel;
+  schedule: ScheduleItem[];
+  isActive: boolean;
+  onClick: () => void;
+}) {
+  const colors = colorClasses[channel.color];
+
+  return (
+    <div className={`flex border-b border-border/50 ${isActive ? 'bg-muted/30' : ''}`}>
+      {/* Channel info column */}
+      <button
+        onClick={onClick}
+        className={`w-32 shrink-0 p-2 flex items-center gap-2 border-r border-border/50 hover:bg-muted/50 transition-colors ${
+          isActive ? `border-l-2 ${colors.border}` : ''
+        }`}
+      >
+        <div className={`w-8 h-8 rounded flex items-center justify-center text-base ${colors.bg}`}>
+          {channel.icon}
+        </div>
+        <span className="text-xs font-medium truncate">{channel.name}</span>
+      </button>
+
+      {/* Schedule items */}
+      <div className="flex-1 flex overflow-x-auto">
+        {schedule.map((item, idx) => (
+          <div
+            key={`${item.video.id}-${idx}`}
+            className={`shrink-0 p-2 border-r border-border/30 transition-colors ${
+              item.isNowPlaying 
+                ? `${colors.bg} bg-opacity-20 border-l-2 ${colors.border}` 
+                : 'hover:bg-muted/30'
+            }`}
+            style={{ 
+              width: `${Math.max(120, Math.min(300, item.video.duration / 10))}px` 
+            }}
+          >
+            <div className="space-y-0.5">
+              <p className="text-[10px] text-muted-foreground">
+                {formatTimeSlot(item.startTime)}
+              </p>
+              <p className="text-xs font-medium line-clamp-2">{item.video.title}</p>
+              <p className="text-[10px] text-muted-foreground">
+                {formatTime(item.video.duration)}
+              </p>
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// Time markers for the schedule header
+function TimeHeader() {
+  const [timeSlots, setTimeSlots] = useState<Date[]>([]);
+
+  useEffect(() => {
+    const updateTimeSlots = () => {
+      const now = new Date();
+      const slots: Date[] = [];
+      
+      // Round down to nearest 30 minutes
+      const startMinutes = Math.floor(now.getMinutes() / 30) * 30;
+      const start = new Date(now);
+      start.setMinutes(startMinutes, 0, 0);
+      
+      // Generate 6 time slots (3 hours)
+      for (let i = 0; i < 6; i++) {
+        const slot = new Date(start.getTime() + i * 30 * 60 * 1000);
+        slots.push(slot);
+      }
+      
+      setTimeSlots(slots);
+    };
+
+    updateTimeSlots();
+    const interval = setInterval(updateTimeSlots, 60000); // Update every minute
+    return () => clearInterval(interval);
+  }, []);
+
+  return (
+    <div className="flex border-b border-border sticky top-0 bg-background z-10">
+      <div className="w-32 shrink-0 p-2 border-r border-border flex items-center gap-2">
+        <Clock className="w-4 h-4 text-muted-foreground" />
+        <span className="text-xs font-semibold text-muted-foreground">Channel</span>
+      </div>
+      <div className="flex-1 flex">
+        {timeSlots.map((slot, idx) => (
+          <div 
+            key={idx} 
+            className="flex-1 p-2 text-center border-r border-border/30 min-w-[120px]"
+          >
+            <span className={`text-xs font-medium ${idx === 0 ? 'text-primary' : 'text-muted-foreground'}`}>
+              {formatTimeSlot(slot)}
+            </span>
+          </div>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 const categoryOrder: ChannelCategory[] = ['family', 'education', 'entertainment', 'lifestyle', 'hobbies'];
 
 export function ChannelGuide({ 
@@ -129,6 +244,25 @@ export function ChannelGuide({
 }: ChannelGuideProps) {
   const { enabled: parentalControlsEnabled } = useParentalControls();
   const availableChannels = getAvailableChannels(parentalControlsEnabled);
+  const [viewMode, setViewMode] = useState<ViewMode>('grid');
+  const [schedules, setSchedules] = useState<Map<string, ScheduleItem[]>>(new Map());
+
+  // Update schedules
+  useEffect(() => {
+    if (viewMode === 'schedule') {
+      const updateSchedules = () => {
+        const newSchedules = new Map<string, ScheduleItem[]>();
+        availableChannels.forEach(channel => {
+          newSchedules.set(channel.id, getChannelSchedule(channel, 3));
+        });
+        setSchedules(newSchedules);
+      };
+
+      updateSchedules();
+      const interval = setInterval(updateSchedules, 30000); // Update every 30 seconds
+      return () => clearInterval(interval);
+    }
+  }, [viewMode, availableChannels]);
 
   // Group channels by category
   const channelsByCategory = categoryOrder.reduce((acc, category) => {
@@ -155,15 +289,39 @@ export function ChannelGuide({
   return (
     <div className="guide-overlay fade-in" onClick={onClose}>
       <div 
-        className={`guide-panel fixed right-0 top-0 bottom-0 w-full max-w-md overflow-hidden ${
-          isOpen ? 'slide-in-right' : 'slide-out-right'
-        }`}
+        className={`guide-panel fixed right-0 top-0 bottom-0 overflow-hidden ${
+          viewMode === 'schedule' ? 'w-full max-w-4xl' : 'w-full max-w-md'
+        } ${isOpen ? 'slide-in-right' : 'slide-out-right'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-border">
           <h2 className="font-display font-bold text-xl">Channel Guide</h2>
           <div className="flex items-center gap-2">
+            {/* View mode toggle */}
+            <div className="flex rounded-lg overflow-hidden border border-border">
+              <button
+                onClick={() => setViewMode('grid')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'grid' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'hover:bg-muted text-muted-foreground'
+                }`}
+              >
+                <Grid3X3 className="w-4 h-4" />
+              </button>
+              <button
+                onClick={() => setViewMode('schedule')}
+                className={`px-3 py-1.5 text-xs font-medium transition-colors ${
+                  viewMode === 'schedule' 
+                    ? 'bg-primary text-primary-foreground' 
+                    : 'hover:bg-muted text-muted-foreground'
+                }`}
+              >
+                <Clock className="w-4 h-4" />
+              </button>
+            </div>
+
             <button 
               onClick={(e) => {
                 e.stopPropagation();
@@ -191,34 +349,70 @@ export function ChannelGuide({
           </div>
         </div>
 
-        {/* Channel list grouped by category */}
-        <div className="p-3 space-y-4 overflow-y-auto h-[calc(100%-130px)]">
-          {categoryOrder.map((category) => {
-            const categoryChannels = channelsByCategory[category];
-            if (!categoryChannels || categoryChannels.length === 0) return null;
+        {/* Content */}
+        {viewMode === 'grid' ? (
+          // Grid view - grouped by category
+          <div className="p-3 space-y-4 overflow-y-auto h-[calc(100%-130px)]">
+            {categoryOrder.map((category) => {
+              const categoryChannels = channelsByCategory[category];
+              if (!categoryChannels || categoryChannels.length === 0) return null;
 
-            return (
-              <div key={category}>
-                <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
-                  {categoryNames[category]}
-                </h3>
-                <div className="space-y-2">
-                  {categoryChannels.map((channel) => (
-                    <ChannelCard
-                      key={channel.id}
-                      channel={channel}
-                      isActive={channel.id === currentChannel.id}
-                      onClick={() => {
-                        onChannelSelect(channel);
-                        onClose();
-                      }}
-                    />
-                  ))}
+              return (
+                <div key={category}>
+                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                    {categoryNames[category]}
+                  </h3>
+                  <div className="space-y-2">
+                    {categoryChannels.map((channel) => (
+                      <ChannelCard
+                        key={channel.id}
+                        channel={channel}
+                        isActive={channel.id === currentChannel.id}
+                        onClick={() => {
+                          onChannelSelect(channel);
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
                 </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        ) : (
+          // Schedule view - time-based
+          <div className="h-[calc(100%-130px)] overflow-hidden flex flex-col">
+            <TimeHeader />
+            <ScrollArea className="flex-1">
+              {categoryOrder.map((category) => {
+                const categoryChannels = channelsByCategory[category];
+                if (!categoryChannels || categoryChannels.length === 0) return null;
+
+                return (
+                  <div key={category}>
+                    <div className="sticky top-0 bg-muted/80 backdrop-blur-sm px-3 py-1.5 border-b border-border">
+                      <span className="text-[10px] font-semibold text-muted-foreground uppercase tracking-wider">
+                        {categoryNames[category]}
+                      </span>
+                    </div>
+                    {categoryChannels.map((channel) => (
+                      <ScheduleRow
+                        key={channel.id}
+                        channel={channel}
+                        schedule={schedules.get(channel.id) || []}
+                        isActive={channel.id === currentChannel.id}
+                        onClick={() => {
+                          onChannelSelect(channel);
+                          onClose();
+                        }}
+                      />
+                    ))}
+                  </div>
+                );
+              })}
+            </ScrollArea>
+          </div>
+        )}
 
         {/* Footer with parental controls status */}
         <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-background/80 backdrop-blur-sm">
