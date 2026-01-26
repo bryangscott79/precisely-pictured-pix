@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { channels, Channel } from '@/data/channels';
+import { channels, Channel, getCurrentPlayback } from '@/data/channels';
 import { VideoPlayer, VideoPlayerHandle } from '@/components/VideoPlayer';
 import { InfoBar } from '@/components/InfoBar';
 import { ChannelGuide } from '@/components/ChannelGuide';
@@ -7,6 +7,9 @@ import { ChannelSwitcher } from '@/components/ChannelSwitcher';
 import { KeyboardHints } from '@/components/KeyboardHints';
 import { GuideButton } from '@/components/GuideButton';
 import { PlaybackControls } from '@/components/PlaybackControls';
+import { UserMenu } from '@/components/UserMenu';
+import { AuthModal } from '@/components/AuthModal';
+import { VoteButtons } from '@/components/VoteButtons';
 
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
@@ -19,16 +22,30 @@ export default function Index() {
   });
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
   const [showHints, setShowHints] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [currentVideoId, setCurrentVideoId] = useState<string>('');
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayerHandle>(null);
+
+  // Get current video ID for voting
+  useEffect(() => {
+    const updateVideoId = () => {
+      const playback = getCurrentPlayback(currentChannel);
+      setCurrentVideoId(playback.video.id);
+    };
+    
+    updateVideoId();
+    const interval = setInterval(updateVideoId, 1000);
+    return () => clearInterval(interval);
+  }, [currentChannel]);
 
   // Reset idle timer
   const resetIdleTimer = useCallback(() => {
@@ -39,12 +56,12 @@ export default function Index() {
     }
     
     idleTimerRef.current = setTimeout(() => {
-      if (!isGuideOpen) {
+      if (!isGuideOpen && !isAuthModalOpen) {
         setShowUI(false);
         setShowHints(false);
       }
     }, IDLE_TIMEOUT);
-  }, [isGuideOpen]);
+  }, [isGuideOpen, isAuthModalOpen]);
 
   // Handle mouse movement
   useEffect(() => {
@@ -176,6 +193,14 @@ export default function Index() {
         onVideoChange={() => {}}
       />
 
+      {/* Top Bar - User Menu */}
+      <div className="absolute top-4 right-4 z-20">
+        <UserMenu 
+          visible={showUI && !isGuideOpen}
+          onSignInClick={() => setIsAuthModalOpen(true)}
+        />
+      </div>
+
       {/* Guide Button */}
       <GuideButton 
         onClick={() => setIsGuideOpen(true)} 
@@ -190,6 +215,16 @@ export default function Index() {
         onToggleMute={toggleMute}
         onTogglePlayPause={togglePlayPause}
       />
+
+      {/* Vote Buttons - above info bar */}
+      <div className="absolute bottom-32 left-6 md:left-10 z-20">
+        <VoteButtons
+          videoId={currentVideoId}
+          youtubeId={currentVideoId}
+          visible={showUI && !isGuideOpen}
+          onAuthRequired={() => setIsAuthModalOpen(true)}
+        />
+      </div>
 
       {/* Info Bar */}
       <InfoBar 
@@ -216,6 +251,12 @@ export default function Index() {
         onClose={() => setIsGuideOpen(false)}
         currentChannel={currentChannel}
         onChannelSelect={handleChannelSelect}
+      />
+
+      {/* Auth Modal */}
+      <AuthModal
+        isOpen={isAuthModalOpen}
+        onClose={() => setIsAuthModalOpen(false)}
       />
     </div>
   );

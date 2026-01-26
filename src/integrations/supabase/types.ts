@@ -14,10 +14,160 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      profiles: {
+        Row: {
+          avatar_url: string | null
+          created_at: string
+          display_name: string | null
+          email: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id: string
+          updated_at?: string
+        }
+        Update: {
+          avatar_url?: string | null
+          created_at?: string
+          display_name?: string | null
+          email?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      videos: {
+        Row: {
+          channel_id: string
+          created_at: string
+          duration: number
+          id: string
+          thumbnail_url: string | null
+          title: string
+          youtube_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          duration?: number
+          id?: string
+          thumbnail_url?: string | null
+          title: string
+          youtube_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          duration?: number
+          id?: string
+          thumbnail_url?: string | null
+          title?: string
+          youtube_id?: string
+        }
+        Relationships: []
+      }
+      votes: {
+        Row: {
+          created_at: string
+          id: string
+          user_id: string
+          video_id: string
+          vote_type: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          user_id: string
+          video_id: string
+          vote_type: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+          vote_type?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "votes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "video_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "votes_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      watch_history: {
+        Row: {
+          channel_id: string
+          id: string
+          user_id: string
+          video_id: string
+          watch_duration: number
+          watched_at: string
+        }
+        Insert: {
+          channel_id: string
+          id?: string
+          user_id: string
+          video_id: string
+          watch_duration?: number
+          watched_at?: string
+        }
+        Update: {
+          channel_id?: string
+          id?: string
+          user_id?: string
+          video_id?: string
+          watch_duration?: number
+          watched_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "watch_history_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "video_rankings"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "watch_history_video_id_fkey"
+            columns: ["video_id"]
+            isOneToOne: false
+            referencedRelation: "videos"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
-      [_ in never]: never
+      video_rankings: {
+        Row: {
+          channel_id: string | null
+          downvotes: number | null
+          duration: number | null
+          id: string | null
+          net_score: number | null
+          thumbnail_url: string | null
+          title: string | null
+          upvotes: number | null
+          youtube_id: string | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       [_ in never]: never
