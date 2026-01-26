@@ -21,11 +21,11 @@ export const channels: Channel[] = [
     color: 'tech',
     description: 'Tech explainers and reviews',
     videos: [
-      { id: 'vk2vJsXTBsk', title: 'How NASA Reinvented The Wheel', duration: 1062 }, // 17:42
-      { id: 'N2u6EDwumdQ', title: 'Spinning Disk Flywheel Battery', duration: 903 }, // 15:03
-      { id: 'zLZSjSj10K4', title: 'Why Lightbulbs Might Be The Best Invention Ever', duration: 1398 }, // 23:18
-      { id: 'erLbbextvlY', title: 'How Do Computers Remember?', duration: 1020 }, // 17:00
-      { id: 'A_BlNA7bBxo', title: 'The World in UV', duration: 780 }, // 13:00
+      { id: 'XRr1kaXKBsU', title: 'How Does a Quantum Computer Work?', duration: 687 }, // 11:27
+      { id: 'cUzklzVXJwo', title: 'Spinning Black Holes', duration: 918 }, // 15:18
+      { id: 'JXeJANDKwDc', title: 'Why Gravity is NOT a Force', duration: 1018 }, // 16:58
+      { id: 'wMFPe-DwULM', title: 'Why No One Has Measured The Speed Of Light', duration: 1128 }, // 18:48
+      { id: 'U47Rg3KP8Oc', title: 'The Unexpected Math Behind How Computers Work', duration: 900 }, // 15:00
     ],
   },
   {
