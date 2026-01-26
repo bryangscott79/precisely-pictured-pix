@@ -1,14 +1,186 @@
-// Update this page (the content is just a fallback if you fail to update the page)
+import { useEffect, useState, useCallback, useRef } from 'react';
+import { channels, Channel } from '@/data/channels';
+import { VideoPlayer } from '@/components/VideoPlayer';
+import { InfoBar } from '@/components/InfoBar';
+import { ChannelGuide } from '@/components/ChannelGuide';
+import { ChannelSwitcher } from '@/components/ChannelSwitcher';
+import { KeyboardHints } from '@/components/KeyboardHints';
+import { GuideButton } from '@/components/GuideButton';
 
-const Index = () => {
+const IDLE_TIMEOUT = 3000;
+const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
+
+export default function Index() {
+  // Get saved channel or default to first
+  const [currentChannel, setCurrentChannel] = useState<Channel>(() => {
+    const savedChannelId = localStorage.getItem('epishow-last-channel');
+    return channels.find(c => c.id === savedChannelId) || channels[0];
+  });
+  
+  const [isGuideOpen, setIsGuideOpen] = useState(false);
+  const [showUI, setShowUI] = useState(true);
+  const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
+  const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
+  const [showHints, setShowHints] = useState(true);
+  
+  const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  // Reset idle timer
+  const resetIdleTimer = useCallback(() => {
+    setShowUI(true);
+    
+    if (idleTimerRef.current) {
+      clearTimeout(idleTimerRef.current);
+    }
+    
+    idleTimerRef.current = setTimeout(() => {
+      if (!isGuideOpen) {
+        setShowUI(false);
+        setShowHints(false);
+      }
+    }, IDLE_TIMEOUT);
+  }, [isGuideOpen]);
+
+  // Handle mouse movement
+  useEffect(() => {
+    const handleMouseMove = () => resetIdleTimer();
+    const handleClick = () => resetIdleTimer();
+    
+    window.addEventListener('mousemove', handleMouseMove);
+    window.addEventListener('click', handleClick);
+    
+    // Initial timer
+    resetIdleTimer();
+    
+    return () => {
+      window.removeEventListener('mousemove', handleMouseMove);
+      window.removeEventListener('click', handleClick);
+      if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
+    };
+  }, [resetIdleTimer]);
+
+  // Switch channel
+  const switchChannel = useCallback((direction: 'up' | 'down') => {
+    const currentIndex = channels.findIndex(c => c.id === currentChannel.id);
+    let newIndex: number;
+    
+    if (direction === 'up') {
+      newIndex = currentIndex <= 0 ? channels.length - 1 : currentIndex - 1;
+    } else {
+      newIndex = currentIndex >= channels.length - 1 ? 0 : currentIndex + 1;
+    }
+    
+    const newChannel = channels[newIndex];
+    setCurrentChannel(newChannel);
+    localStorage.setItem('epishow-last-channel', newChannel.id);
+    
+    // Show channel switcher overlay
+    setSwitchDirection(direction);
+    setShowChannelSwitcher(true);
+    
+    if (channelSwitchTimerRef.current) {
+      clearTimeout(channelSwitchTimerRef.current);
+    }
+    
+    channelSwitchTimerRef.current = setTimeout(() => {
+      setShowChannelSwitcher(false);
+      setSwitchDirection(null);
+    }, CHANNEL_SWITCH_DISPLAY_TIME);
+    
+    resetIdleTimer();
+  }, [currentChannel, resetIdleTimer]);
+
+  // Keyboard shortcuts
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      // Ignore if typing in an input
+      if (e.target instanceof HTMLInputElement || e.target instanceof HTMLTextAreaElement) {
+        return;
+      }
+
+      switch (e.key.toLowerCase()) {
+        case 'g':
+          e.preventDefault();
+          setIsGuideOpen(prev => !prev);
+          break;
+        case 'arrowup':
+          e.preventDefault();
+          if (!isGuideOpen) {
+            switchChannel('up');
+          }
+          break;
+        case 'arrowdown':
+          e.preventDefault();
+          if (!isGuideOpen) {
+            switchChannel('down');
+          }
+          break;
+        case 'i':
+          e.preventDefault();
+          resetIdleTimer();
+          break;
+      }
+    };
+
+    window.addEventListener('keydown', handleKeyDown);
+    return () => window.removeEventListener('keydown', handleKeyDown);
+  }, [isGuideOpen, switchChannel, resetIdleTimer]);
+
+  // Handle channel selection from guide
+  const handleChannelSelect = useCallback((channel: Channel) => {
+    setCurrentChannel(channel);
+    localStorage.setItem('epishow-last-channel', channel.id);
+    resetIdleTimer();
+  }, [resetIdleTimer]);
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      if (channelSwitchTimerRef.current) clearTimeout(channelSwitchTimerRef.current);
+    };
+  }, []);
+
   return (
-    <div className="flex min-h-screen items-center justify-center bg-background">
-      <div className="text-center">
-        <h1 className="mb-4 text-4xl font-bold">Welcome to Your Blank App</h1>
-        <p className="text-xl text-muted-foreground">Start building your amazing project here!</p>
-      </div>
+    <div className="relative w-screen h-screen overflow-hidden bg-background crt-effect">
+      {/* Video Player */}
+      <VideoPlayer 
+        channel={currentChannel}
+        onVideoChange={() => {}}
+      />
+
+      {/* Guide Button */}
+      <GuideButton 
+        onClick={() => setIsGuideOpen(true)} 
+        visible={showUI && !isGuideOpen}
+      />
+
+      {/* Info Bar */}
+      <InfoBar 
+        channel={currentChannel} 
+        visible={showUI && !isGuideOpen}
+      />
+
+      {/* Channel Switcher Overlay */}
+      <ChannelSwitcher
+        channel={currentChannel}
+        visible={showChannelSwitcher}
+        direction={switchDirection}
+      />
+
+      {/* Keyboard Hints (first visit only) */}
+      <KeyboardHints 
+        visible={showUI && !isGuideOpen}
+        onDismiss={() => setShowHints(false)}
+      />
+
+      {/* Channel Guide */}
+      <ChannelGuide
+        isOpen={isGuideOpen}
+        onClose={() => setIsGuideOpen(false)}
+        currentChannel={currentChannel}
+        onChannelSelect={handleChannelSelect}
+      />
     </div>
   );
-};
-
-export default Index;
+}
