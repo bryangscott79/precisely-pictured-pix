@@ -1,5 +1,4 @@
-import { useEffect, useState } from 'react';
-import { Channel } from '@/data/channels';
+import { Channel, ChannelColor } from '@/data/channels';
 import { ChevronUp, ChevronDown } from 'lucide-react';
 
 interface ChannelSwitcherProps {
@@ -8,12 +7,27 @@ interface ChannelSwitcherProps {
   direction: 'up' | 'down' | null;
 }
 
-const colorClasses = {
+const colorClasses: Record<ChannelColor, string> = {
   tech: 'bg-channel-tech',
   science: 'bg-channel-science',
   maker: 'bg-channel-maker',
   cooking: 'bg-channel-cooking',
   history: 'bg-channel-history',
+  diy: 'bg-channel-diy',
+  sports: 'bg-channel-sports',
+  collecting: 'bg-channel-collecting',
+  kids: 'bg-channel-kids',
+  family: 'bg-channel-family',
+  faith: 'bg-channel-faith',
+  automotive: 'bg-channel-automotive',
+  teen: 'bg-channel-teen',
+  gaming: 'bg-channel-gaming',
+  music: 'bg-channel-music',
+  nature: 'bg-channel-nature',
+  comedy: 'bg-channel-comedy',
+  fitness: 'bg-channel-fitness',
+  travel: 'bg-channel-travel',
+  art: 'bg-channel-art',
 };
 
 export function ChannelSwitcher({ channel, visible, direction }: ChannelSwitcherProps) {
