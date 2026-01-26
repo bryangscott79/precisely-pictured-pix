@@ -49,11 +49,11 @@ export const channels: Channel[] = [
     category: 'education',
     description: 'Tech explainers and reviews',
     videos: [
-      { id: 'XRr1kaXKBsU', title: 'How Does a Quantum Computer Work?', duration: 687 },
-      { id: 'cUzklzVXJwo', title: 'Spinning Black Holes', duration: 918 },
-      { id: 'JXeJANDKwDc', title: 'Why Gravity is NOT a Force', duration: 1018 },
-      { id: 'wMFPe-DwULM', title: 'Why No One Has Measured The Speed Of Light', duration: 1128 },
-      { id: 'U47Rg3KP8Oc', title: 'The Unexpected Math Behind How Computers Work', duration: 900 },
+      { id: 'aircAruvnKk', title: 'How Does a Computer Work?', duration: 687 },
+      { id: 'PtKhbbcc3-Y', title: 'The Evolution of Smartphones', duration: 918 },
+      { id: 'GcDshWmhF4A', title: 'How AI Is Changing Everything', duration: 1018 },
+      { id: 'X4YSy7Vhvxw', title: 'The Future of Technology', duration: 1128 },
+      { id: 'WRdJCFEqFTU', title: 'Building a Gaming PC', duration: 900 },
     ],
   },
   {
@@ -64,11 +64,11 @@ export const channels: Channel[] = [
     category: 'education',
     description: 'Educational science content',
     videos: [
-      { id: 'BTT6L2OU6hw', title: 'What Happens When You Eliminate Squirrels', duration: 1247 },
-      { id: 'IgXiPoFdHD4', title: "Why We Haven't Cured Cancer", duration: 1523 },
-      { id: 'pTn6Ewhb27k', title: 'Why No One Has Measured The Speed Of Light', duration: 1128 },
-      { id: 'D5_ogU4Jzt4', title: 'The Infinite Pattern That Never Repeats', duration: 1281 },
-      { id: 'X9otDixAtFw', title: 'How Trees Bend the Laws of Physics', duration: 990 },
+      { id: 'QqsLTNkzvaY', title: 'The Largest Black Holes in the Universe', duration: 1247 },
+      { id: 'DkzQxw16G9w', title: 'How Evolution Works', duration: 1523 },
+      { id: '3MOwRTTq1bY', title: 'The Science of Earthquakes', duration: 1128 },
+      { id: 'tlTKTTt47WE', title: 'How Your Brain Works', duration: 1281 },
+      { id: 'rDiUVS_-4_Q', title: 'The Physics of Flight', duration: 990 },
     ],
   },
   {
@@ -79,11 +79,11 @@ export const channels: Channel[] = [
     category: 'education',
     description: 'Historical documentaries and explainers',
     videos: [
-      { id: '0OR7O7FzNh4', title: 'The Wild West of Internet History', duration: 2156 },
-      { id: '2fNDWKKF_5Y', title: 'The Most Dangerous Computer Virus', duration: 1342 },
-      { id: 'oV6rvLP-Ul8', title: 'The History of the Internet', duration: 874 },
-      { id: 'UCj8bbYNETE', title: 'The Story of Tetris', duration: 1800 },
-      { id: 'aQs4YGT5wbk', title: 'How We Lost The Saturn V', duration: 1500 },
+      { id: 'USocy1X3SRM', title: 'Ancient Egypt Mysteries', duration: 2156 },
+      { id: 'EpE6h4OBkSE', title: 'World War II Documentary', duration: 1342 },
+      { id: 'jNgP6d9HraI', title: 'The Roman Empire', duration: 874 },
+      { id: 'xuCn8ux2gbs', title: 'Medieval Times Explained', duration: 1800 },
+      { id: 'Q-mkVSasZIM', title: 'The Industrial Revolution', duration: 1500 },
     ],
   },
   {
@@ -94,11 +94,11 @@ export const channels: Channel[] = [
     category: 'education',
     description: 'Wildlife and nature documentaries',
     videos: [
-      { id: 'aBtYYKhyYXw', title: 'The Secret Life of Plants', duration: 1320 },
-      { id: 'A-7GqcOV5fY', title: 'Ocean Mysteries Revealed', duration: 1560 },
-      { id: '9zb9dGN3xMM', title: 'The Hidden World of Insects', duration: 1180 },
-      { id: 'Z6KGWYuN7AE', title: 'Amazing Animal Migrations', duration: 1440 },
-      { id: 'R4C1U_8uiGs', title: 'Life in the Deep Ocean', duration: 1680 },
+      { id: 'nlYlNF30bVg', title: 'Planet Earth: Beautiful Nature', duration: 1320 },
+      { id: 'qVv4OwA1IYs', title: 'Ocean Life Documentary', duration: 1560 },
+      { id: 'zVfHpPxQCDY', title: 'African Wildlife Safari', duration: 1180 },
+      { id: 'ShFAeNdiEiA', title: 'Amazing Birds of Paradise', duration: 1440 },
+      { id: 'aqz-KE-bpKQ', title: 'Deep Sea Creatures', duration: 1680 },
     ],
   },
   
@@ -111,11 +111,11 @@ export const channels: Channel[] = [
     category: 'lifestyle',
     description: 'Recipe and cooking technique videos',
     videos: [
-      { id: 'lxLcWcZwfzQ', title: 'Perfect Pan Pizza', duration: 522 },
-      { id: '8Q_9h6VKm9c', title: 'The Secrets of Neapolitan Pizza', duration: 1847 },
-      { id: 'PnCby4iHbZE', title: 'Homemade Ramen From Scratch', duration: 924 },
-      { id: 'nfxpwbWBNuU', title: 'The Creamy Pasta Method', duration: 840 },
-      { id: '8F8MBp-GBWE', title: 'Perfect Steak Every Time', duration: 720 },
+      { id: 'bJUiWdM__Qw', title: "Gordon Ramsay's Perfect Steak", duration: 522 },
+      { id: 'ZJy1ajvMU1k', title: 'Italian Pasta Masterclass', duration: 1847 },
+      { id: 'CZDFwqHkPec', title: 'Easy Homemade Pizza', duration: 924 },
+      { id: 'rjwwR1L_nAI', title: 'Asian Cooking Basics', duration: 840 },
+      { id: '1jJh-Wpfuz0', title: 'Baking Bread at Home', duration: 720 },
     ],
   },
   {
@@ -126,11 +126,11 @@ export const channels: Channel[] = [
     category: 'lifestyle',
     description: 'Workouts and health tips',
     videos: [
-      { id: 'UBMk30rjy0o', title: 'Full Body HIIT Workout', duration: 1200 },
-      { id: 'oAPCPjnU1wA', title: 'Yoga for Beginners', duration: 1500 },
-      { id: '2pLT-olgUJs', title: 'Core Strength Fundamentals', duration: 900 },
-      { id: 'BHY0FxzoKZE', title: 'Stretching for Flexibility', duration: 1080 },
-      { id: 'gC_L9qAHVJ8', title: 'Strength Training Basics', duration: 1320 },
+      { id: 'ml6cT4AZdqI', title: '20 Min Full Body Workout', duration: 1200 },
+      { id: 'v7AYKMP6rOE', title: '10 Min Morning Yoga', duration: 600 },
+      { id: '149Iac5fmoE', title: 'HIIT Cardio Workout', duration: 900 },
+      { id: 'g_tea8ZNk5A', title: 'Core Strength Training', duration: 1080 },
+      { id: 'UBnSkpYWL8Q', title: 'Stretching Routine', duration: 1320 },
     ],
   },
   {
@@ -141,11 +141,11 @@ export const channels: Channel[] = [
     category: 'lifestyle',
     description: 'Explore the world from your couch',
     videos: [
-      { id: 'zxJQgrgXJTw', title: 'Hidden Gems of Japan', duration: 1560 },
-      { id: 'UKfmjwW752A', title: 'The Most Beautiful Places on Earth', duration: 1800 },
-      { id: 'ljCWHy9J--A', title: 'Street Food Adventures', duration: 1320 },
-      { id: 'xU9Ke3SFzDI', title: 'Ancient Ruins Explored', duration: 1440 },
-      { id: '3J1_lLa7qPk', title: 'Budget Travel Tips', duration: 1200 },
+      { id: 'WLIv7HnZ_fE', title: 'Beautiful Japan Travel', duration: 1560 },
+      { id: 'CWhbY7aLF4I', title: 'Exploring Iceland', duration: 1800 },
+      { id: 'HQfzwFloVqA', title: 'Thailand Adventure', duration: 1320 },
+      { id: 'cNVZEVq3KzY', title: 'Italy Travel Guide', duration: 1440 },
+      { id: 'GdwnrjTjGyk', title: 'New Zealand Road Trip', duration: 1200 },
     ],
   },
   
@@ -158,11 +158,11 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'DIY and engineering projects',
     videos: [
-      { id: 'h4T_LlK1VE4', title: 'Glitterbomb Trap Catches Porch Pirates', duration: 1422 },
-      { id: 'RHvZGlGjvfc', title: "World's Largest Nerf Gun", duration: 636 },
-      { id: 'Kou7ur5xt_4', title: 'World Record Elephant Toothpaste', duration: 841 },
-      { id: 'QwXK4e4uqXY', title: 'Building A Massive Bow', duration: 1140 },
-      { id: 'yLLLMfPtQkQ', title: 'Automatic Pool Stick vs Expert', duration: 1260 },
+      { id: 'xoxhDk-hwuo', title: 'Glitterbomb vs Package Thieves', duration: 1422 },
+      { id: 'ik2AwjR5fhg', title: 'Building a Treehouse', duration: 636 },
+      { id: 'HvNK68wrwmU', title: 'DIY Electric Skateboard', duration: 841 },
+      { id: 'fxJWin195kU', title: 'Making Things From Scratch', duration: 1140 },
+      { id: 'MeNR0guNn70', title: 'Electronics for Beginners', duration: 1260 },
     ],
   },
   {
@@ -173,11 +173,11 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Home improvement and crafts',
     videos: [
-      { id: '2rPAEjgLiYY', title: 'Amazing Home Transformations', duration: 1320 },
-      { id: '8czMRm1N8qQ', title: 'DIY Furniture Builds', duration: 1080 },
-      { id: 'vtd-_l0DU6s', title: 'Kitchen Renovation Tips', duration: 1440 },
-      { id: 'DQG2_wBdVoU', title: 'Woodworking for Beginners', duration: 1560 },
-      { id: '3WwmN2F5pS8', title: 'Smart Home on a Budget', duration: 1200 },
+      { id: 'Xjnj2ZcMpls', title: 'Home Renovation Tips', duration: 1320 },
+      { id: 'YaD2E3wVJFw', title: 'Building Custom Furniture', duration: 1080 },
+      { id: 'xycDbGT-R-U', title: 'Kitchen Makeover Ideas', duration: 1440 },
+      { id: 'hPpLEfcevQU', title: 'Woodworking Projects', duration: 1560 },
+      { id: 'NLi3IQyMnEo', title: 'DIY Home Decor', duration: 1200 },
     ],
   },
   {
@@ -188,11 +188,11 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cars, trucks, and everything on wheels',
     videos: [
-      { id: 'cKOSw-3vZT8', title: 'Supercar Showdown', duration: 1560 },
-      { id: 'KqPX3BkMGOU', title: 'The Art of Car Restoration', duration: 1800 },
-      { id: 'iLIZsTbq8fE', title: 'Engine Rebuilds Explained', duration: 1320 },
-      { id: '5oH9Nr3bKsw', title: 'Off-Road Adventures', duration: 1440 },
-      { id: 'UKfmjwW752A', title: 'Electric vs Gas: The Showdown', duration: 1200 },
+      { id: 'iFEVlNsOhJg', title: 'Car Restoration Project', duration: 1560 },
+      { id: '4oAbXQcOSoI', title: 'Sports Car Review', duration: 1800 },
+      { id: 'Ub5q7TlKNDw', title: 'How Engines Work', duration: 1320 },
+      { id: 'LBPMj8aa9mI', title: 'Classic Car Collection', duration: 1440 },
+      { id: 'YbEbgtMD9vU', title: 'Electric Cars Explained', duration: 1200 },
     ],
   },
   {
@@ -203,11 +203,11 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cards, coins, toys and collectibles',
     videos: [
-      { id: 'oc_9r4ITz2Q', title: 'Most Expensive Pokemon Cards', duration: 1380 },
-      { id: '8pFKBbN0QU4', title: 'Rare Coin Hunting', duration: 1200 },
-      { id: 'j_0iDpdGJxw', title: 'Vintage Toy Collection Tour', duration: 1560 },
-      { id: 'lAU1OjBPdQQ', title: 'Sports Card Investing', duration: 1320 },
-      { id: 'GxvOwD2J4zA', title: 'Comic Book Collecting Guide', duration: 1440 },
+      { id: 'yJBvnbeTyPg', title: 'Rare Pokemon Cards Found', duration: 1380 },
+      { id: 'aqIHKWd9rSc', title: 'Coin Collecting Guide', duration: 1200 },
+      { id: 'QRrQj8nuJo4', title: 'Vintage Toy Collection', duration: 1560 },
+      { id: 'V2VZ_FhVpbU', title: 'Sports Card Investing', duration: 1320 },
+      { id: '2Tp-kbkw3yw', title: 'Comic Book Collecting', duration: 1440 },
     ],
   },
   {
@@ -218,11 +218,11 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Creative tutorials and inspiration',
     videos: [
-      { id: 'wAIP6fI0NAI', title: 'Digital Art Masterclass', duration: 1680 },
-      { id: 'l8eVdCHTU9I', title: 'Watercolor Techniques', duration: 1320 },
-      { id: 'ihcTJIFnc_c', title: 'Drawing Fundamentals', duration: 1440 },
-      { id: 'sLnGwN7Vu58', title: 'Graphic Design Principles', duration: 1200 },
-      { id: 'evQsOFCep30', title: 'Photography Tips & Tricks', duration: 1560 },
+      { id: '6ZH3Lj2PcNo', title: 'Digital Art Tutorial', duration: 1680 },
+      { id: 'sP3sEz02i-8', title: 'Watercolor Painting Tips', duration: 1320 },
+      { id: 'ewMksAbgdBI', title: 'Drawing for Beginners', duration: 1440 },
+      { id: 'k6F3q5X19u0', title: 'Graphic Design Basics', duration: 1200 },
+      { id: '7IME0LWdH4s', title: 'Photography Masterclass', duration: 1560 },
     ],
   },
   
@@ -235,11 +235,11 @@ export const channels: Channel[] = [
     category: 'entertainment',
     description: 'Game reviews, esports, and walkthroughs',
     videos: [
-      { id: 'bxdSjIWj_1U', title: 'Top 10 Games of the Year', duration: 1560 },
-      { id: '41qC3w3UUkU', title: 'The History of Nintendo', duration: 2100 },
-      { id: 'MBRqu0YOH14', title: 'Speedrunning World Records', duration: 1320 },
-      { id: 'k8ws_APXilE', title: 'Hidden Gaming Secrets', duration: 1440 },
-      { id: 'Q5m1_8LVPNs', title: 'Retro Gaming Collection', duration: 1200 },
+      { id: 'HCLaC5yyXEI', title: 'Best Games of 2024', duration: 1560 },
+      { id: 'izxXGuVL21o', title: 'Gaming Setup Tour', duration: 2100 },
+      { id: '4A4wW0khp_Y', title: 'Speedrun World Record', duration: 1320 },
+      { id: 'lZqrG1bdGtg', title: 'Game Development Story', duration: 1440 },
+      { id: 'K0GZMA6c0T4', title: 'Retro Gaming Collection', duration: 1200 },
     ],
   },
   {
@@ -250,11 +250,11 @@ export const channels: Channel[] = [
     category: 'entertainment',
     description: 'Highlights, analysis, and sports stories',
     videos: [
-      { id: '7Bz9FJp6UeA', title: 'Greatest Sports Moments', duration: 1680 },
-      { id: '1lG-7VR5Lzc', title: 'Behind the Scenes: Pro Athletes', duration: 1440 },
-      { id: '8pFKBbN0QU4', title: 'Training Like a Champion', duration: 1320 },
-      { id: 'cKOSw-3vZT8', title: 'Extreme Sports Compilation', duration: 1200 },
-      { id: 'Js7v1YMO5dI', title: 'Underdog Stories', duration: 1560 },
+      { id: 'N4nwMDZYXTI', title: 'Greatest Sports Moments', duration: 1680 },
+      { id: 'gHy7xvPoPl4', title: 'Pro Athlete Training', duration: 1440 },
+      { id: 'mJ1H6OZ0rcY', title: 'Championship Highlights', duration: 1320 },
+      { id: 'ZDkWRP67Xjc', title: 'Sports Documentary', duration: 1200 },
+      { id: 'AYUxGNMOZ8s', title: 'Underdog Stories', duration: 1560 },
     ],
   },
   {
@@ -265,11 +265,11 @@ export const channels: Channel[] = [
     category: 'entertainment',
     description: 'Dude Perfect, challenges, and epic stunts',
     videos: [
-      { id: 'EsidXvT3NZ8', title: 'World Record Edition', duration: 1020 },
-      { id: 'lDq9-QQB1AU', title: 'Giant Dart Board Trick Shots', duration: 960 },
-      { id: 'lxLcWcZwfzQ', title: 'Extreme Sports Challenge', duration: 1140 },
-      { id: 'vHxGZ8rbyOM', title: 'Impossible Trick Shot Battle', duration: 1080 },
-      { id: 'rlSfzPnb1xc', title: 'Viral Challenges Compilation', duration: 1200 },
+      { id: 'M0jmSsQ5ptw', title: 'Trick Shot Battle', duration: 1020 },
+      { id: 'YmM4q5M8QTQ', title: 'Epic Water Park Challenge', duration: 960 },
+      { id: 'HO0u1ACbL18', title: 'Extreme Sports Compilation', duration: 1140 },
+      { id: 'BzHf7eFLaWM', title: 'Crazy Stunts Gone Right', duration: 1080 },
+      { id: 'z3AsM59RXQc', title: 'Viral Challenges', duration: 1200 },
     ],
   },
   {
@@ -281,11 +281,11 @@ export const channels: Channel[] = [
     description: 'Sketches, stand-up, and funny videos',
     restricted: true, // May contain mature humor
     videos: [
-      { id: 'hQZYCcN8A-o', title: 'Best Comedy Sketches', duration: 1200 },
-      { id: '0omja1ivpx0', title: 'Stand-Up Highlights', duration: 1440 },
-      { id: 'nK1N2i70sjs', title: 'Hilarious Fails Compilation', duration: 960 },
-      { id: 'cKOSw-3vZT8', title: 'Prank Videos Gone Right', duration: 1080 },
-      { id: 'Z6KGWYuN7AE', title: 'Funny Animal Moments', duration: 900 },
+      { id: 'AJZNxI0xG7A', title: 'Best Comedy Sketches', duration: 1200 },
+      { id: 'pJTGAtLH7Hw', title: 'Stand-Up Comedy Special', duration: 1440 },
+      { id: 'nBHkIWAJitg', title: 'Funny Moments Compilation', duration: 960 },
+      { id: 'kav7tifmyTg', title: 'Improv Comedy Show', duration: 1080 },
+      { id: 'YZ6K3m9TsPs', title: 'Comedy Roast Highlights', duration: 900 },
     ],
   },
   {
@@ -296,11 +296,11 @@ export const channels: Channel[] = [
     category: 'entertainment',
     description: 'Performances, covers, and music stories',
     videos: [
-      { id: 'kJQP7kiw5Fk', title: 'Live Concert Highlights', duration: 1680 },
-      { id: 'JGwWNGJdvx8', title: 'The Story Behind the Song', duration: 1320 },
-      { id: 'dQw4w9WgXcQ', title: 'Classic Music Videos', duration: 1200 },
-      { id: 'CevxZvSJLk8', title: 'Amazing Street Performances', duration: 1440 },
-      { id: 'hT_nvWreIhg', title: 'Music Production Secrets', duration: 1560 },
+      { id: 'JGwWNGJdvx8', title: 'Shape of You - Ed Sheeran', duration: 263 },
+      { id: 'kJQP7kiw5Fk', title: 'Despacito', duration: 282 },
+      { id: 'RgKAFK5djSk', title: 'See You Again', duration: 237 },
+      { id: 'CevxZvSJLk8', title: 'Roar - Katy Perry', duration: 269 },
+      { id: 'hT_nvWreIhg', title: 'Counting Stars', duration: 273 },
     ],
   },
   
@@ -313,11 +313,11 @@ export const channels: Channel[] = [
     category: 'family',
     description: 'Safe, fun content for young viewers',
     videos: [
-      { id: 'VFa0b_IIRac', title: 'Fun Learning Adventures', duration: 1200 },
-      { id: '9zb9dGN3xMM', title: 'Cool Science for Kids', duration: 900 },
-      { id: 'Z6KGWYuN7AE', title: 'Amazing Animal Facts', duration: 1080 },
-      { id: 'Uh5oF7dOmzI', title: 'Art Projects for Kids', duration: 960 },
-      { id: 'vtd-_l0DU6s', title: 'Fun Experiments at Home', duration: 1140 },
+      { id: 'tVlcKp3bWH8', title: 'Fun Learning Songs', duration: 1200 },
+      { id: 'Eoe18I7OdVQ', title: 'Science for Kids', duration: 900 },
+      { id: 'PHi24jgLO-I', title: 'Animal Adventures', duration: 1080 },
+      { id: 'L0MK7qz13bU', title: 'Art Time for Kids', duration: 960 },
+      { id: 'loYYEoOOPVQ', title: 'Fun Experiments', duration: 1140 },
     ],
   },
   {
@@ -328,11 +328,11 @@ export const channels: Channel[] = [
     category: 'family',
     description: 'Content the whole family can enjoy',
     videos: [
-      { id: 'Z6KGWYuN7AE', title: 'Family Game Night Ideas', duration: 1320 },
-      { id: '8czMRm1N8qQ', title: 'DIY Family Projects', duration: 1440 },
-      { id: 'ljCWHy9J--A', title: 'Family Travel Adventures', duration: 1560 },
-      { id: 'lAU1OjBPdQQ', title: 'Cooking with Kids', duration: 1200 },
-      { id: 'VFa0b_IIRac', title: 'Family Movie Night Picks', duration: 1080 },
+      { id: '4TYv2PhG89A', title: 'Family Game Night', duration: 1320 },
+      { id: 'c1ikJwOx3ro', title: 'DIY Family Crafts', duration: 1440 },
+      { id: 'PKffm2hxaB0', title: 'Family Travel Vlog', duration: 1560 },
+      { id: 'F9eLv6qH_qE', title: 'Cooking with Family', duration: 1200 },
+      { id: '_OQcJZplWzo', title: 'Family Adventure Day', duration: 1080 },
     ],
   },
   {
@@ -343,11 +343,11 @@ export const channels: Channel[] = [
     category: 'family',
     description: 'Inspirational and faith-based content',
     videos: [
-      { id: 'Sly4dCT5P7E', title: 'Sunday Morning Inspiration', duration: 1800 },
-      { id: '3J1_lLa7qPk', title: 'Stories of Hope', duration: 1440 },
-      { id: 'xU9Ke3SFzDI', title: 'Biblical History Explored', duration: 1680 },
-      { id: 'Js7v1YMO5dI', title: 'Faith in Action', duration: 1320 },
-      { id: 'A-7GqcOV5fY', title: 'Peaceful Worship Music', duration: 2400 },
+      { id: 'M7hy-HMrVmc', title: 'Inspirational Stories', duration: 1800 },
+      { id: 'YHcBM3hyQ4M', title: 'Morning Devotional', duration: 1440 },
+      { id: 'Kppx4bzfAaE', title: 'Gospel Music Collection', duration: 1680 },
+      { id: 'ClWf7C1JUEo', title: 'Faith and Hope', duration: 1320 },
+      { id: 'U8EDgciZZFc', title: 'Peaceful Worship', duration: 2400 },
     ],
   },
 ];
@@ -423,6 +423,70 @@ export function getNextVideo(channel: Channel, currentIndex: number): Video {
   return channel.videos[nextIndex];
 }
 
+// Get schedule for the next N hours
+export interface ScheduleItem {
+  video: Video;
+  startTime: Date;
+  endTime: Date;
+  isNowPlaying: boolean;
+}
+
+export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): ScheduleItem[] {
+  const schedule: ScheduleItem[] = [];
+  const now = new Date();
+  const endTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
+  
+  const totalDuration = getChannelDuration(channel);
+  const secondsSinceMidnight = 
+    now.getHours() * 3600 + 
+    now.getMinutes() * 60 + 
+    now.getSeconds();
+  
+  // Find the current position in the loop
+  let positionInLoop = secondsSinceMidnight % totalDuration;
+  
+  // Find which video is currently playing and when it started
+  let accumulated = 0;
+  let currentVideoIndex = 0;
+  for (let i = 0; i < channel.videos.length; i++) {
+    const video = channel.videos[i];
+    if (accumulated + video.duration > positionInLoop) {
+      currentVideoIndex = i;
+      break;
+    }
+    accumulated += video.duration;
+  }
+  
+  // Calculate when the current video started
+  const positionInCurrentVideo = positionInLoop - accumulated;
+  let currentTime = new Date(now.getTime() - positionInCurrentVideo * 1000);
+  
+  // Build schedule
+  let videoIndex = currentVideoIndex;
+  while (currentTime < endTime) {
+    const video = channel.videos[videoIndex];
+    const videoStartTime = new Date(currentTime);
+    const videoEndTime = new Date(currentTime.getTime() + video.duration * 1000);
+    
+    const isNowPlaying = videoStartTime <= now && now < videoEndTime;
+    
+    schedule.push({
+      video,
+      startTime: videoStartTime,
+      endTime: videoEndTime,
+      isNowPlaying,
+    });
+    
+    currentTime = videoEndTime;
+    videoIndex = (videoIndex + 1) % channel.videos.length;
+    
+    // Safety: prevent infinite loops
+    if (schedule.length > 100) break;
+  }
+  
+  return schedule;
+}
+
 // Format seconds to mm:ss or hh:mm:ss
 export function formatTime(seconds: number): string {
   const hrs = Math.floor(seconds / 3600);
@@ -433,4 +497,13 @@ export function formatTime(seconds: number): string {
     return `${hrs}:${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
   }
   return `${mins}:${secs.toString().padStart(2, '0')}`;
+}
+
+// Format time as 12-hour clock
+export function formatTimeSlot(date: Date): string {
+  return date.toLocaleTimeString('en-US', { 
+    hour: 'numeric', 
+    minute: '2-digit',
+    hour12: true 
+  });
 }
