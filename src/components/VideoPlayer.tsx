@@ -22,7 +22,7 @@ interface YTPlayer {
   unMute: () => void;
   isMuted: () => boolean;
   getPlayerState: () => number;
-  getVideoData: () => { video_id: string };
+  getVideoData: () => { video_id: string; title?: string };
   destroy: () => void;
 }
 
@@ -67,8 +67,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isPaused, setIsPaused] = useState(false);
     const currentChannelIdRef = useRef(channel.id);
     const currentVideoIdRef = useRef<string>('');
+    const channelRef = useRef(channel);
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isInitializingRef = useRef(false);
+    const failedByChannelRef = useRef<Record<string, Set<string>>>({});
+
+    useEffect(() => {
+      channelRef.current = channel;
+    }, [channel]);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -138,6 +144,35 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       return false;
     };
 
+    const getActualVideoId = (): string => {
+      try {
+        const data = playerRef.current?.getVideoData?.();
+        return data?.video_id || '';
+      } catch {
+        return '';
+      }
+    };
+
+    const markFailed = (channelId: string, videoId: string) => {
+      if (!videoId) return;
+      if (!failedByChannelRef.current[channelId]) {
+        failedByChannelRef.current[channelId] = new Set();
+      }
+      failedByChannelRef.current[channelId].add(videoId);
+    };
+
+    const getNextPlayable = (liveChannel: Channel, startIndex: number) => {
+      const failed = failedByChannelRef.current[liveChannel.id] || new Set<string>();
+      for (let offset = 0; offset < liveChannel.videos.length; offset++) {
+        const idx = (startIndex + offset) % liveChannel.videos.length;
+        const candidate = liveChannel.videos[idx];
+        if (!failed.has(candidate.id)) return { video: candidate, videoIndex: idx };
+      }
+      // If everything is failed, just fall back to the scheduled video.
+      const playback = getCurrentPlayback(liveChannel);
+      return { video: playback.video, videoIndex: playback.videoIndex };
+    };
+
     // Initialize player - only once when API is ready
     useEffect(() => {
       if (!isApiLoaded || !containerRef.current || isInitializingRef.current) return;
@@ -145,9 +180,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       
       isInitializingRef.current = true;
       
-      const playback = getCurrentPlayback(channel);
+      const liveChannel = channelRef.current;
+      const playback = getCurrentPlayback(liveChannel);
       currentVideoIdRef.current = playback.video.id;
-      currentChannelIdRef.current = channel.id;
+      currentChannelIdRef.current = liveChannel.id;
       onVideoChange?.(playback.video.title);
 
       // Create player element
@@ -185,9 +221,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               }
             },
             onStateChange: (event: YTPlayerEvent) => {
+              // Ignore stale events from a previous load/channel.
+              const actualId = getActualVideoId();
+              if (actualId && currentVideoIdRef.current && actualId !== currentVideoIdRef.current) {
+                return;
+              }
+
               if (event.data === window.YT.PlayerState.ENDED) {
                 // Video ended, load the next scheduled video
-                const newPlayback = getCurrentPlayback(channel);
+                const live = channelRef.current;
+                const newPlayback = getCurrentPlayback(live);
                 onVideoChange?.(newPlayback.video.title);
                 safeLoadVideo(newPlayback.video.id, newPlayback.positionInVideo);
               }
@@ -195,14 +238,33 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                 setIsPaused(true);
               } else if (event.data === window.YT.PlayerState.PLAYING) {
                 setIsPaused(false);
+
+                // Guardrail: if anything other than this channel's allowlist is playing, force back.
+                const live = channelRef.current;
+                const playingId = getActualVideoId();
+                if (playingId) {
+                  currentVideoIdRef.current = playingId;
+
+                  const isAllowed = live.videos.some((v) => v.id === playingId);
+                  if (!isAllowed) {
+                    const pb = getCurrentPlayback(live);
+                    onVideoChange?.(pb.video.title);
+                    safeLoadVideo(pb.video.id, pb.positionInVideo);
+                    return;
+                  }
+                }
               }
             },
             onError: () => {
               // On error, try the next video
               setTimeout(() => {
-                const newPlayback = getCurrentPlayback(channel);
-                onVideoChange?.(newPlayback.video.title);
-                safeLoadVideo(newPlayback.video.id, newPlayback.positionInVideo);
+                const live = channelRef.current;
+                const current = getCurrentPlayback(live);
+                markFailed(live.id, current.video.id);
+
+                const next = getNextPlayable(live, current.videoIndex + 1);
+                onVideoChange?.(next.video.title);
+                safeLoadVideo(next.video.id, 0);
               }, 2000);
             },
           },
@@ -238,6 +300,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       currentChannelIdRef.current = channel.id;
       const playback = getCurrentPlayback(channel);
       onVideoChange?.(playback.video.title);
+
+      // Cut old audio immediately during channel transitions.
+      try {
+        playerRef.current.pauseVideo();
+      } catch {
+        // ignore
+      }
+
       safeLoadVideo(playback.video.id, playback.positionInVideo);
     }, [channel.id, isReady, onVideoChange]);
 
@@ -253,8 +323,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       checkIntervalRef.current = setInterval(() => {
         if (!playerRef.current || !isReady) return;
         
-        // Get the channel from the ref to avoid stale closures
-        const playback = getCurrentPlayback(channel);
+        // Always use the latest channel
+        const live = channelRef.current;
+        const playback = getCurrentPlayback(live);
+        const failed = failedByChannelRef.current[live.id];
+
+        // If the scheduled video is known-bad, skip forward.
+        if (failed?.has(playback.video.id)) {
+          const next = getNextPlayable(live, playback.videoIndex + 1);
+          onVideoChange?.(next.video.title);
+          safeLoadVideo(next.video.id, 0);
+          return;
+        }
         
         // Only switch if the video ID has changed
         if (currentVideoIdRef.current !== playback.video.id) {
@@ -269,7 +349,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           checkIntervalRef.current = null;
         }
       };
-    }, [isReady, channel, onVideoChange]);
+    }, [isReady, onVideoChange]);
 
     return (
       <div className="absolute inset-0 bg-black">
