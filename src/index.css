@@ -43,17 +43,6 @@
     --channel-maker: 35 95% 55%;
     --channel-cooking: 0 80% 60%;
     --channel-history: 45 90% 55%;
-
-    /* Special effects */
-    --glow-primary: 0 0 30px hsl(263 70% 58% / 0.4);
-    --glow-channel: 0 0 40px var(--current-channel-color, hsl(263 70% 58% / 0.3));
-    
-    /* Glass effect */
-    --glass-bg: hsl(220 20% 8% / 0.85);
-    --glass-border: hsl(0 0% 100% / 0.08);
-
-    /* TV static overlay */
-    --static-opacity: 0.02;
   }
 
   .dark {
@@ -97,8 +86,8 @@
   }
 
   .guide-panel {
-    background: var(--glass-bg);
-    border-left: 1px solid var(--glass-border);
+    background: hsl(220 20% 8% / 0.85);
+    border-left: 1px solid hsl(0 0% 100% / 0.08);
     backdrop-filter: blur(20px);
   }
 
