@@ -1,5 +1,5 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
-import { channels, Channel, getCurrentPlayback } from '@/data/channels';
+import { channels, Channel, getCurrentPlayback, getAvailableChannels } from '@/data/channels';
 import { VideoPlayer, VideoPlayerHandle } from '@/components/VideoPlayer';
 import { InfoBar } from '@/components/InfoBar';
 import { ChannelGuide } from '@/components/ChannelGuide';
@@ -10,19 +10,26 @@ import { PlaybackControls } from '@/components/PlaybackControls';
 import { UserMenu } from '@/components/UserMenu';
 import { AuthModal } from '@/components/AuthModal';
 import { VoteButtons } from '@/components/VoteButtons';
+import { ParentalControlsModal } from '@/components/ParentalControlsModal';
+import { useParentalControls } from '@/hooks/useParentalControls';
 
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
 
 export default function Index() {
-  // Get saved channel or default to first
+  const { enabled: parentalControlsEnabled } = useParentalControls();
+  const availableChannels = getAvailableChannels(parentalControlsEnabled);
+
+  // Get saved channel or default to first available
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {
     const savedChannelId = localStorage.getItem('epishow-last-channel');
-    return channels.find(c => c.id === savedChannelId) || channels[0];
+    const saved = availableChannels.find(c => c.id === savedChannelId);
+    return saved || availableChannels[0];
   });
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
+  const [isParentalControlsOpen, setIsParentalControlsOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
@@ -34,6 +41,13 @@ export default function Index() {
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayerHandle>(null);
+
+  // Ensure current channel is still available when parental controls change
+  useEffect(() => {
+    if (!availableChannels.find(c => c.id === currentChannel.id)) {
+      setCurrentChannel(availableChannels[0]);
+    }
+  }, [availableChannels, currentChannel.id]);
 
   // Get current video ID for voting
   useEffect(() => {
@@ -56,12 +70,12 @@ export default function Index() {
     }
     
     idleTimerRef.current = setTimeout(() => {
-      if (!isGuideOpen && !isAuthModalOpen) {
+      if (!isGuideOpen && !isAuthModalOpen && !isParentalControlsOpen) {
         setShowUI(false);
         setShowHints(false);
       }
     }, IDLE_TIMEOUT);
-  }, [isGuideOpen, isAuthModalOpen]);
+  }, [isGuideOpen, isAuthModalOpen, isParentalControlsOpen]);
 
   // Handle mouse movement
   useEffect(() => {
@@ -83,16 +97,16 @@ export default function Index() {
 
   // Switch channel
   const switchChannel = useCallback((direction: 'up' | 'down') => {
-    const currentIndex = channels.findIndex(c => c.id === currentChannel.id);
+    const currentIndex = availableChannels.findIndex(c => c.id === currentChannel.id);
     let newIndex: number;
     
     if (direction === 'up') {
-      newIndex = currentIndex <= 0 ? channels.length - 1 : currentIndex - 1;
+      newIndex = currentIndex <= 0 ? availableChannels.length - 1 : currentIndex - 1;
     } else {
-      newIndex = currentIndex >= channels.length - 1 ? 0 : currentIndex + 1;
+      newIndex = currentIndex >= availableChannels.length - 1 ? 0 : currentIndex + 1;
     }
     
-    const newChannel = channels[newIndex];
+    const newChannel = availableChannels[newIndex];
     setCurrentChannel(newChannel);
     localStorage.setItem('epishow-last-channel', newChannel.id);
     
@@ -110,7 +124,7 @@ export default function Index() {
     }, CHANNEL_SWITCH_DISPLAY_TIME);
     
     resetIdleTimer();
-  }, [currentChannel, resetIdleTimer]);
+  }, [availableChannels, currentChannel, resetIdleTimer]);
 
   // Playback controls
   const toggleMute = useCallback(() => {
@@ -251,12 +265,19 @@ export default function Index() {
         onClose={() => setIsGuideOpen(false)}
         currentChannel={currentChannel}
         onChannelSelect={handleChannelSelect}
+        onOpenParentalControls={() => setIsParentalControlsOpen(true)}
       />
 
       {/* Auth Modal */}
       <AuthModal
         isOpen={isAuthModalOpen}
         onClose={() => setIsAuthModalOpen(false)}
+      />
+
+      {/* Parental Controls Modal */}
+      <ParentalControlsModal
+        open={isParentalControlsOpen}
+        onOpenChange={setIsParentalControlsOpen}
       />
     </div>
   );

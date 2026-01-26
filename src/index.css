@@ -43,6 +43,21 @@
     --channel-maker: 35 95% 55%;
     --channel-cooking: 0 80% 60%;
     --channel-history: 45 90% 55%;
+    --channel-diy: 25 85% 50%;
+    --channel-sports: 210 90% 55%;
+    --channel-collecting: 280 75% 60%;
+    --channel-kids: 320 80% 65%;
+    --channel-family: 170 70% 50%;
+    --channel-faith: 220 60% 65%;
+    --channel-automotive: 0 0% 60%;
+    --channel-teen: 15 95% 55%;
+    --channel-gaming: 260 85% 60%;
+    --channel-music: 340 80% 60%;
+    --channel-nature: 100 60% 45%;
+    --channel-comedy: 50 95% 55%;
+    --channel-fitness: 10 90% 55%;
+    --channel-travel: 190 80% 50%;
+    --channel-art: 300 70% 55%;
   }
 
   .dark {
@@ -217,16 +232,61 @@
   .bg-channel-maker { background-color: hsl(var(--channel-maker)); }
   .bg-channel-cooking { background-color: hsl(var(--channel-cooking)); }
   .bg-channel-history { background-color: hsl(var(--channel-history)); }
+  .bg-channel-diy { background-color: hsl(var(--channel-diy)); }
+  .bg-channel-sports { background-color: hsl(var(--channel-sports)); }
+  .bg-channel-collecting { background-color: hsl(var(--channel-collecting)); }
+  .bg-channel-kids { background-color: hsl(var(--channel-kids)); }
+  .bg-channel-family { background-color: hsl(var(--channel-family)); }
+  .bg-channel-faith { background-color: hsl(var(--channel-faith)); }
+  .bg-channel-automotive { background-color: hsl(var(--channel-automotive)); }
+  .bg-channel-teen { background-color: hsl(var(--channel-teen)); }
+  .bg-channel-gaming { background-color: hsl(var(--channel-gaming)); }
+  .bg-channel-music { background-color: hsl(var(--channel-music)); }
+  .bg-channel-nature { background-color: hsl(var(--channel-nature)); }
+  .bg-channel-comedy { background-color: hsl(var(--channel-comedy)); }
+  .bg-channel-fitness { background-color: hsl(var(--channel-fitness)); }
+  .bg-channel-travel { background-color: hsl(var(--channel-travel)); }
+  .bg-channel-art { background-color: hsl(var(--channel-art)); }
 
   .text-channel-tech { color: hsl(var(--channel-tech)); }
   .text-channel-science { color: hsl(var(--channel-science)); }
   .text-channel-maker { color: hsl(var(--channel-maker)); }
   .text-channel-cooking { color: hsl(var(--channel-cooking)); }
   .text-channel-history { color: hsl(var(--channel-history)); }
+  .text-channel-diy { color: hsl(var(--channel-diy)); }
+  .text-channel-sports { color: hsl(var(--channel-sports)); }
+  .text-channel-collecting { color: hsl(var(--channel-collecting)); }
+  .text-channel-kids { color: hsl(var(--channel-kids)); }
+  .text-channel-family { color: hsl(var(--channel-family)); }
+  .text-channel-faith { color: hsl(var(--channel-faith)); }
+  .text-channel-automotive { color: hsl(var(--channel-automotive)); }
+  .text-channel-teen { color: hsl(var(--channel-teen)); }
+  .text-channel-gaming { color: hsl(var(--channel-gaming)); }
+  .text-channel-music { color: hsl(var(--channel-music)); }
+  .text-channel-nature { color: hsl(var(--channel-nature)); }
+  .text-channel-comedy { color: hsl(var(--channel-comedy)); }
+  .text-channel-fitness { color: hsl(var(--channel-fitness)); }
+  .text-channel-travel { color: hsl(var(--channel-travel)); }
+  .text-channel-art { color: hsl(var(--channel-art)); }
 
   .border-channel-tech { border-color: hsl(var(--channel-tech)); }
   .border-channel-science { border-color: hsl(var(--channel-science)); }
   .border-channel-maker { border-color: hsl(var(--channel-maker)); }
   .border-channel-cooking { border-color: hsl(var(--channel-cooking)); }
   .border-channel-history { border-color: hsl(var(--channel-history)); }
+  .border-channel-diy { border-color: hsl(var(--channel-diy)); }
+  .border-channel-sports { border-color: hsl(var(--channel-sports)); }
+  .border-channel-collecting { border-color: hsl(var(--channel-collecting)); }
+  .border-channel-kids { border-color: hsl(var(--channel-kids)); }
+  .border-channel-family { border-color: hsl(var(--channel-family)); }
+  .border-channel-faith { border-color: hsl(var(--channel-faith)); }
+  .border-channel-automotive { border-color: hsl(var(--channel-automotive)); }
+  .border-channel-teen { border-color: hsl(var(--channel-teen)); }
+  .border-channel-gaming { border-color: hsl(var(--channel-gaming)); }
+  .border-channel-music { border-color: hsl(var(--channel-music)); }
+  .border-channel-nature { border-color: hsl(var(--channel-nature)); }
+  .border-channel-comedy { border-color: hsl(var(--channel-comedy)); }
+  .border-channel-fitness { border-color: hsl(var(--channel-fitness)); }
+  .border-channel-travel { border-color: hsl(var(--channel-travel)); }
+  .border-channel-art { border-color: hsl(var(--channel-art)); }
 }
