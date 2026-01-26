@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState, useCallback, forwardRef, useImperativeHandle } from 'react';
+import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Channel, getCurrentPlayback } from '@/data/channels';
 
 interface VideoPlayerProps {
@@ -65,10 +65,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isApiLoaded, setIsApiLoaded] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
-    const [playerKey, setPlayerKey] = useState(0); // Force remount on channel change
-    const currentChannelRef = useRef(channel.id);
+    const currentChannelIdRef = useRef(channel.id);
+    const currentVideoIdRef = useRef<string>('');
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
-    const playerIdRef = useRef(`yt-player-${Date.now()}`);
+    const isInitializingRef = useRef(false);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -122,60 +122,41 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       };
     }, []);
 
-    // Cleanup function
-    const destroyPlayer = useCallback(() => {
-      if (checkIntervalRef.current) {
-        clearInterval(checkIntervalRef.current);
-        checkIntervalRef.current = null;
-      }
-      if (playerRef.current) {
-        try {
-          playerRef.current.destroy();
-        } catch (e) {
-          console.error('Error destroying player:', e);
-        }
-        playerRef.current = null;
-      }
-      setIsReady(false);
-    }, []);
-
-    // Handle channel changes - destroy and recreate player
-    useEffect(() => {
-      if (channel.id !== currentChannelRef.current) {
-        console.log(`Channel changed from ${currentChannelRef.current} to ${channel.id}`);
-        currentChannelRef.current = channel.id;
-        
-        // Destroy existing player
-        destroyPlayer();
-        
-        // Generate new player ID and trigger remount
-        playerIdRef.current = `yt-player-${Date.now()}`;
-        setPlayerKey(prev => prev + 1);
-      }
-    }, [channel.id, destroyPlayer]);
-
-    // Initialize player when API is loaded
-    useEffect(() => {
-      if (!isApiLoaded || !containerRef.current) return;
+    // Safe method to load a video
+    const safeLoadVideo = (videoId: string, startSeconds: number) => {
+      if (!playerRef.current || !isReady) return false;
       
-      // Don't initialize if player already exists
-      if (playerRef.current) return;
+      try {
+        if (typeof playerRef.current.loadVideoById === 'function') {
+          playerRef.current.loadVideoById({ videoId, startSeconds });
+          currentVideoIdRef.current = videoId;
+          return true;
+        }
+      } catch (e) {
+        console.error('Error loading video:', e);
+      }
+      return false;
+    };
 
+    // Initialize player - only once when API is ready
+    useEffect(() => {
+      if (!isApiLoaded || !containerRef.current || isInitializingRef.current) return;
+      if (playerRef.current) return; // Already initialized
+      
+      isInitializingRef.current = true;
+      
       const playback = getCurrentPlayback(channel);
-      console.log(`Initializing player for channel ${channel.id}, video ${playback.video.id}`);
+      currentVideoIdRef.current = playback.video.id;
+      currentChannelIdRef.current = channel.id;
       onVideoChange?.(playback.video.title);
 
-      // Create a fresh div for the player
-      const playerId = playerIdRef.current;
-      const existingPlayer = document.getElementById(playerId);
-      if (existingPlayer) {
-        existingPlayer.remove();
-      }
-
+      // Create player element
+      const playerId = `yt-player-${Date.now()}`;
       const playerDiv = document.createElement('div');
       playerDiv.id = playerId;
       playerDiv.style.width = '100%';
       playerDiv.style.height = '100%';
+      containerRef.current.innerHTML = ''; // Clear any existing content
       containerRef.current.appendChild(playerDiv);
 
       try {
@@ -192,24 +173,23 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             showinfo: 0,
             start: Math.floor(playback.positionInVideo),
             origin: window.location.origin,
+            playsinline: 1,
           },
           events: {
             onReady: () => {
-              console.log(`Player ready for channel ${channel.id}`);
+              isInitializingRef.current = false;
               setIsReady(true);
-              playerRef.current?.setVolume(100);
-              playerRef.current?.playVideo();
+              if (playerRef.current) {
+                playerRef.current.setVolume(100);
+                playerRef.current.playVideo();
+              }
             },
             onStateChange: (event: YTPlayerEvent) => {
               if (event.data === window.YT.PlayerState.ENDED) {
-                // Video ended, load next one based on current time
+                // Video ended, load the next scheduled video
                 const newPlayback = getCurrentPlayback(channel);
-                console.log(`Video ended, loading ${newPlayback.video.id}`);
                 onVideoChange?.(newPlayback.video.title);
-                playerRef.current?.loadVideoById({
-                  videoId: newPlayback.video.id,
-                  startSeconds: newPlayback.positionInVideo,
-                });
+                safeLoadVideo(newPlayback.video.id, newPlayback.positionInVideo);
               }
               if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPaused(true);
@@ -218,49 +198,70 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               }
             },
             onError: () => {
-              // On error, try loading the correct video for current time
-              console.log('Player error, attempting recovery...');
+              // On error, try the next video
               setTimeout(() => {
                 const newPlayback = getCurrentPlayback(channel);
                 onVideoChange?.(newPlayback.video.title);
-                playerRef.current?.loadVideoById({
-                  videoId: newPlayback.video.id,
-                  startSeconds: newPlayback.positionInVideo,
-                });
-              }, 1000);
+                safeLoadVideo(newPlayback.video.id, newPlayback.positionInVideo);
+              }, 2000);
             },
           },
         });
       } catch (e) {
         console.error('Error creating player:', e);
+        isInitializingRef.current = false;
       }
 
       return () => {
-        destroyPlayer();
+        if (checkIntervalRef.current) {
+          clearInterval(checkIntervalRef.current);
+          checkIntervalRef.current = null;
+        }
+        if (playerRef.current) {
+          try {
+            playerRef.current.destroy();
+          } catch (e) {
+            // Ignore destroy errors
+          }
+          playerRef.current = null;
+        }
+        setIsReady(false);
+        isInitializingRef.current = false;
       };
-    }, [isApiLoaded, playerKey, channel, onVideoChange, destroyPlayer]);
+    }, [isApiLoaded]); // Only depend on API loaded state
 
-    // Check for video transitions periodically
+    // Handle channel changes - just load new video, don't recreate player
     useEffect(() => {
       if (!isReady || !playerRef.current) return;
+      if (channel.id === currentChannelIdRef.current) return;
+      
+      currentChannelIdRef.current = channel.id;
+      const playback = getCurrentPlayback(channel);
+      onVideoChange?.(playback.video.title);
+      safeLoadVideo(playback.video.id, playback.positionInVideo);
+    }, [channel.id, isReady, onVideoChange]);
+
+    // Periodic sync check - ensure we're playing the right video
+    useEffect(() => {
+      if (!isReady) return;
+
+      // Clear any existing interval
+      if (checkIntervalRef.current) {
+        clearInterval(checkIntervalRef.current);
+      }
 
       checkIntervalRef.current = setInterval(() => {
+        if (!playerRef.current || !isReady) return;
+        
+        // Get the channel from the ref to avoid stale closures
         const playback = getCurrentPlayback(channel);
-        try {
-          const currentVideoId = playerRef.current?.getVideoData?.()?.video_id;
-          
-          if (currentVideoId && currentVideoId !== playback.video.id) {
-            console.log(`Time sync: switching from ${currentVideoId} to ${playback.video.id}`);
-            onVideoChange?.(playback.video.title);
-            playerRef.current?.loadVideoById({
-              videoId: playback.video.id,
-              startSeconds: playback.positionInVideo,
-            });
-          }
-        } catch (e) {
-          // Player might not be ready
+        
+        // Only switch if the video ID has changed
+        if (currentVideoIdRef.current !== playback.video.id) {
+          onVideoChange?.(playback.video.title);
+          safeLoadVideo(playback.video.id, playback.positionInVideo);
         }
-      }, 2000);
+      }, 3000); // Check every 3 seconds instead of every second
 
       return () => {
         if (checkIntervalRef.current) {
@@ -268,10 +269,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           checkIntervalRef.current = null;
         }
       };
-    }, [channel, isReady, onVideoChange]);
+    }, [isReady, channel, onVideoChange]);
 
     return (
-      <div className="absolute inset-0 bg-black channel-switch">
+      <div className="absolute inset-0 bg-black">
         <div 
           ref={containerRef} 
           className="w-full h-full"
