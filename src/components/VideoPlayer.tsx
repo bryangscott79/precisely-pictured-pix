@@ -350,16 +350,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               }
             },
             onError: () => {
-              // Mark video as failed and skip to next
+              // Mark video as failed and skip to next immediately
               const failedId = currentVideoIdRef.current;
               if (failedId) {
                 failedVideosRef.current.add(failedId);
                 console.warn(`Video ${failedId} failed, skipping to next`);
               }
               
-              setTimeout(() => {
-                advanceToNextVideo();
-              }, 1000);
+              // Skip immediately - don't wait
+              advanceToNextVideo();
             },
           },
         });
