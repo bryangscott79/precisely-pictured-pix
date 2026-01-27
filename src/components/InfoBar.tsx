@@ -67,43 +67,43 @@ export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-8 pointer-events-none'
       }`}
     >
-      <div className="px-6 md:px-10 pb-8 space-y-4">
+      <div className="px-4 md:px-10 pb-6 md:pb-8 space-y-2 md:space-y-4">
         {/* Channel info */}
-        <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${colorClasses[channel.color] || 'bg-channel-music'}`}>
+        <div className="flex items-center gap-2 md:gap-3">
+          <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-lg md:text-xl ${colorClasses[channel.color] || 'bg-channel-music'}`}>
             {channel.icon}
           </div>
-          <div className="flex items-center gap-3">
-            <h2 className="font-display font-bold text-xl">{channel.name}</h2>
-            <span className="live-badge">
-              <span className="w-2 h-2 rounded-full bg-white animate-pulse" />
+          <div className="flex items-center gap-2 md:gap-3">
+            <h2 className="font-display font-bold text-base md:text-xl">{channel.name}</h2>
+            <span className="live-badge text-xs">
+              <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse" />
               Live
             </span>
           </div>
         </div>
 
         {/* Video info */}
-        <div className="space-y-3">
-          <h1 className="font-display font-bold text-2xl md:text-3xl line-clamp-1">
+        <div className="space-y-2 md:space-y-3">
+          <h1 className="font-display font-bold text-lg md:text-3xl line-clamp-2 md:line-clamp-1">
             {displayTitle}
           </h1>
           
           {/* Progress bar */}
-          <div className="space-y-2">
+          <div className="space-y-1 md:space-y-2">
             <div className="progress-bar">
               <div 
                 className={`progress-bar-fill ${colorClasses[channel.color] || 'bg-channel-music'}`}
                 style={{ width: `${playback.progress}%` }}
               />
             </div>
-            <div className="flex justify-between text-sm text-muted-foreground">
+            <div className="flex justify-between text-xs md:text-sm text-muted-foreground">
               <span>{formatTime(playback.positionInVideo)}</span>
               <span>{formatTime(playback.video.duration)}</span>
             </div>
           </div>
 
-          {/* Up next */}
-          <div className="flex items-center gap-2 text-sm text-muted-foreground">
+          {/* Up next - hidden on small mobile */}
+          <div className="hidden sm:flex items-center gap-2 text-sm text-muted-foreground">
             <span>Up next in {formatTime(timeRemaining)}</span>
             <ChevronRight className="w-4 h-4" />
             <span className="text-foreground font-medium line-clamp-1">{nextVideo.title}</span>

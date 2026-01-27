@@ -17,13 +17,13 @@ export function PlaybackControls({
 }: PlaybackControlsProps) {
   return (
     <div
-      className={`fixed bottom-32 right-6 md:right-10 flex items-center gap-2 transition-all duration-500 z-30 ${
+      className={`fixed bottom-24 md:bottom-32 right-4 md:right-10 flex items-center gap-2 transition-all duration-500 z-30 ${
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'
       }`}
     >
       <button
         onClick={onTogglePlayPause}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50 hover:bg-background/90 transition-colors"
+        className="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50 hover:bg-background/90 active:scale-95 transition-all"
         aria-label={isPlaying ? 'Pause' : 'Play'}
       >
         {isPlaying ? (
@@ -31,14 +31,14 @@ export function PlaybackControls({
         ) : (
           <Play className="w-4 h-4" />
         )}
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground hidden md:inline">
           <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">K</kbd>
         </span>
       </button>
       
       <button
         onClick={onToggleMute}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50 hover:bg-background/90 transition-colors"
+        className="flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50 hover:bg-background/90 active:scale-95 transition-all"
         aria-label={isMuted ? 'Unmute' : 'Mute'}
       >
         {isMuted ? (
@@ -46,7 +46,7 @@ export function PlaybackControls({
         ) : (
           <Volume2 className="w-4 h-4" />
         )}
-        <span className="text-xs font-medium text-muted-foreground">
+        <span className="text-xs font-medium text-muted-foreground hidden md:inline">
           <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">M</kbd>
         </span>
       </button>

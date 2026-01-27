@@ -38,25 +38,25 @@ export function ChannelSwitcher({ channel, visible, direction }: ChannelSwitcher
   if (!visible) return null;
 
   return (
-    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 fade-in">
-      <div className="flex flex-col items-center gap-4 p-8 rounded-2xl bg-background/90 backdrop-blur-xl border border-border shadow-2xl">
+    <div className="fixed top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 z-50 fade-in px-4 w-full max-w-md">
+      <div className="flex flex-col items-center gap-3 md:gap-4 p-4 md:p-8 rounded-2xl bg-background/90 backdrop-blur-xl border border-border shadow-2xl">
         {/* Direction indicator */}
-        <div className={`w-10 h-10 rounded-full flex items-center justify-center ${colorClasses[channel.color]}`}>
+        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-full flex items-center justify-center ${colorClasses[channel.color]}`}>
           {direction === 'up' ? (
-            <ChevronUp className="w-6 h-6 text-white" />
+            <ChevronUp className="w-5 h-5 md:w-6 md:h-6 text-white" />
           ) : (
-            <ChevronDown className="w-6 h-6 text-white" />
+            <ChevronDown className="w-5 h-5 md:w-6 md:h-6 text-white" />
           )}
         </div>
 
         {/* Channel info */}
-        <div className="flex items-center gap-4">
-          <div className={`w-16 h-16 rounded-xl flex items-center justify-center text-3xl ${colorClasses[channel.color]}`}>
+        <div className="flex items-center gap-3 md:gap-4">
+          <div className={`w-12 h-12 md:w-16 md:h-16 rounded-xl flex items-center justify-center text-2xl md:text-3xl ${colorClasses[channel.color]}`}>
             {channel.icon}
           </div>
           <div className="text-left">
-            <h2 className="font-display font-bold text-2xl">{channel.name}</h2>
-            <p className="text-muted-foreground">{channel.description}</p>
+            <h2 className="font-display font-bold text-lg md:text-2xl">{channel.name}</h2>
+            <p className="text-muted-foreground text-sm md:text-base line-clamp-1">{channel.description}</p>
           </div>
         </div>
       </div>
