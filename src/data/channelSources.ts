@@ -174,7 +174,8 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     maxDuration: 1800,
   },
   collecting: {
-    query: 'card collecting coins vintage antiques',
+    // Default query - actual content is driven by scheduledProgramming.ts
+    query: 'collectibles sports cards Pokemon antiques rare finds -coins',
     duration: 'medium',
     uploadDate: 'month',
     order: 'viewCount',
