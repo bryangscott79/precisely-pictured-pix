@@ -3,6 +3,7 @@ import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo } from '@/serv
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels } from '@/data/channels';
+import { isAllowedVideoTitle } from '@/lib/contentGuards';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
@@ -77,9 +78,12 @@ export function useDynamicVideos(channelId: string) {
           limit: 25
         });
 
-        if (fetched.length > 0) {
-          videoCache[cacheKey] = { videos: fetched, timestamp: Date.now(), programName: currentProgram || undefined };
-          setVideos(fetched);
+        // Final title-only guard (catches cases where search/metadata filtering misses).
+        const guarded = fetched.filter((v) => isAllowedVideoTitle(channelId, v.title));
+
+        if (guarded.length > 0) {
+          videoCache[cacheKey] = { videos: guarded, timestamp: Date.now(), programName: currentProgram || undefined };
+          setVideos(guarded);
           setUsingFallback(false);
         } else {
           // API returned nothing, use static fallback
