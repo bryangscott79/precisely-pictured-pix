@@ -143,14 +143,15 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 300000,
   },
   sports: {
-    // Sports highlights - MUST be actual sports content
-    query: '"ESPN" OR "NFL" OR "NBA" OR "NHL" OR "MLB" sports highlights goals touchdowns -kids -song -music -parody -cartoon -animation',
+    // Sports highlights - ONLY from official sports accounts
+    // Very strict query to prevent kids content, songs, parodies from appearing
+    query: '"ESPN" "NFL" "NBA" "NHL" "MLB" "Premier League" highlights official -kids -song -music -parody -cartoon -animation -nursery -preschool -toddler -children -family -funny -compilation -remix -cover',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
     minDuration: 180,
     maxDuration: 1800,
-    minViews: 300000,
+    minViews: 500000, // Higher threshold to ensure official content
   },
   nfl: {
     // NFL specific content
