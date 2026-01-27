@@ -10,6 +10,8 @@ interface VideoPlayerProps {
 export interface VideoPlayerHandle {
   togglePlayPause: () => void;
   toggleMute: () => void;
+  setVolume: (volume: number) => void;
+  getVolume: () => number;
   isMuted: () => boolean;
   isPlaying: () => boolean;
   getCurrentInfo: () => { title: string; videoId: string; duration: number; currentTime: number } | null;
@@ -18,6 +20,7 @@ export interface VideoPlayerHandle {
 interface YTPlayer {
   loadVideoById: (options: { videoId: string; startSeconds: number }) => void;
   setVolume: (volume: number) => void;
+  getVolume?: () => number;
   playVideo: () => void;
   pauseVideo: () => void;
   stopVideo?: () => void;
@@ -96,6 +99,12 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isMuted, setIsMuted] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
     const [playerInstanceVersion, setPlayerInstanceVersion] = useState(0);
+    const getInitialVolume = (): number => {
+      const stored = localStorage.getItem('epishow_volume');
+      const parsed = stored ? Number(stored) : NaN;
+      return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+    };
+    const volumeRef = useRef<number>(getInitialVolume());
     const currentChannelIdRef = useRef(channel.id);
     const currentVideoIdRef = useRef<string>('');
     const currentVideoIndexRef = useRef<number>(0);
@@ -155,6 +164,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         } catch (e) {
           console.error('Error toggling mute:', e);
         }
+      },
+      setVolume: (volume: number) => {
+        const v = Math.max(0, Math.min(100, Math.round(volume)));
+        volumeRef.current = v;
+        localStorage.setItem('epishow_volume', String(v));
+        if (!playerRef.current || !isReady) return;
+        try {
+          playerRef.current.setVolume(v);
+        } catch (e) {
+          console.error('Error setting volume:', e);
+        }
+      },
+      getVolume: () => {
+        // Prefer the live player volume when available
+        try {
+          const live = playerRef.current?.getVolume?.();
+          if (typeof live === 'number' && Number.isFinite(live)) return live;
+        } catch {
+          // ignore
+        }
+        return volumeRef.current;
       },
       isMuted: () => isMuted,
       isPlaying: () => !isPaused,
@@ -317,12 +347,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               isInitializingRef.current = false;
               setIsReady(true);
               if (playerRef.current) {
-                playerRef.current.setVolume(100);
+                // Apply persisted volume and explicit mute/unmute state.
+                // (After channel switches we hard-reset the player, so we must restore these.)
+                try {
+                  playerRef.current.setVolume(volumeRef.current);
+                } catch {
+                  // ignore
+                }
                 try {
                   // Preserve user's mute preference across player re-initializations
-                  if (isMuted) {
-                    playerRef.current.mute();
-                  }
+                  if (isMuted) playerRef.current.mute();
+                  else playerRef.current.unMute();
                 } catch {
                   // ignore
                 }

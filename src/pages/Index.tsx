@@ -67,6 +67,11 @@ export default function Index() {
   const [showHints, setShowHints] = useState(true);
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
+  const [volume, setVolume] = useState<number>(() => {
+    const stored = localStorage.getItem('epishow_volume');
+    const parsed = stored ? Number(stored) : NaN;
+    return Number.isFinite(parsed) ? Math.max(0, Math.min(100, parsed)) : 100;
+  });
   const [currentVideoId, setCurrentVideoId] = useState<string>('');
   const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
   const [languageVersion, setLanguageVersion] = useState(0); // Force refresh when language changes
@@ -214,6 +219,18 @@ export default function Index() {
     resetIdleTimer();
   }, [resetIdleTimer]);
 
+  const setPlayerVolume = useCallback((newVolume: number) => {
+    const v = Math.max(0, Math.min(100, Math.round(newVolume)));
+    setVolume(v);
+    playerRef.current?.setVolume(v);
+    resetIdleTimer();
+  }, [resetIdleTimer]);
+
+  // Ensure player always gets the persisted volume (including after hard resets)
+  useEffect(() => {
+    playerRef.current?.setVolume(volume);
+  }, [volume]);
+
   // Keyboard shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
@@ -320,8 +337,10 @@ export default function Index() {
         visible={showUI && !isGuideOpen && !isChannelLocked && !isBedtimeLocked && (timeRemaining === null || timeRemaining > 0)}
         isMuted={isMuted}
         isPlaying={isPlaying}
+        volume={volume}
         onToggleMute={toggleMute}
         onTogglePlayPause={togglePlayPause}
+        onVolumeChange={setPlayerVolume}
       />
 
       {/* Mobile Channel Controls */}

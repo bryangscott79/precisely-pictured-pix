@@ -1,19 +1,24 @@
 import { Volume2, VolumeX, Play, Pause } from 'lucide-react';
+import { Slider } from '@/components/ui/slider';
 
 interface PlaybackControlsProps {
   visible: boolean;
   isMuted: boolean;
   isPlaying: boolean;
+  volume: number;
   onToggleMute: () => void;
   onTogglePlayPause: () => void;
+  onVolumeChange: (volume: number) => void;
 }
 
 export function PlaybackControls({
   visible,
   isMuted,
   isPlaying,
+  volume,
   onToggleMute,
   onTogglePlayPause,
+  onVolumeChange,
 }: PlaybackControlsProps) {
   return (
     <div
@@ -50,6 +55,22 @@ export function PlaybackControls({
           <kbd className="px-1.5 py-0.5 bg-muted rounded text-[10px]">M</kbd>
         </span>
       </button>
+
+      {/* Volume */}
+      <div className="hidden sm:flex items-center gap-2 px-2.5 md:px-3 py-2 rounded-lg bg-background/80 backdrop-blur-md border border-border/50">
+        <span className="text-xs font-medium text-muted-foreground tabular-nums w-7 text-right">
+          {Math.round(volume)}
+        </span>
+        <div className="w-20 md:w-28">
+          <Slider
+            value={[volume]}
+            max={100}
+            step={1}
+            onValueChange={(v) => onVolumeChange(v[0] ?? 0)}
+            aria-label="Volume"
+          />
+        </div>
+      </div>
     </div>
   );
 }
