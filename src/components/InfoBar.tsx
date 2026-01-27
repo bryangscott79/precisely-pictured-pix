@@ -33,6 +33,9 @@ const colorClasses: Record<ChannelColor, string> = {
   music90s: 'bg-channel-music',
   music00s: 'bg-channel-music',
   music10s: 'bg-channel-music',
+  movies: 'bg-channel-movies',
+  nfl: 'bg-channel-nfl',
+  cinema80s: 'bg-channel-cinema80s',
 };
 
 export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {

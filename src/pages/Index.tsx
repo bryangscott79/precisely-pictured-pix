@@ -11,16 +11,25 @@ import { MobileControls } from '@/components/MobileControls';
 import { UserMenu } from '@/components/UserMenu';
 import { AuthModal } from '@/components/AuthModal';
 import { VoteButtons } from '@/components/VoteButtons';
+import { FeedbackMenu } from '@/components/FeedbackMenu';
 import { ParentalControlsModal } from '@/components/ParentalControlsModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
+import { UpgradeModal } from '@/components/UpgradeModal';
+import { PremiumChannelLock } from '@/components/PremiumChannelLock';
 import { useParentalControls } from '@/hooks/useParentalControls';
+import { useUserTier } from '@/contexts/UserTierContext';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useSearchParams } from 'react-router-dom';
+import { toast } from 'sonner';
+
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
 
 export default function Index() {
   const isMobile = useIsMobile();
   const { enabled: parentalControlsEnabled } = useParentalControls();
+  const { isPremium, checkSubscription, openUpgradeModal } = useUserTier();
+  const [searchParams, setSearchParams] = useSearchParams();
   const availableChannels = getAvailableChannels(parentalControlsEnabled);
 
   // Get saved channel or default to first available
@@ -45,6 +54,22 @@ export default function Index() {
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const playerRef = useRef<VideoPlayerHandle>(null);
+
+  // Handle upgrade success/cancel from Stripe redirect
+  useEffect(() => {
+    const upgrade = searchParams.get('upgrade');
+    if (upgrade === 'success') {
+      toast.success('Welcome to Premium! Refreshing your subscription...');
+      checkSubscription();
+      setSearchParams({});
+    } else if (upgrade === 'canceled') {
+      toast.info('Upgrade canceled');
+      setSearchParams({});
+    }
+  }, [searchParams, setSearchParams, checkSubscription]);
+
+  // Check if current channel is premium-locked
+  const isChannelLocked = currentChannel.premium && !isPremium;
 
   // Ensure current channel is still available when parental controls change
   useEffect(() => {
@@ -207,10 +232,16 @@ export default function Index() {
 
   // Handle channel selection from guide
   const handleChannelSelect = useCallback((channel: Channel) => {
+    // Check if channel is premium and user doesn't have premium
+    if (channel.premium && !isPremium) {
+      openUpgradeModal();
+      return;
+    }
+    
     setCurrentChannel(channel);
     localStorage.setItem('epishow-last-channel', channel.id);
     resetIdleTimer();
-  }, [resetIdleTimer]);
+  }, [resetIdleTimer, isPremium, openUpgradeModal]);
 
   // Cleanup on unmount
   useEffect(() => {
@@ -230,6 +261,11 @@ export default function Index() {
         }}
       />
 
+      {/* Premium Channel Lock Overlay */}
+      {isChannelLocked && (
+        <PremiumChannelLock channelName={currentChannel.name} />
+      )}
+
       {/* Top Bar - User Menu */}
       <div className="absolute top-4 right-4 z-20">
         <UserMenu 
@@ -246,7 +282,7 @@ export default function Index() {
 
       {/* Playback Controls */}
       <PlaybackControls
-        visible={showUI && !isGuideOpen}
+        visible={showUI && !isGuideOpen && !isChannelLocked}
         isMuted={isMuted}
         isPlaying={isPlaying}
         onToggleMute={toggleMute}
@@ -260,12 +296,17 @@ export default function Index() {
         onChannelDown={() => switchChannel('down')}
       />
 
-      {/* Vote Buttons - above info bar */}
-      <div className="absolute bottom-24 md:bottom-32 left-4 md:left-10 z-20">
+      {/* Vote Buttons and Feedback Menu - above info bar */}
+      <div className="absolute bottom-24 md:bottom-32 left-4 md:left-10 z-20 flex items-center gap-2">
         <VoteButtons
           videoId={currentVideoId}
           youtubeId={currentVideoId}
-          visible={showUI && !isGuideOpen}
+          visible={showUI && !isGuideOpen && !isChannelLocked}
+          onAuthRequired={() => setIsAuthModalOpen(true)}
+        />
+        <FeedbackMenu
+          videoId={currentVideoId}
+          visible={showUI && !isGuideOpen && !isChannelLocked}
           onAuthRequired={() => setIsAuthModalOpen(true)}
         />
       </div>
@@ -312,6 +353,9 @@ export default function Index() {
         open={isParentalControlsOpen}
         onOpenChange={setIsParentalControlsOpen}
       />
+
+      {/* Upgrade Modal */}
+      <UpgradeModal />
 
       {/* Onboarding for first-time visitors */}
       <OnboardingModal />
