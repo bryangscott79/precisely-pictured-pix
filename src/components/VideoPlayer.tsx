@@ -23,6 +23,8 @@ interface YTPlayer {
   isMuted: () => boolean;
   getPlayerState: () => number;
   getVideoData: () => { video_id: string; title?: string };
+  getCurrentTime: () => number;
+  getDuration: () => number;
   destroy: () => void;
 }
 
@@ -69,8 +71,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const currentVideoIdRef = useRef<string>('');
     const channelRef = useRef(channel);
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const endScreenCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isInitializingRef = useRef(false);
     const failedByChannelRef = useRef<Record<string, Set<string>>>({});
+    const hasSkippedEndRef = useRef(false);
 
     useEffect(() => {
       channelRef.current = channel;
@@ -356,6 +360,51 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
           checkIntervalRef.current = null;
+        }
+      };
+    }, [isReady, onVideoChange]);
+
+    // End screen prevention - skip to next video before YouTube's end screen appears
+    useEffect(() => {
+      if (!isReady) return;
+
+      if (endScreenCheckRef.current) {
+        clearInterval(endScreenCheckRef.current);
+      }
+
+      endScreenCheckRef.current = setInterval(() => {
+        if (!playerRef.current || !isReady) return;
+        
+        try {
+          const currentTime = playerRef.current.getCurrentTime();
+          const duration = playerRef.current.getDuration();
+          
+          // If we're within 15 seconds of the end, skip to next video
+          // This prevents YouTube's end screen from appearing
+          if (duration > 0 && currentTime > 0 && (duration - currentTime) < 15 && !hasSkippedEndRef.current) {
+            hasSkippedEndRef.current = true;
+            
+            const live = channelRef.current;
+            const currentPlayback = getCurrentPlayback(live);
+            const nextIndex = (currentPlayback.videoIndex + 1) % live.videos.length;
+            const nextVideo = live.videos[nextIndex];
+            onVideoChange?.(nextVideo.title);
+            safeLoadVideo(nextVideo.id, 0);
+            
+            // Reset the flag after a short delay
+            setTimeout(() => {
+              hasSkippedEndRef.current = false;
+            }, 2000);
+          }
+        } catch (e) {
+          // Ignore errors from getting time
+        }
+      }, 1000); // Check every second
+
+      return () => {
+        if (endScreenCheckRef.current) {
+          clearInterval(endScreenCheckRef.current);
+          endScreenCheckRef.current = null;
         }
       };
     }, [isReady, onVideoChange]);
