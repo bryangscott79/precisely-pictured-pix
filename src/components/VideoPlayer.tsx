@@ -577,8 +577,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             transformOrigin: 'center center',
           }}
         />
-        {/* Overlay to block any clicks on YouTube elements */}
-        <div className="absolute inset-0 z-10" style={{ pointerEvents: 'none' }} />
+        {/* 
+          Invisible overlay that covers the entire iframe to:
+          1. Block all clicks (prevents YouTube play button interaction)
+          2. Visually hide the play button by intercepting mouse events
+        */}
+        <div 
+          className="absolute inset-0 z-10" 
+          style={{ 
+            pointerEvents: 'auto',
+            background: 'transparent',
+            cursor: 'default',
+          }} 
+          aria-hidden="true"
+        />
         {(!isReady || videosLoading) && (
           <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
             <div className="flex flex-col items-center gap-4">
