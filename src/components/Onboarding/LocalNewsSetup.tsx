@@ -2,12 +2,13 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { useOnboarding } from '@/contexts/OnboardingContext';
-import { getMetroFromZip, getMetroNameFromZip, getAllStationsForZip, LocalNewsStation } from '@/data/localNewsStations';
+import { getMetroNameFromZip, getAllStationsForZip, LocalNewsStation } from '@/data/localNewsStations';
+import { saveLocalNewsStation, clearLocalNewsStation } from '@/hooks/useLocalNews';
 import { MapPin, Tv, Check, AlertCircle, Radio } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 export function LocalNewsSetup() {
-  const { setStep, state } = useOnboarding();
+  const { setStep } = useOnboarding();
   const [zipCode, setZipCode] = useState('');
   const [metroName, setMetroName] = useState<string | null>(null);
   const [stations, setStations] = useState<LocalNewsStation[]>([]);
@@ -51,17 +52,15 @@ export function LocalNewsSetup() {
   };
 
   const handleContinue = () => {
-    // Save selected station to localStorage for now
+    // Save selected station using the centralized function (triggers event)
     if (selectedStation) {
-      localStorage.setItem('epishow-local-news-station', JSON.stringify(selectedStation));
-      localStorage.setItem('epishow-local-zip', zipCode);
+      saveLocalNewsStation(selectedStation, zipCode);
     }
     setStep('youtube');
   };
 
   const handleSkip = () => {
-    localStorage.removeItem('epishow-local-news-station');
-    localStorage.removeItem('epishow-local-zip');
+    clearLocalNewsStation();
     setStep('youtube');
   };
 
