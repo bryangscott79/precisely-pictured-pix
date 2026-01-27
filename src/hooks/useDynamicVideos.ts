@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react';
 import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo } from '@/services/youtubeService';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
+import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels } from '@/data/channels';
 
-let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number }> = {};
+let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 // Clear cache when language changes
@@ -18,13 +19,22 @@ export function useDynamicVideos(channelId: string) {
   const [videos, setVideos] = useState<FetchedVideo[]>([]);
   const [loading, setLoading] = useState(true);
   const [usingFallback, setUsingFallback] = useState(false);
+  const [currentProgramName, setCurrentProgramName] = useState<string | null>(null);
 
   useEffect(() => {
     async function loadVideos() {
       setLoading(true);
       
+      // Check for scheduled programming
+      const program = getCurrentProgram(channelId);
+      const currentProgram = program?.name || null;
+      setCurrentProgramName(currentProgram);
+      
+      // Create a cache key that includes the program name for scheduled channels
+      const cacheKey = currentProgram ? `${channelId}:${currentProgram}` : channelId;
+      
       // Check cache first
-      const cached = videoCache[channelId];
+      const cached = videoCache[cacheKey];
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         setVideos(cached.videos);
         setLoading(false);
@@ -44,9 +54,9 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
-      // Check if this channel has search config
-      const searchConfig = CHANNEL_SEARCH_CONFIG[channelId];
-      if (!searchConfig) {
+      // Get base search config
+      const baseConfig = CHANNEL_SEARCH_CONFIG[channelId];
+      if (!baseConfig) {
         // No search config for this channel, use static
         setVideos(staticVideos);
         setUsingFallback(true);
@@ -54,8 +64,11 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
+      // Apply scheduled programming if available
+      const searchConfig = getChannelSearchConfig(channelId, baseConfig);
+
       try {
-        console.log(`[${channelId}] Fetching videos with query: "${searchConfig.query}"`);
+        console.log(`[${channelId}] Fetching videos with query: "${searchConfig.query}"${currentProgram ? ` (Program: ${currentProgram})` : ''}`);
         // Use YouTube Search API with topic-based queries
         const fetched = await fetchVideosFromSearch({
           ...searchConfig,
@@ -63,7 +76,7 @@ export function useDynamicVideos(channelId: string) {
         });
 
         if (fetched.length > 0) {
-          videoCache[channelId] = { videos: fetched, timestamp: Date.now() };
+          videoCache[cacheKey] = { videos: fetched, timestamp: Date.now(), programName: currentProgram || undefined };
           setVideos(fetched);
           setUsingFallback(false);
         } else {
@@ -85,7 +98,7 @@ export function useDynamicVideos(channelId: string) {
     loadVideos();
   }, [channelId]);
 
-  return { videos, loading, usingFallback };
+  return { videos, loading, usingFallback, currentProgramName };
 }
 
 // Export function to get videos for a channel (for use in non-React contexts)

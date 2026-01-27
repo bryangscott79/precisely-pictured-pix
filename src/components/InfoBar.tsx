@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { Channel, ChannelColor, getCurrentPlayback, getNextVideo, formatTime } from '@/data/channels';
-import { ChevronRight } from 'lucide-react';
+import { getCurrentProgram } from '@/data/scheduledProgramming';
+import { ChevronRight, Calendar } from 'lucide-react';
 
 interface InfoBarProps {
   channel: Channel;
@@ -42,12 +43,17 @@ const colorClasses: Record<ChannelColor, string> = {
 export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
   const [playback, setPlayback] = useState(() => getCurrentPlayback(channel));
   const [nextVideo, setNextVideo] = useState(() => getNextVideo(channel, playback.videoIndex));
+  const [currentProgram, setCurrentProgram] = useState<string | null>(null);
 
   useEffect(() => {
     const interval = setInterval(() => {
       const current = getCurrentPlayback(channel);
       setPlayback(current);
       setNextVideo(getNextVideo(channel, current.videoIndex));
+      
+      // Check for scheduled programming
+      const program = getCurrentProgram(channel.id);
+      setCurrentProgram(program?.name || null);
     }, 1000);
 
     return () => clearInterval(interval);
@@ -58,6 +64,10 @@ export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
     const current = getCurrentPlayback(channel);
     setPlayback(current);
     setNextVideo(getNextVideo(channel, current.videoIndex));
+    
+    // Check for scheduled programming
+    const program = getCurrentProgram(channel.id);
+    setCurrentProgram(program?.name || null);
   }, [channel]);
 
   const timeRemaining = playback.video.duration - playback.positionInVideo;
@@ -83,6 +93,12 @@ export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
               <span className="w-1.5 h-1.5 md:w-2 md:h-2 rounded-full bg-white animate-pulse" />
               Live
             </span>
+            {currentProgram && (
+              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-foreground">
+                <Calendar className="w-3 h-3" />
+                {currentProgram}
+              </span>
+            )}
           </div>
         </div>
 
