@@ -317,8 +317,8 @@
   .border-channel-podcast { border-color: hsl(var(--channel-podcast)); }
 
   .glass-panel {
-    @apply backdrop-blur-md border border-white/10;
-    background: hsl(var(--card) / 0.8);
+    @apply backdrop-blur-xl border border-white/10;
+    background: hsl(var(--card) / 0.95);
   }
 
   /* Hide YouTube big play button overlay */
