@@ -49,7 +49,6 @@ export interface Channel {
   premium?: boolean;
   description: string;
   restricted?: boolean;
-  isPodcast?: boolean;
   videos: Video[];
 }
 
@@ -565,7 +564,7 @@ export const channels: Channel[] = [
       { id: '1w7OgIMMRc4', title: 'Ferris Bueller Moments', duration: 780 },
     ],
   },
-  // Podcast Channel - TED Talks and inspirational speeches
+  // Podcast Channel - Top video podcasts (full video format)
   {
     id: 'podcast',
     name: 'Podcasts',
@@ -573,25 +572,31 @@ export const channels: Channel[] = [
     color: 'podcast',
     category: 'entertainment',
     contentRating: 'PG-13',
-    description: 'Curated talks and inspirational content',
-    isPodcast: true,
+    description: 'Top video podcasts and conversations',
     videos: [
-      { id: 'arj7oStGLkU', title: 'Inside the mind of a master procrastinator', duration: 853 },
-      { id: '8jPQjjsBbIc', title: 'How great leaders inspire action', duration: 1081 },
-      { id: 'iCvmsMzlF7o', title: 'The power of vulnerability', duration: 1213 },
-      { id: 'H14bBuluwB8', title: 'Your body language may shape who you are', duration: 1266 },
-      { id: 'oRSij0gffXA', title: 'How to speak so that people want to listen', duration: 600 },
-      { id: 'Unzc731iCUY', title: 'How to make stress your friend', duration: 870 },
-      { id: 'RcGyVTAoXEU', title: 'The happy secret to better work', duration: 725 },
-      { id: 'UF8uR6Z6KLc', title: 'Steve Jobs Stanford Commencement Speech', duration: 912 },
-      { id: '_J4QPz52Sfo', title: 'How to practice effectively', duration: 270 },
-      { id: 'eIho2S0ZahI', title: 'How to learn anything faster', duration: 780 },
-      { id: 'JI8AMRbqY6w', title: '3 secrets of resilient people', duration: 720 },
-      { id: 'Hu4Yvq-g7_Y', title: 'The skill of self confidence', duration: 840 },
-      { id: 'P6FORpg0KVo', title: 'What makes a good life', duration: 780 },
-      { id: 'r9LelXa3U_I', title: 'Grit: The power of passion and perseverance', duration: 366 },
-      { id: '36m1o-tM05g', title: 'The power of introverts', duration: 1140 },
-      { id: 'GIJDXHXqDPE', title: 'This is what happens when you reply to spam email', duration: 960 },
+      // Joe Rogan Experience clips (PowerfulJRE channel)
+      { id: '5tSTk1083VY', title: 'Joe Rogan Experience #2219 - Donald Trump', duration: 10800 },
+      { id: 'xz8a4BYxKQM', title: 'JRE - Elon Musk on AI and the Future', duration: 7200 },
+      { id: 'mMBqdDf1D8I', title: 'JRE - Mark Zuckerberg Full Interview', duration: 10800 },
+      // My First Million (popular business podcast)
+      { id: 'YZ0KIaJxrDE', title: 'My First Million - How He Made $100M', duration: 3600 },
+      { id: 'q5Xb0QHLV-w', title: 'My First Million - Best Business Ideas 2024', duration: 3000 },
+      // Lex Fridman Podcast
+      { id: 'DxREm3s1scA', title: 'Lex Fridman #419 - Sam Altman on OpenAI', duration: 9000 },
+      { id: 'jvqFAi7vkBc', title: 'Lex Fridman #400 - Elon Musk', duration: 10800 },
+      // Impaulsive (Logan Paul podcast)
+      { id: 'wVY8pB5rDeo', title: 'IMPAULSIVE - Mike Tyson Interview', duration: 5400 },
+      // The Diary of a CEO
+      { id: 'Gd9tB0XrXM4', title: 'Diary of a CEO - Simon Sinek', duration: 5400 },
+      { id: 'VgpJ1zKfJbE', title: 'Diary of a CEO - Dr. Andrew Huberman', duration: 7200 },
+      // Flagrant (Andrew Schulz)
+      { id: 'BfFBPFLNm8s', title: 'Flagrant - Most Offensive Episode Yet', duration: 5400 },
+      // H3 Podcast
+      { id: 'rY0WxgSXdEE', title: 'H3 Podcast - Best Moments 2024', duration: 3600 },
+      // Call Her Daddy
+      { id: 'a1gvL1v0k0c', title: 'Call Her Daddy - Most Viral Episode', duration: 4200 },
+      // Theo Von
+      { id: 'xA-sBLuq3IM', title: 'This Past Weekend - Theo Von Best Of', duration: 4800 },
     ],
   },
 ];
