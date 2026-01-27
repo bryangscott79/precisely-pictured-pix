@@ -311,13 +311,15 @@ export const channels: Channel[] = [
     contentRating: 'PG',
     description: 'Highlights and sports stories',
     videos: [
-      // Verified sports content
-      { id: 'DhUzqPLGQxA', title: 'Greatest Goals in Football', duration: 1200 },
-      { id: 'kn1eTXhcx0E', title: 'NBA Best Dunks Ever', duration: 900 },
-      { id: '5iqt0wEAw0E', title: 'Epic Sports Moments', duration: 1080 },
-      { id: 'Y5kYLOb6i5I', title: 'Underdog Sports Stories', duration: 1320 },
-      { id: 'S3C0mUfFHNY', title: 'Greatest Comebacks Ever', duration: 960 },
-      { id: 'V5RUy7oMI3I', title: 'Olympic Highlights', duration: 1140 },
+      // Verified ESPN & official sports highlights (2024-2025)
+      { id: '8GKmCQOy88Y', title: 'NBA Top 100 Plays of 2024', duration: 1800 },
+      { id: 'LoD9RlPr5RA', title: 'NFL Best Catches 2024-25', duration: 720 },
+      { id: 'h3XeN0WL2cs', title: 'UEFA Champions League Best Goals', duration: 900 },
+      { id: '1r0aU4cj2E0', title: 'MLB Greatest Home Runs', duration: 1080 },
+      { id: 'VN36C_ILOns', title: 'Premier League Top 50 Goals', duration: 1200 },
+      { id: 'ZYcBMgqpIUM', title: 'NHL Best Goals 2024', duration: 840 },
+      { id: '3LzCz2FxAek', title: 'College Football Best Moments', duration: 960 },
+      { id: 'Bs-6RjmEm2A', title: 'Tennis Greatest Rallies', duration: 780 },
     ],
   },
   {
