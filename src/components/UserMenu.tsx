@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { useProfiles } from '@/contexts/ProfileContext';
-import { LogOut, User, LogIn, Crown, Settings, Users, Globe, Youtube } from 'lucide-react';
+import { LogOut, User, LogIn, Settings } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,22 +13,18 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TierBadge } from '@/components/TierBadge';
 import { cn } from '@/lib/utils';
-import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 
 interface UserMenuProps {
   visible: boolean;
   onSignInClick: () => void;
   onSwitchProfile?: () => void;
-  onOpenParentalSettings?: () => void;
-  onOpenLanguageSettings?: () => void;
-  onConnectYouTube?: () => void;
+  onOpenProfileSettings?: () => void;
 }
 
-export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings, onOpenLanguageSettings, onConnectYouTube }: UserMenuProps) {
-  const { user, session, signOut, isLoading } = useAuth();
-  const { tier, isPremium, openUpgradeModal } = useUserTier();
+export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenProfileSettings }: UserMenuProps) {
+  const { user, signOut, isLoading } = useAuth();
+  const { isPremium } = useUserTier();
   const { activeProfile, isChildProfile } = useProfiles();
-  const { language } = useLanguagePreference();
 
   if (isLoading) {
     return null;
@@ -117,57 +113,19 @@ export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParent
             </Avatar>
           </Button>
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="glass-panel border-white/10 min-w-[180px]">
+        <DropdownMenuContent align="end" className="glass-panel border-white/10 min-w-[160px]">
           <div className="px-2 py-1.5">
             <p className="text-sm font-medium truncate">{user.email}</p>
             <TierBadge className="mt-1" />
           </div>
           <DropdownMenuSeparator className="bg-white/10" />
-          <DropdownMenuItem className="gap-2 cursor-pointer">
-            <User className="w-4 h-4" />
-            Profile
-          </DropdownMenuItem>
           {!isChildProfile && (
-            <DropdownMenuItem
-              className="gap-2 cursor-pointer text-red-400 focus:text-red-400"
-              onClick={onConnectYouTube}
-            >
-              <Youtube className="w-4 h-4" />
-              Connect YouTube
-            </DropdownMenuItem>
-          )}
-          <DropdownMenuItem
-            className="gap-2 cursor-pointer"
-            onClick={onOpenLanguageSettings}
-          >
-            <Globe className="w-4 h-4" />
-            Language: {language.name}
-          </DropdownMenuItem>
-          {!isChildProfile && (
-            <DropdownMenuItem
+            <DropdownMenuItem 
               className="gap-2 cursor-pointer"
-              onClick={onOpenParentalSettings}
-            >
-              <Users className="w-4 h-4" />
-              Parental Controls
-            </DropdownMenuItem>
-          )}
-          {!isPremium && !isChildProfile && (
-            <DropdownMenuItem
-              className="gap-2 cursor-pointer text-amber-400 focus:text-amber-400"
-              onClick={openUpgradeModal}
-            >
-              <Crown className="w-4 h-4" />
-              Upgrade to Premium
-            </DropdownMenuItem>
-          )}
-          {isPremium && !isChildProfile && (
-            <DropdownMenuItem
-              className="gap-2 cursor-pointer"
-              onClick={openUpgradeModal}
+              onClick={onOpenProfileSettings}
             >
               <Settings className="w-4 h-4" />
-              Manage Subscription
+              Settings
             </DropdownMenuItem>
           )}
           <DropdownMenuSeparator className="bg-white/10" />

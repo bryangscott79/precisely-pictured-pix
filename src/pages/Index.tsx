@@ -18,6 +18,7 @@ import { UpgradeModal } from '@/components/UpgradeModal';
 import { PremiumChannelLock } from '@/components/PremiumChannelLock';
 import { LanguageSettingsModal } from '@/components/LanguageSettingsModal';
 import { ActionFeedback } from '@/components/ActionFeedback';
+import { ProfileSettingsModal } from '@/components/ProfileSettingsModal';
 import { 
   ProfileSwitcher, 
   ProfileSettings, 
@@ -66,6 +67,7 @@ export default function Index() {
   const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isLanguageSettingsOpen, setIsLanguageSettingsOpen] = useState(false);
+  const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
@@ -344,9 +346,7 @@ export default function Index() {
           visible={showUI && !isGuideOpen}
           onSignInClick={() => setIsAuthModalOpen(true)}
           onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
-          onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
-          onOpenLanguageSettings={() => setIsLanguageSettingsOpen(true)}
-          onConnectYouTube={() => signInWithGoogle(true)}
+          onOpenProfileSettings={() => setIsAccountSettingsOpen(true)}
         />
       </div>
 
@@ -453,6 +453,15 @@ export default function Index() {
 
       {/* Upgrade Modal */}
       <UpgradeModal />
+
+      {/* Account Settings Modal */}
+      <ProfileSettingsModal
+        open={isAccountSettingsOpen}
+        onOpenChange={setIsAccountSettingsOpen}
+        onOpenLanguageSettings={() => setIsLanguageSettingsOpen(true)}
+        onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
+        onConnectYouTube={() => signInWithGoogle(true)}
+      />
 
       {/* Language Settings Modal */}
       <LanguageSettingsModal 
