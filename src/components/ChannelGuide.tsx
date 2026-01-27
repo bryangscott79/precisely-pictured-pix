@@ -80,23 +80,23 @@ function ChannelCard({
   return (
     <button
       onClick={onClick}
-      className={`channel-card w-full p-3 text-left transition-all duration-300 ${
+      className={`channel-card w-full p-2 md:p-3 text-left transition-all duration-300 ${
         isActive ? `border-2 ${colors.border} shadow-lg` : 'hover:border-muted-foreground/30'
       }`}
       style={isActive ? { boxShadow: `0 0 30px hsl(var(--channel-${channel.color}) / 0.3)` } : undefined}
     >
-      <div className="flex items-start gap-3">
+      <div className="flex items-start gap-2 md:gap-3">
         {/* Channel icon */}
-        <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl shrink-0 ${colors.bg}`}>
+        <div className={`w-8 h-8 md:w-10 md:h-10 rounded-lg flex items-center justify-center text-lg md:text-xl shrink-0 ${colors.bg}`}>
           {channel.icon}
         </div>
 
         {/* Channel info */}
-        <div className="flex-1 min-w-0 space-y-1.5">
+        <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
           <div className="flex items-center gap-2">
-            <h3 className="font-display font-bold text-sm">{channel.name}</h3>
+            <h3 className="font-display font-bold text-xs md:text-sm">{channel.name}</h3>
             {isActive && (
-              <span className="live-badge text-[9px]">
+              <span className="live-badge text-[8px] md:text-[9px]">
                 <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
                 Watching
               </span>
@@ -105,21 +105,21 @@ function ChannelCard({
           
           {/* Now playing */}
           <div className="space-y-1">
-            <p className="text-xs font-medium line-clamp-1">{playback.video.title}</p>
+            <p className="text-[10px] md:text-xs font-medium line-clamp-1">{playback.video.title}</p>
             <div className="progress-bar h-0.5">
               <div 
                 className={`progress-bar-fill ${colors.bg}`}
                 style={{ width: `${playback.progress}%` }}
               />
             </div>
-            <div className="flex justify-between text-[10px] text-muted-foreground">
+            <div className="flex justify-between text-[9px] md:text-[10px] text-muted-foreground">
               <span>{formatTime(playback.positionInVideo)}</span>
               <span>{formatTime(playback.video.duration)}</span>
             </div>
           </div>
 
-          {/* Up next */}
-          <p className="text-[10px] text-muted-foreground">
+          {/* Up next - hidden on mobile */}
+          <p className="hidden sm:block text-[10px] text-muted-foreground">
             Up next: <span className="text-foreground/70">{nextVideo.title}</span>
           </p>
         </div>
@@ -293,17 +293,17 @@ export function ChannelGuide({
   return (
     <div className="guide-overlay fade-in" onClick={onClose}>
       <div 
-        className={`guide-panel fixed right-0 top-0 bottom-0 overflow-hidden ${
-          viewMode === 'schedule' ? 'w-full max-w-4xl' : 'w-full max-w-md'
+        className={`guide-panel fixed right-0 top-0 bottom-0 overflow-hidden w-full md:w-auto ${
+          viewMode === 'schedule' ? 'md:max-w-4xl' : 'md:max-w-md'
         } ${isOpen ? 'slide-in-right' : 'slide-out-right'}`}
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between p-4 border-b border-border">
-          <h2 className="font-display font-bold text-xl">Channel Guide</h2>
-          <div className="flex items-center gap-2">
-            {/* View mode toggle */}
-            <div className="flex rounded-lg overflow-hidden border border-border">
+        <div className="flex items-center justify-between p-3 md:p-4 border-b border-border">
+          <h2 className="font-display font-bold text-lg md:text-xl">Channel Guide</h2>
+          <div className="flex items-center gap-1.5 md:gap-2">
+            {/* View mode toggle - hidden on mobile */}
+            <div className="hidden sm:flex rounded-lg overflow-hidden border border-border">
               <button
                 onClick={() => setViewMode('grid')}
                 className={`px-3 py-1.5 text-xs font-medium transition-colors ${
@@ -331,7 +331,7 @@ export function ChannelGuide({
                 e.stopPropagation();
                 onOpenParentalControls();
               }}
-              className={`w-9 h-9 rounded-lg flex items-center justify-center transition-colors ${
+              className={`w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center transition-colors ${
                 parentalControlsEnabled 
                   ? 'bg-primary/20 text-primary hover:bg-primary/30' 
                   : 'hover:bg-muted text-muted-foreground hover:text-foreground'
@@ -346,27 +346,27 @@ export function ChannelGuide({
             </button>
             <button 
               onClick={onClose}
-              className="w-9 h-9 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
+              className="w-8 h-8 md:w-9 md:h-9 rounded-lg flex items-center justify-center hover:bg-muted transition-colors"
             >
               <X className="w-5 h-5" />
             </button>
           </div>
         </div>
 
-        {/* Content */}
-        {viewMode === 'grid' ? (
+        {/* Content - Force grid view on mobile */}
+        {(viewMode === 'grid' || typeof window !== 'undefined' && window.innerWidth < 640) ? (
           // Grid view - grouped by category
-          <div className="p-3 space-y-4 overflow-y-auto h-[calc(100%-130px)]">
+          <div className="p-2 md:p-3 space-y-3 md:space-y-4 overflow-y-auto h-[calc(100%-110px)] md:h-[calc(100%-130px)]">
             {categoryOrder.map((category) => {
               const categoryChannels = channelsByCategory[category];
               if (!categoryChannels || categoryChannels.length === 0) return null;
 
               return (
                 <div key={category}>
-                  <h3 className="text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-2 px-1">
+                  <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 md:mb-2 px-1">
                     {categoryNames[category]}
                   </h3>
-                  <div className="space-y-2">
+                  <div className="space-y-1.5 md:space-y-2">
                     {categoryChannels.map((channel) => (
                       <ChannelCard
                         key={channel.id}
@@ -419,13 +419,13 @@ export function ChannelGuide({
         )}
 
         {/* Footer with parental controls status */}
-        <div className="absolute bottom-0 left-0 right-0 p-3 border-t border-border bg-background/80 backdrop-blur-sm">
-          <div className="flex items-center justify-between text-xs text-muted-foreground">
-            <div className="flex items-center gap-4">
+        <div className="absolute bottom-0 left-0 right-0 p-2 md:p-3 border-t border-border bg-background/80 backdrop-blur-sm">
+          <div className="flex items-center justify-between text-[10px] md:text-xs text-muted-foreground">
+            <div className="hidden sm:flex items-center gap-4">
               <span><kbd className="kbd">↑</kbd> <kbd className="kbd">↓</kbd> Navigate</span>
               <span><kbd className="kbd">Esc</kbd> Close</span>
             </div>
-            <span className="text-[10px]">
+            <span className="text-[10px] sm:ml-auto">
               {availableChannels.length} channels
             </span>
           </div>

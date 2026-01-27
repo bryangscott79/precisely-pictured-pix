@@ -7,17 +7,19 @@ import { ChannelSwitcher } from '@/components/ChannelSwitcher';
 import { KeyboardHints } from '@/components/KeyboardHints';
 import { GuideButton } from '@/components/GuideButton';
 import { PlaybackControls } from '@/components/PlaybackControls';
+import { MobileControls } from '@/components/MobileControls';
 import { UserMenu } from '@/components/UserMenu';
 import { AuthModal } from '@/components/AuthModal';
 import { VoteButtons } from '@/components/VoteButtons';
 import { ParentalControlsModal } from '@/components/ParentalControlsModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { useParentalControls } from '@/hooks/useParentalControls';
-
+import { useIsMobile } from '@/hooks/use-mobile';
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
 
 export default function Index() {
+  const isMobile = useIsMobile();
   const { enabled: parentalControlsEnabled } = useParentalControls();
   const availableChannels = getAvailableChannels(parentalControlsEnabled);
 
@@ -79,13 +81,15 @@ export default function Index() {
     }, IDLE_TIMEOUT);
   }, [isGuideOpen, isAuthModalOpen, isParentalControlsOpen]);
 
-  // Handle mouse movement
+  // Handle mouse/touch movement
   useEffect(() => {
     const handleMouseMove = () => resetIdleTimer();
     const handleClick = () => resetIdleTimer();
+    const handleTouch = () => resetIdleTimer();
     
     window.addEventListener('mousemove', handleMouseMove);
     window.addEventListener('click', handleClick);
+    window.addEventListener('touchstart', handleTouch);
     
     // Initial timer
     resetIdleTimer();
@@ -93,6 +97,7 @@ export default function Index() {
     return () => {
       window.removeEventListener('mousemove', handleMouseMove);
       window.removeEventListener('click', handleClick);
+      window.removeEventListener('touchstart', handleTouch);
       if (idleTimerRef.current) clearTimeout(idleTimerRef.current);
     };
   }, [resetIdleTimer]);
@@ -248,8 +253,15 @@ export default function Index() {
         onTogglePlayPause={togglePlayPause}
       />
 
+      {/* Mobile Channel Controls */}
+      <MobileControls
+        visible={showUI && !isGuideOpen}
+        onChannelUp={() => switchChannel('up')}
+        onChannelDown={() => switchChannel('down')}
+      />
+
       {/* Vote Buttons - above info bar */}
-      <div className="absolute bottom-32 left-6 md:left-10 z-20">
+      <div className="absolute bottom-24 md:bottom-32 left-4 md:left-10 z-20">
         <VoteButtons
           videoId={currentVideoId}
           youtubeId={currentVideoId}
@@ -272,11 +284,13 @@ export default function Index() {
         direction={switchDirection}
       />
 
-      {/* Keyboard Hints (first visit only) */}
-      <KeyboardHints 
-        visible={showUI && !isGuideOpen}
-        onDismiss={() => setShowHints(false)}
-      />
+      {/* Keyboard Hints (first visit only, desktop only) */}
+      {!isMobile && (
+        <KeyboardHints 
+          visible={showUI && !isGuideOpen}
+          onDismiss={() => setShowHints(false)}
+        />
+      )}
 
       {/* Channel Guide */}
       <ChannelGuide
