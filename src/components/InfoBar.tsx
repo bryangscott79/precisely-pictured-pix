@@ -1,10 +1,11 @@
 import { useEffect, useState } from 'react';
-import { Channel, ChannelColor, getCurrentPlayback, getNextVideo, formatTime, getChannelDuration } from '@/data/channels';
+import { Channel, ChannelColor, getCurrentPlayback, getNextVideo, formatTime } from '@/data/channels';
 import { ChevronRight } from 'lucide-react';
 
 interface InfoBarProps {
   channel: Channel;
   visible: boolean;
+  currentVideoTitle?: string; // Title from actual YouTube player
 }
 
 const colorClasses: Record<ChannelColor, string> = {
@@ -28,9 +29,13 @@ const colorClasses: Record<ChannelColor, string> = {
   fitness: 'bg-channel-fitness',
   travel: 'bg-channel-travel',
   art: 'bg-channel-art',
+  music80s: 'bg-channel-music',
+  music90s: 'bg-channel-music',
+  music00s: 'bg-channel-music',
+  music10s: 'bg-channel-music',
 };
 
-export function InfoBar({ channel, visible }: InfoBarProps) {
+export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
   const [playback, setPlayback] = useState(() => getCurrentPlayback(channel));
   const [nextVideo, setNextVideo] = useState(() => getNextVideo(channel, playback.videoIndex));
 
@@ -52,6 +57,9 @@ export function InfoBar({ channel, visible }: InfoBarProps) {
   }, [channel]);
 
   const timeRemaining = playback.video.duration - playback.positionInVideo;
+  
+  // Use actual YouTube title if provided, otherwise fall back to schedule
+  const displayTitle = currentVideoTitle || playback.video.title;
 
   return (
     <div 
@@ -62,7 +70,7 @@ export function InfoBar({ channel, visible }: InfoBarProps) {
       <div className="px-6 md:px-10 pb-8 space-y-4">
         {/* Channel info */}
         <div className="flex items-center gap-3">
-          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${colorClasses[channel.color]}`}>
+          <div className={`w-10 h-10 rounded-lg flex items-center justify-center text-xl ${colorClasses[channel.color] || 'bg-channel-music'}`}>
             {channel.icon}
           </div>
           <div className="flex items-center gap-3">
@@ -77,14 +85,14 @@ export function InfoBar({ channel, visible }: InfoBarProps) {
         {/* Video info */}
         <div className="space-y-3">
           <h1 className="font-display font-bold text-2xl md:text-3xl line-clamp-1">
-            {playback.video.title}
+            {displayTitle}
           </h1>
           
           {/* Progress bar */}
           <div className="space-y-2">
             <div className="progress-bar">
               <div 
-                className={`progress-bar-fill ${colorClasses[channel.color]}`}
+                className={`progress-bar-fill ${colorClasses[channel.color] || 'bg-channel-music'}`}
                 style={{ width: `${playback.progress}%` }}
               />
             </div>

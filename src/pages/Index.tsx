@@ -38,6 +38,7 @@ export default function Index() {
   const [isMuted, setIsMuted] = useState(false);
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentVideoId, setCurrentVideoId] = useState<string>('');
+  const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -219,7 +220,9 @@ export default function Index() {
       <VideoPlayer 
         ref={playerRef}
         channel={currentChannel}
-        onVideoChange={() => {}}
+        onVideoChange={(title) => {
+          setCurrentVideoTitle(title);
+        }}
       />
 
       {/* Top Bar - User Menu */}
@@ -259,6 +262,7 @@ export default function Index() {
       <InfoBar 
         channel={currentChannel} 
         visible={showUI && !isGuideOpen}
+        currentVideoTitle={currentVideoTitle}
       />
 
       {/* Channel Switcher Overlay */}

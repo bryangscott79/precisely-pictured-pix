@@ -28,6 +28,10 @@ const colorClasses: Record<ChannelColor, string> = {
   fitness: 'bg-channel-fitness',
   travel: 'bg-channel-travel',
   art: 'bg-channel-art',
+  music80s: 'bg-channel-music80s',
+  music90s: 'bg-channel-music90s',
+  music00s: 'bg-channel-music00s',
+  music10s: 'bg-channel-music10s',
 };
 
 export function ChannelSwitcher({ channel, visible, direction }: ChannelSwitcherProps) {
