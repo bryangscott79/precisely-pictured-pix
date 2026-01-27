@@ -32,7 +32,20 @@ export interface SearchConfig {
   limit?: number;
   minDuration?: number; // Additional filter in seconds
   maxDuration?: number; // Additional filter in seconds
+  minViews?: number; // Minimum view count for quality filtering
 }
+
+// Quality control: Terms to exclude from all searches (UGC, vertical, amateur content)
+const QUALITY_EXCLUSIONS = [
+  // Language exclusions (dubbed content)
+  '-doblado', '-dublado', '-dublagem', '-synchronisiert', '-doppiato', '-дубляж', '-吹替',
+  // UGC/amateur markers
+  '-vlog', '-shorts', '-TikTok', '-"my first"', '-amateur', '-reaction',
+  // Vertical video indicators
+  '-vertical', '-#shorts', '-"phone recording"',
+  // Low quality markers
+  '-"screen recording"', '-compilation',
+].join(' ');
 
 // Calculate the publishedAfter date based on uploadDate filter
 function getPublishedAfterDate(uploadDate: UploadDate): string | null {
@@ -57,27 +70,24 @@ function getPublishedAfterDate(uploadDate: UploadDate): string | null {
 
 // Search for videos using YouTube Search API
 async function searchVideos(config: SearchConfig): Promise<string[]> {
-  // Get user's language preference - default to English for now
-  const langPref = getStoredLanguage();
-  
-  // Force English for consistent content (avoiding dubbed versions)
+  // Force English for consistent, professional content
   const languageCode = 'en';
   const regionCode = 'US';
   
-  // Add language exclusion terms to filter out dubbed content
-  const excludeDubbed = '-doblado -dublado -dublagem -synchronisiert -doppiato -дубляж -吹替';
-  const enhancedQuery = `${config.query} ${excludeDubbed}`;
+  // Enhance query with quality exclusions
+  const enhancedQuery = `${config.query} ${QUALITY_EXCLUSIONS}`;
   
   const params = new URLSearchParams({
     part: 'snippet',
     type: 'video',
     q: enhancedQuery,
     maxResults: String(Math.min(config.limit || 25, 50)),
-    order: config.order || 'relevance',
+    order: config.order || 'viewCount', // Default to view count for quality
     safeSearch: config.safeSearch || 'moderate',
     regionCode: regionCode,
     relevanceLanguage: languageCode,
     videoEmbeddable: 'true',
+    videoDefinition: 'high', // Only HD content
     key: YOUTUBE_API_KEY,
   });
 
@@ -103,7 +113,7 @@ async function searchVideos(config: SearchConfig): Promise<string[]> {
   return data.items?.map((item: any) => item.id.videoId).filter(Boolean) || [];
 }
 
-// Get video details (duration, statistics)
+// Get video details (duration, statistics, aspect ratio)
 async function getVideoDetails(videoIds: string[]): Promise<any[]> {
   if (!videoIds.length) return [];
   const res = await fetch(
@@ -113,17 +123,114 @@ async function getVideoDetails(videoIds: string[]): Promise<any[]> {
   return data.items || [];
 }
 
+// Check if video is landscape based on thumbnail aspect ratio
+function isLandscapeVideo(video: any): boolean {
+  const thumbnails = video.snippet?.thumbnails;
+  if (!thumbnails) return true; // Assume landscape if no data
+  
+  // Check maxres or high quality thumbnail dimensions
+  const thumb = thumbnails.maxres || thumbnails.high || thumbnails.medium;
+  if (thumb && thumb.width && thumb.height) {
+    const aspectRatio = thumb.width / thumb.height;
+    // Landscape videos have aspect ratio > 1.3 (excludes vertical 9:16 and square 1:1)
+    return aspectRatio > 1.3;
+  }
+  return true; // Assume landscape if no dimensions
+}
+
+// Check if video title/channel suggests professional content
+function isProfessionalContent(video: any): boolean {
+  const title = video.snippet?.title?.toLowerCase() || '';
+  const channelTitle = video.snippet?.channelTitle?.toLowerCase() || '';
+  const description = video.snippet?.description?.toLowerCase() || '';
+  
+  // Negative indicators (amateur/UGC content)
+  const amateurIndicators = [
+    'vlog', 'my first', 'day in my life', 'grwm', 'get ready with me',
+    'pov:', 'storytime', '#shorts', 'tiktok', 'reupload', 're-upload',
+    'unboxing haul', 'what i got', 'room tour'
+  ];
+  
+  for (const indicator of amateurIndicators) {
+    if (title.includes(indicator) || description.includes(indicator)) {
+      return false;
+    }
+  }
+  
+  // Positive indicators (professional content)
+  const professionalIndicators = [
+    'official', 'vevo', 'documentary', 'explained', 'tutorial',
+    'podcast', 'interview', 'review', 'highlights', 'trailer',
+    'ted', 'talks', 'masterclass', 'course', 'lesson'
+  ];
+  
+  // Boost professional channels
+  const professionalChannels = [
+    'vevo', 'ted', 'netflix', 'hbo', 'espn', 'nfl', 'nba', 'bbc',
+    'national geographic', 'discovery', 'history', 'vice', 'vox',
+    'veritasium', 'vsauce', 'kurzgesagt', 'fireship', 'mark rober',
+    'dude perfect', 'mrwhosetheboss', 'mkbhd', 'linus tech tips',
+    'babish', 'gordon ramsay', 'bon appetit', 'tasty', 'epicurious',
+    'joe rogan', 'lex fridman', 'huberman', 'jordan peterson',
+    'gary vee', 'garyvee', 'adam savage', 'tested', 'simone giertz',
+    'tom scott', 'johnny harris', 'wendover', 'half as interesting',
+    'donut media', 'top gear', 'grand tour', 'motortrend'
+  ];
+  
+  for (const channel of professionalChannels) {
+    if (channelTitle.includes(channel)) {
+      return true;
+    }
+  }
+  
+  // Check for professional indicators in title
+  for (const indicator of professionalIndicators) {
+    if (title.includes(indicator)) {
+      return true;
+    }
+  }
+  
+  return true; // Default to allowing if no negative indicators
+}
+
 // Main function: search videos using YouTube Search API with filters
 export async function fetchVideosFromSearch(config: SearchConfig): Promise<FetchedVideo[]> {
-  const { minDuration = 60, maxDuration = 3600, limit = 25 } = config;
+  const { 
+    minDuration = 60, 
+    maxDuration = 3600, 
+    limit = 25,
+    minViews = 50000 // Default minimum 50K views for quality
+  } = config;
   
   try {
-    const videoIds = await searchVideos({ ...config, limit: 50 }); // Fetch more to filter
+    // Fetch more videos to account for filtering
+    const videoIds = await searchVideos({ ...config, limit: 50 });
     if (!videoIds.length) return [];
     
     const details = await getVideoDetails(videoIds);
     
     return details
+      .filter(v => {
+        // Filter: Landscape only
+        if (!isLandscapeVideo(v)) {
+          console.log(`[Filter] Excluded vertical/square video: ${v.snippet?.title}`);
+          return false;
+        }
+        
+        // Filter: Professional content only
+        if (!isProfessionalContent(v)) {
+          console.log(`[Filter] Excluded amateur content: ${v.snippet?.title}`);
+          return false;
+        }
+        
+        // Filter: Minimum view count
+        const views = parseInt(v.statistics?.viewCount || '0');
+        if (views < minViews) {
+          return false;
+        }
+        
+        return true;
+      })
       .map(v => ({
         id: v.id,
         title: v.snippet.title,
@@ -131,6 +238,7 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
         views: parseInt(v.statistics?.viewCount || '0')
       }))
       .filter(v => v.duration >= minDuration && v.duration <= maxDuration)
+      .sort((a, b) => b.views - a.views) // Sort by popularity
       .slice(0, limit)
       .map(({ id, title, duration }) => ({ id, title, duration }));
   } catch (error) {
@@ -144,7 +252,7 @@ export async function fetchVideosFromChannel(
   channelId: string,
   options: { minDuration?: number; maxDuration?: number; minViews?: number; limit?: number } = {}
 ): Promise<FetchedVideo[]> {
-  const { minDuration = 60, maxDuration = 3600, minViews = 0, limit = 25 } = options;
+  const { minDuration = 60, maxDuration = 3600, minViews = 50000, limit = 25 } = options;
   
   try {
     // Get channel's uploads playlist ID
@@ -165,6 +273,7 @@ export async function fetchVideosFromChannel(
     const details = await getVideoDetails(videoIds);
     
     return details
+      .filter(v => isLandscapeVideo(v) && isProfessionalContent(v))
       .map(v => ({
         id: v.id,
         title: v.snippet.title,
