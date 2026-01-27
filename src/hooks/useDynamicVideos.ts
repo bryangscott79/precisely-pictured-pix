@@ -3,9 +3,8 @@ import { fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo } from '@/ser
 import { CHANNEL_SOURCES } from '@/data/channelSources';
 import { channels } from '@/data/channels';
 
-// In-memory cache
 const videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number }> = {};
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const CACHE_DURATION = 60 * 60 * 1000;
 
 export function useDynamicVideos(channelId: string) {
   const [videos, setVideos] = useState<FetchedVideo[]>([]);
@@ -16,7 +15,6 @@ export function useDynamicVideos(channelId: string) {
     async function loadVideos() {
       setLoading(true);
       
-      // Check cache first
       const cached = videoCache[channelId];
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         setVideos(cached.videos);
@@ -24,7 +22,6 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
-      // If YouTube not configured, use static fallback
       if (!isYouTubeConfigured()) {
         const staticChannel = channels.find(c => c.id === channelId);
         if (staticChannel) {
@@ -35,7 +32,6 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
-      // Fetch from YouTube
       const sources = CHANNEL_SOURCES[channelId];
       if (!sources) {
         const staticChannel = channels.find(c => c.id === channelId);
@@ -57,11 +53,10 @@ export function useDynamicVideos(channelId: string) {
         }
 
         if (allVideos.length > 0) {
-          const sorted = allVideos.sort((a, b) => Math.random() - 0.5).slice(0, 25);
-          videoCache[channelId] = { videos: sorted, timestamp: Date.now() };
-          setVideos(sorted);
+          const shuffled = allVideos.sort(() => Math.random() - 0.5).slice(0, 25);
+          videoCache[channelId] = { videos: shuffled, timestamp: Date.now() };
+          setVideos(shuffled);
         } else {
-          // Fallback to static
           const staticChannel = channels.find(c => c.id === channelId);
           if (staticChannel) {
             setVideos(staticChannel.videos);
@@ -84,4 +79,52 @@ export function useDynamicVideos(channelId: string) {
   }, [channelId]);
 
   return { videos, loading, usingFallback };
+}
+
+// Export function to get videos for a channel (for use in non-React contexts)
+export function getDynamicVideosForChannel(channelId: string): FetchedVideo[] {
+  const cached = videoCache[channelId];
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return cached.videos;
+  }
+  // Return static fallback
+  const staticChannel = channels.find(c => c.id === channelId);
+  return staticChannel?.videos || [];
+}
+
+// Preload videos for a channel (useful for preloading next channel)
+export async function preloadChannelVideos(channelId: string): Promise<void> {
+  const cached = videoCache[channelId];
+  if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+    return; // Already cached
+  }
+
+  if (!isYouTubeConfigured()) {
+    return;
+  }
+
+  const sources = CHANNEL_SOURCES[channelId];
+  if (!sources) {
+    return;
+  }
+
+  try {
+    const allVideos: FetchedVideo[] = [];
+    for (const ytChannelId of sources.youtubeChannels) {
+      const fetched = await fetchVideosFromChannel(ytChannelId, {
+        minDuration: sources.minDuration,
+        maxDuration: sources.maxDuration,
+        minViews: sources.minViews,
+        limit: 15
+      });
+      allVideos.push(...fetched);
+    }
+
+    if (allVideos.length > 0) {
+      const shuffled = allVideos.sort(() => Math.random() - 0.5).slice(0, 25);
+      videoCache[channelId] = { videos: shuffled, timestamp: Date.now() };
+    }
+  } catch (error) {
+    console.error('Error preloading videos:', error);
+  }
 }

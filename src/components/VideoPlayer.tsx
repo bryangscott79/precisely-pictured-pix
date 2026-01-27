@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
-import { Channel, getCurrentPlayback } from '@/data/channels';
+import { Channel, Video } from '@/data/channels';
+import { useDynamicVideos, getDynamicVideosForChannel } from '@/hooks/useDynamicVideos';
 
 interface VideoPlayerProps {
   channel: Channel;
@@ -60,6 +61,31 @@ declare global {
   }
 }
 
+// Get current playback based on synchronized schedule using dynamic videos
+function getCurrentPlaybackDynamic(channelId: string, videos: Video[]): { video: Video; videoIndex: number; positionInVideo: number } {
+  if (videos.length === 0) {
+    return { video: { id: '', title: '', duration: 0 }, videoIndex: 0, positionInVideo: 0 };
+  }
+
+  const totalDuration = videos.reduce((sum, v) => sum + v.duration, 0);
+  const now = Date.now();
+  const position = (now / 1000) % totalDuration;
+  
+  let elapsed = 0;
+  for (let i = 0; i < videos.length; i++) {
+    if (elapsed + videos[i].duration > position) {
+      return {
+        video: videos[i],
+        videoIndex: i,
+        positionInVideo: position - elapsed
+      };
+    }
+    elapsed += videos[i].duration;
+  }
+  
+  return { video: videos[0], videoIndex: 0, positionInVideo: 0 };
+}
+
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
   function VideoPlayer({ channel, onVideoChange }, ref) {
     const playerRef = useRef<YTPlayer | null>(null);
@@ -70,16 +96,31 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isPaused, setIsPaused] = useState(false);
     const currentChannelIdRef = useRef(channel.id);
     const currentVideoIdRef = useRef<string>('');
+    const currentVideoIndexRef = useRef<number>(0);
     const channelRef = useRef(channel);
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const endScreenCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const isInitializingRef = useRef(false);
-    const failedByChannelRef = useRef<Record<string, Set<string>>>({});
+    const failedVideosRef = useRef<Set<string>>(new Set());
     const hasSkippedEndRef = useRef(false);
+    const videosRef = useRef<Video[]>([]);
 
+    // Use dynamic videos hook
+    const { videos: dynamicVideos, loading: videosLoading } = useDynamicVideos(channel.id);
+
+    // Update refs when props change
     useEffect(() => {
       channelRef.current = channel;
     }, [channel]);
+
+    // Update videos ref when dynamic videos change
+    useEffect(() => {
+      if (dynamicVideos.length > 0) {
+        videosRef.current = dynamicVideos;
+      } else {
+        videosRef.current = channel.videos;
+      }
+    }, [dynamicVideos, channel.videos]);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -183,37 +224,52 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     };
 
-    const markFailed = (channelId: string, videoId: string) => {
-      if (!videoId) return;
-      if (!failedByChannelRef.current[channelId]) {
-        failedByChannelRef.current[channelId] = new Set();
+    // Get next playable video (skipping failed ones)
+    const getNextPlayableVideo = (startIndex: number): { video: Video; index: number } => {
+      const videos = videosRef.current;
+      if (videos.length === 0) {
+        return { video: { id: '', title: '', duration: 0 }, index: 0 };
       }
-      failedByChannelRef.current[channelId].add(videoId);
+
+      for (let offset = 0; offset < videos.length; offset++) {
+        const idx = (startIndex + offset) % videos.length;
+        const video = videos[idx];
+        if (!failedVideosRef.current.has(video.id)) {
+          return { video, index: idx };
+        }
+      }
+      
+      // All videos failed, reset and try first one
+      failedVideosRef.current.clear();
+      return { video: videos[0], index: 0 };
     };
 
-    const getNextPlayable = (liveChannel: Channel, startIndex: number) => {
-      const failed = failedByChannelRef.current[liveChannel.id] || new Set<string>();
-      for (let offset = 0; offset < liveChannel.videos.length; offset++) {
-        const idx = (startIndex + offset) % liveChannel.videos.length;
-        const candidate = liveChannel.videos[idx];
-        if (!failed.has(candidate.id)) return { video: candidate, videoIndex: idx };
-      }
-      // If everything is failed, just fall back to the scheduled video.
-      const playback = getCurrentPlayback(liveChannel);
-      return { video: playback.video, videoIndex: playback.videoIndex };
+    // Advance to next video
+    const advanceToNextVideo = () => {
+      const videos = videosRef.current;
+      if (videos.length === 0) return;
+
+      const nextIndex = (currentVideoIndexRef.current + 1) % videos.length;
+      const { video, index } = getNextPlayableVideo(nextIndex);
+      
+      currentVideoIndexRef.current = index;
+      onVideoChange?.(video.title);
+      safeLoadVideo(video.id, 0);
     };
 
-    // Initialize player - only once when API is ready
+    // Initialize player - only once when API is ready and videos are loaded
     useEffect(() => {
       if (!isApiLoaded || !containerRef.current || isInitializingRef.current) return;
       if (playerRef.current) return; // Already initialized
+      if (videosLoading || videosRef.current.length === 0) return; // Wait for videos
       
       isInitializingRef.current = true;
       
-      const liveChannel = channelRef.current;
-      const playback = getCurrentPlayback(liveChannel);
+      const videos = videosRef.current;
+      const playback = getCurrentPlaybackDynamic(channel.id, videos);
       currentVideoIdRef.current = playback.video.id;
-      currentChannelIdRef.current = liveChannel.id;
+      currentVideoIndexRef.current = playback.videoIndex;
+      currentChannelIdRef.current = channel.id;
       onVideoChange?.(playback.video.title);
 
       // Create player element
@@ -240,7 +296,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             start: Math.floor(playback.positionInVideo),
             origin: window.location.origin,
             playsinline: 1,
-            // Disable end screen and related videos
             endscreen: 0,
           },
           events: {
@@ -253,21 +308,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               }
             },
             onStateChange: (event: YTPlayerEvent) => {
-              // Ignore stale events from a previous load/channel.
+              // Ignore stale events from a previous load/channel
               const actualId = getActualVideoId();
               if (actualId && currentVideoIdRef.current && actualId !== currentVideoIdRef.current) {
                 return;
               }
 
               if (event.data === window.YT.PlayerState.ENDED) {
-                // Video ended - immediately load next scheduled video to prevent end screen
-                const live = channelRef.current;
-                const currentPlayback = getCurrentPlayback(live);
-                const nextIndex = (currentPlayback.videoIndex + 1) % live.videos.length;
-                const nextVideo = live.videos[nextIndex];
-                onVideoChange?.(nextVideo.title);
-                // Load from beginning since this is a fresh video
-                safeLoadVideo(nextVideo.id, 0);
+                // Video ended - immediately load next video to prevent end screen
+                advanceToNextVideo();
               }
               if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPaused(true);
@@ -279,27 +328,26 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                 if (playingId) {
                   currentVideoIdRef.current = playingId;
                   
-                  // Use actual YouTube title instead of our hardcoded one
                   setTimeout(() => {
                     const actualTitle = getActualVideoTitle();
                     if (actualTitle) {
                       onVideoChange?.(actualTitle);
                     }
-                  }, 500); // Small delay to ensure title is available
+                  }, 500);
                 }
               }
             },
             onError: () => {
-              // On error, try the next video
+              // Mark video as failed and skip to next
+              const failedId = currentVideoIdRef.current;
+              if (failedId) {
+                failedVideosRef.current.add(failedId);
+                console.warn(`Video ${failedId} failed, skipping to next`);
+              }
+              
               setTimeout(() => {
-                const live = channelRef.current;
-                const current = getCurrentPlayback(live);
-                markFailed(live.id, current.video.id);
-
-                const next = getNextPlayable(live, current.videoIndex + 1);
-                onVideoChange?.(next.video.title);
-                safeLoadVideo(next.video.id, 0);
-              }, 2000);
+                advanceToNextVideo();
+              }, 1000);
             },
           },
         });
@@ -324,18 +372,26 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setIsReady(false);
         isInitializingRef.current = false;
       };
-    }, [isApiLoaded]); // Only depend on API loaded state
+    }, [isApiLoaded, videosLoading]);
 
-    // Handle channel changes - just load new video, don't recreate player
+    // Handle channel changes - load new video from dynamic content
     useEffect(() => {
       if (!isReady || !playerRef.current) return;
       if (channel.id === currentChannelIdRef.current) return;
       
       currentChannelIdRef.current = channel.id;
-      const playback = getCurrentPlayback(channel);
+      failedVideosRef.current.clear(); // Clear failed videos for new channel
+      
+      // Get videos for the new channel (from cache or static fallback)
+      const newVideos = getDynamicVideosForChannel(channel.id);
+      const videosToUse = newVideos.length > 0 ? newVideos : channel.videos;
+      videosRef.current = videosToUse;
+      
+      const playback = getCurrentPlaybackDynamic(channel.id, videosToUse);
+      currentVideoIndexRef.current = playback.videoIndex;
       onVideoChange?.(playback.video.title);
 
-      // Cut old audio immediately during channel transitions.
+      // Cut old audio immediately during channel transitions
       try {
         playerRef.current.pauseVideo();
       } catch {
@@ -345,12 +401,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       safeLoadVideo(playback.video.id, playback.positionInVideo);
     }, [channel.id, isReady, onVideoChange]);
 
-    // Periodic sync check - only check for failed videos, not schedule sync
-    // We trust that once a video starts, it should play to completion
+    // Update videos when dynamic videos finish loading
+    useEffect(() => {
+      if (videosLoading || dynamicVideos.length === 0) return;
+      if (!isReady || !playerRef.current) return;
+      if (channel.id !== currentChannelIdRef.current) return;
+      
+      // Videos just loaded, update the ref
+      videosRef.current = dynamicVideos;
+    }, [dynamicVideos, videosLoading, isReady, channel.id]);
+
+    // Periodic check for failed videos
     useEffect(() => {
       if (!isReady) return;
 
-      // Clear any existing interval
       if (checkIntervalRef.current) {
         clearInterval(checkIntervalRef.current);
       }
@@ -358,25 +422,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       checkIntervalRef.current = setInterval(() => {
         if (!playerRef.current || !isReady) return;
         
-        // Always use the latest channel
-        const live = channelRef.current;
-        const playback = getCurrentPlayback(live);
-        const failed = failedByChannelRef.current[live.id];
+        const videos = videosRef.current;
+        if (videos.length === 0) return;
 
-        // If the scheduled video is known-bad, skip forward.
-        if (failed?.has(playback.video.id)) {
-          const next = getNextPlayable(live, playback.videoIndex + 1);
-          if (currentVideoIdRef.current !== next.video.id) {
-            onVideoChange?.(next.video.title);
-            safeLoadVideo(next.video.id, 0);
-          }
-          return;
+        // Check if current video is in failed set
+        const currentId = currentVideoIdRef.current;
+        if (currentId && failedVideosRef.current.has(currentId)) {
+          advanceToNextVideo();
         }
-        
-        // DON'T force sync during playback - this causes the restart loop
-        // Videos should play from start to finish once loaded
-        // Schedule sync only happens on channel change or video end
-      }, 10000); // Check every 10 seconds, just for failed video recovery
+      }, 10000);
 
       return () => {
         if (checkIntervalRef.current) {
@@ -402,18 +456,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           const duration = playerRef.current.getDuration();
           
           // If we're within 15 seconds of the end, skip to next video
-          // This prevents YouTube's end screen from appearing
           if (duration > 0 && currentTime > 0 && (duration - currentTime) < 15 && !hasSkippedEndRef.current) {
             hasSkippedEndRef.current = true;
+            advanceToNextVideo();
             
-            const live = channelRef.current;
-            const currentPlayback = getCurrentPlayback(live);
-            const nextIndex = (currentPlayback.videoIndex + 1) % live.videos.length;
-            const nextVideo = live.videos[nextIndex];
-            onVideoChange?.(nextVideo.title);
-            safeLoadVideo(nextVideo.id, 0);
-            
-            // Reset the flag after a short delay
             setTimeout(() => {
               hasSkippedEndRef.current = false;
             }, 2000);
@@ -421,7 +467,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         } catch (e) {
           // Ignore errors from getting time
         }
-      }, 1000); // Check every second
+      }, 1000);
 
       return () => {
         if (endScreenCheckRef.current) {
@@ -439,18 +485,19 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           className="w-full h-full"
           style={{ 
             pointerEvents: 'none',
-            // Slightly scale up to hide YouTube end screen borders
             transform: 'scale(1.02)',
             transformOrigin: 'center center',
           }}
         />
         {/* Overlay to block any clicks on YouTube elements */}
         <div className="absolute inset-0 z-10" style={{ pointerEvents: 'none' }} />
-        {!isReady && (
+        {(!isReady || videosLoading) && (
           <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-4 border-muted border-t-foreground rounded-full animate-spin" />
-              <p className="text-muted-foreground font-medium">Tuning in to {channel.name}...</p>
+              <p className="text-muted-foreground font-medium">
+                {videosLoading ? 'Loading channel content...' : `Tuning in to ${channel.name}...`}
+              </p>
             </div>
           </div>
         )}
