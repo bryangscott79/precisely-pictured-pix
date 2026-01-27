@@ -38,6 +38,7 @@ const colorClasses: Record<ChannelColor, string> = {
   nfl: 'bg-channel-nfl',
   cinema80s: 'bg-channel-cinema80s',
   podcast: 'bg-channel-podcast',
+  localnews: 'bg-channel-localnews',
 };
 
 export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {

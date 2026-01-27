@@ -70,7 +70,7 @@ export function InterestSelection() {
         </div>
 
         <Button
-          onClick={() => setStep('youtube')}
+          onClick={() => setStep('localnews')}
           disabled={!canContinue}
           className="gap-2"
         >

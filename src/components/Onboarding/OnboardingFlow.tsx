@@ -4,11 +4,12 @@ import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useAuth } from '@/hooks/useAuth';
 import { WelcomeScreen } from './WelcomeScreen';
 import { InterestSelection } from './InterestSelection';
+import { LocalNewsSetup } from './LocalNewsSetup';
 import { YouTubeImport } from './YouTubeImport';
 import { ChannelLineup } from './ChannelLineup';
 import { cn } from '@/lib/utils';
 
-const STEPS = ['welcome', 'interests', 'youtube', 'lineup'] as const;
+const STEPS = ['welcome', 'interests', 'localnews', 'youtube', 'lineup'] as const;
 
 export function OnboardingFlow() {
   const { state, isOnboardingOpen, closeOnboarding, setStep, isLoading } = useOnboarding();
@@ -51,6 +52,7 @@ export function OnboardingFlow() {
         <div className="flex-1 min-h-0 overflow-hidden p-6 flex flex-col">
           {state.currentStep === 'welcome' && <WelcomeScreen />}
           {state.currentStep === 'interests' && <InterestSelection />}
+          {state.currentStep === 'localnews' && <LocalNewsSetup />}
           {state.currentStep === 'youtube' && <YouTubeImport />}
           {state.currentStep === 'lineup' && <ChannelLineup />}
         </div>

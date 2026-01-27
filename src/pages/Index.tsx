@@ -1,4 +1,4 @@
-import { useEffect, useState, useCallback, useRef } from 'react';
+import { useEffect, useState, useCallback, useRef, useMemo } from 'react';
 import { channels, Channel, getCurrentPlayback, getAvailableChannels } from '@/data/channels';
 import { VideoPlayer, VideoPlayerHandle } from '@/components/VideoPlayer';
 import { InfoBar } from '@/components/InfoBar';
@@ -31,6 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+import { getSavedLocalNewsStation, createLocalNewsChannel } from '@/hooks/useLocalNews';
 
 type ActionType = 'mute' | 'unmute' | 'play' | 'pause' | 'captions-on' | 'captions-off' | null;
 
@@ -45,14 +46,27 @@ export default function Index() {
   const { signInWithGoogle } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
-  // Get available channels based on profile's content rating
-  const availableChannels = channels.filter(c => {
-    // First apply parental controls (legacy)
-    if (parentalControlsEnabled && c.restricted) return false;
-    // Then apply profile-based content filtering
-    if (!isChannelAllowed(c.id)) return false;
-    return true;
-  });
+  // Build channel list with optional local news channel
+  const availableChannels = useMemo(() => {
+    let channelList = [...channels];
+    
+    // Add local news channel if user has one configured
+    const localStation = getSavedLocalNewsStation();
+    if (localStation) {
+      const localNewsChannel = createLocalNewsChannel(localStation);
+      // Insert at position 1 (after first channel, making it easily accessible)
+      channelList = [channelList[0], localNewsChannel, ...channelList.slice(1)];
+    }
+    
+    // Apply parental controls and profile-based filtering
+    return channelList.filter(c => {
+      // First apply parental controls (legacy)
+      if (parentalControlsEnabled && c.restricted) return false;
+      // Then apply profile-based content filtering
+      if (!isChannelAllowed(c.id)) return false;
+      return true;
+    });
+  }, [parentalControlsEnabled, isChannelAllowed]);
 
   // Get saved channel or default to first available
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {

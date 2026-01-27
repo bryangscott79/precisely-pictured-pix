@@ -54,6 +54,7 @@ const colorClasses: Record<ChannelColor, { bg: string; border: string; text: str
   nfl: { bg: 'bg-channel-nfl', border: 'border-channel-nfl', text: 'text-channel-nfl' },
   cinema80s: { bg: 'bg-channel-cinema80s', border: 'border-channel-cinema80s', text: 'text-channel-cinema80s' },
   podcast: { bg: 'bg-channel-podcast', border: 'border-channel-podcast', text: 'text-channel-podcast' },
+  localnews: { bg: 'bg-channel-localnews', border: 'border-channel-localnews', text: 'text-channel-localnews' },
 };
 
 type ViewMode = 'grid' | 'schedule';

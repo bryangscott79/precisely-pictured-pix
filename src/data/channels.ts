@@ -32,7 +32,8 @@ export type ChannelColor =
   | 'movies'
   | 'nfl'
   | 'cinema80s'
-  | 'podcast';
+  | 'podcast'
+  | 'localnews';
 
 export type ChannelCategory = 'education' | 'entertainment' | 'lifestyle' | 'family' | 'hobbies';
 

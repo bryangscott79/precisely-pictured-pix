@@ -302,6 +302,20 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     maxDuration: 14400, // Up to 4 hours
     minViews: 50000,
   },
+  
+  // === LOCAL NEWS ===
+  // This is a dynamic channel - the search query is generated based on user's selected station
+  // See useLocalNews.ts and useDynamicVideos.ts for implementation
+  localnews: {
+    // Default query - will be overridden by user's selected station
+    query: 'local news live today',
+    duration: 'any',
+    uploadDate: 'today',
+    order: 'date',
+    minDuration: 0, // Live streams can be any length
+    maxDuration: 0, // No max for live
+    minViews: 0, // Live streams may have lower view counts
+  },
 };
 
 // Legacy channel-based sources (fallback if search doesn't work)
