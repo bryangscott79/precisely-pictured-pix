@@ -57,18 +57,26 @@ function getPublishedAfterDate(uploadDate: UploadDate): string | null {
 
 // Search for videos using YouTube Search API
 async function searchVideos(config: SearchConfig): Promise<string[]> {
-  // Get user's language preference
+  // Get user's language preference - default to English for now
   const langPref = getStoredLanguage();
+  
+  // Force English for consistent content (avoiding dubbed versions)
+  const languageCode = 'en';
+  const regionCode = 'US';
+  
+  // Add language exclusion terms to filter out dubbed content
+  const excludeDubbed = '-doblado -dublado -dublagem -synchronisiert -doppiato -дубляж -吹替';
+  const enhancedQuery = `${config.query} ${excludeDubbed}`;
   
   const params = new URLSearchParams({
     part: 'snippet',
     type: 'video',
-    q: config.query,
+    q: enhancedQuery,
     maxResults: String(Math.min(config.limit || 25, 50)),
     order: config.order || 'relevance',
     safeSearch: config.safeSearch || 'moderate',
-    regionCode: langPref.regionCode,
-    relevanceLanguage: langPref.code,
+    regionCode: regionCode,
+    relevanceLanguage: languageCode,
     videoEmbeddable: 'true',
     key: YOUTUBE_API_KEY,
   });
