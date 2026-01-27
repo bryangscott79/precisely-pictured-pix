@@ -68,6 +68,10 @@ export default {
           fitness: "hsl(var(--channel-fitness))",
           travel: "hsl(var(--channel-travel))",
           art: "hsl(var(--channel-art))",
+          music80s: "hsl(var(--channel-music80s))",
+          music90s: "hsl(var(--channel-music90s))",
+          music00s: "hsl(var(--channel-music00s))",
+          music10s: "hsl(var(--channel-music10s))",
         },
       },
       borderRadius: {

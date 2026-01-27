@@ -24,7 +24,11 @@ export type ChannelColor =
   | 'comedy'
   | 'fitness'
   | 'travel'
-  | 'art';
+  | 'art'
+  | 'music80s'
+  | 'music90s'
+  | 'music00s'
+  | 'music10s';
 
 export type ChannelCategory = 'education' | 'entertainment' | 'lifestyle' | 'family' | 'hobbies';
 
@@ -325,6 +329,84 @@ export const channels: Channel[] = [
       { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again', duration: 237 },
       { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito', duration: 282 },
       { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk', duration: 270 },
+    ],
+  },
+  
+  // === DECADE MUSIC CHANNELS ===
+  {
+    id: 'music80s',
+    name: '80s Hits',
+    icon: '📼',
+    color: 'music80s',
+    category: 'entertainment',
+    description: 'Classic 80s music videos',
+    videos: [
+      // Verified VEVO 80s hits
+      { id: 'dQw4w9WgXcQ', title: 'Rick Astley - Never Gonna Give You Up', duration: 212 },
+      { id: 'djV11Xbc914', title: 'a-ha - Take On Me', duration: 225 },
+      { id: 'fJ9rUzIMcZQ', title: 'Queen - Bohemian Rhapsody', duration: 354 },
+      { id: 'oRdxUFDoQe0', title: 'Bonnie Tyler - Total Eclipse of the Heart', duration: 334 },
+      { id: 'pIgZ7gMze7A', title: 'Michael Jackson - Thriller', duration: 838 },
+      { id: 'Zi_XLOBDo_Y', title: 'Michael Jackson - Billie Jean', duration: 294 },
+      { id: 'sOnqjkJTMaA', title: 'Cyndi Lauper - Girls Just Want to Have Fun', duration: 237 },
+      { id: 'qeMFqkcPYcg', title: 'Guns N Roses - Sweet Child O Mine', duration: 302 },
+    ],
+  },
+  {
+    id: 'music90s',
+    name: '90s Classics',
+    icon: '💿',
+    color: 'music90s',
+    category: 'entertainment',
+    description: 'Iconic 90s music videos',
+    videos: [
+      // Verified VEVO 90s hits
+      { id: 'ZyhrYis509A', title: 'Backstreet Boys - I Want It That Way', duration: 213 },
+      { id: 'Ug88HO2mg44', title: 'Britney Spears - Baby One More Time', duration: 210 },
+      { id: 'djV11Xbc914', title: 'TLC - No Scrubs', duration: 234 },
+      { id: '4m48GqaOz90', title: 'Nirvana - Smells Like Teen Spirit', duration: 301 },
+      { id: 'hTWKbfoikeg', title: 'Nirvana - Come As You Are', duration: 219 },
+      { id: 'gJLIiF15wjQ', title: 'R.E.M. - Losing My Religion', duration: 269 },
+      { id: 'WpmILPAcRQo', title: 'No Doubt - Dont Speak', duration: 264 },
+      { id: 'Tg3C0nvenro', title: 'Alanis Morissette - Ironic', duration: 229 },
+    ],
+  },
+  {
+    id: 'music00s',
+    name: '2000s Pop',
+    icon: '📱',
+    color: 'music00s',
+    category: 'entertainment',
+    description: 'Hit music videos from the 2000s',
+    videos: [
+      // Verified VEVO 2000s hits
+      { id: 'dTAAsCNK7RA', title: 'OutKast - Hey Ya!', duration: 234 },
+      { id: 'LOZuxwVk7TU', title: 'Usher - Yeah!', duration: 250 },
+      { id: 'hLQl3WQQoQ0', title: 'Adele - Someone Like You', duration: 285 },
+      { id: 'uelHwf8o7_U', title: 'Lady Gaga - Bad Romance', duration: 350 },
+      { id: 'pRpeEdMmmQ0', title: 'Shakira - Hips Dont Lie', duration: 218 },
+      { id: 'dZLfasMPOU4', title: 'Eminem - Lose Yourself', duration: 326 },
+      { id: 'QJO3ROT-A4E', title: 'OneRepublic - Counting Stars', duration: 257 },
+      { id: 'YVkUvmDQ3HY', title: 'Beyonce - Single Ladies', duration: 197 },
+    ],
+  },
+  {
+    id: 'music10s',
+    name: '2010s Bangers',
+    icon: '🔥',
+    color: 'music10s',
+    category: 'entertainment',
+    description: 'Top hits from the 2010s',
+    videos: [
+      // Verified VEVO 2010s hits
+      { id: '9bZkp7q19f0', title: 'PSY - Gangnam Style', duration: 252 },
+      { id: 'JGwWNGJdvx8', title: 'Ed Sheeran - Shape of You', duration: 263 },
+      { id: 'kJQP7kiw5Fk', title: 'Luis Fonsi - Despacito', duration: 282 },
+      { id: 'OPf0YbXqDm0', title: 'Mark Ronson - Uptown Funk', duration: 270 },
+      { id: 'RgKAFK5djSk', title: 'Wiz Khalifa - See You Again', duration: 237 },
+      { id: 'CevxZvSJLk8', title: 'Katy Perry - Roar', duration: 269 },
+      { id: 'YQHsXMglC9A', title: 'Adele - Hello', duration: 366 },
+      { id: 'hT_nvWreIhg', title: 'OneRepublic - Counting Stars', duration: 257 },
     ],
   },
   

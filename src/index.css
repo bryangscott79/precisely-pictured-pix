@@ -58,6 +58,12 @@
     --channel-fitness: 10 90% 55%;
     --channel-travel: 190 80% 50%;
     --channel-art: 300 70% 55%;
+    
+    /* Decade music channel colors */
+    --channel-music80s: 330 85% 55%;
+    --channel-music90s: 270 75% 55%;
+    --channel-music00s: 200 85% 55%;
+    --channel-music10s: 15 90% 55%;
   }
 
   .dark {

@@ -46,6 +46,10 @@ const colorClasses: Record<ChannelColor, { bg: string; border: string; text: str
   fitness: { bg: 'bg-channel-fitness', border: 'border-channel-fitness', text: 'text-channel-fitness' },
   travel: { bg: 'bg-channel-travel', border: 'border-channel-travel', text: 'text-channel-travel' },
   art: { bg: 'bg-channel-art', border: 'border-channel-art', text: 'text-channel-art' },
+  music80s: { bg: 'bg-channel-music80s', border: 'border-channel-music80s', text: 'text-channel-music80s' },
+  music90s: { bg: 'bg-channel-music90s', border: 'border-channel-music90s', text: 'text-channel-music90s' },
+  music00s: { bg: 'bg-channel-music00s', border: 'border-channel-music00s', text: 'text-channel-music00s' },
+  music10s: { bg: 'bg-channel-music10s', border: 'border-channel-music10s', text: 'text-channel-music10s' },
 };
 
 type ViewMode = 'grid' | 'schedule';

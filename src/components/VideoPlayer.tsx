@@ -11,6 +11,7 @@ export interface VideoPlayerHandle {
   toggleMute: () => void;
   isMuted: () => boolean;
   isPlaying: () => boolean;
+  getCurrentInfo: () => { title: string; videoId: string; duration: number; currentTime: number } | null;
 }
 
 interface YTPlayer {
@@ -113,6 +114,22 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       },
       isMuted: () => isMuted,
       isPlaying: () => !isPaused,
+      getCurrentInfo: () => {
+        if (!playerRef.current || !isReady) return null;
+        try {
+          const data = playerRef.current.getVideoData?.();
+          const currentTime = playerRef.current.getCurrentTime?.() || 0;
+          const duration = playerRef.current.getDuration?.() || 0;
+          return {
+            title: data?.title || '',
+            videoId: data?.video_id || '',
+            duration,
+            currentTime,
+          };
+        } catch {
+          return null;
+        }
+      },
     }));
 
     // Load YouTube IFrame API
