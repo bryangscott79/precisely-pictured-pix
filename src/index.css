@@ -69,6 +69,9 @@
     --channel-movies: 45 95% 50%;
     --channel-nfl: 220 85% 50%;
     --channel-cinema80s: 350 80% 55%;
+    
+    /* Podcast channel color */
+    --channel-podcast: 280 65% 50%;
   }
 
   .dark {
@@ -261,6 +264,7 @@
   .bg-channel-movies { background-color: hsl(var(--channel-movies)); }
   .bg-channel-nfl { background-color: hsl(var(--channel-nfl)); }
   .bg-channel-cinema80s { background-color: hsl(var(--channel-cinema80s)); }
+  .bg-channel-podcast { background-color: hsl(var(--channel-podcast)); }
 
   .text-channel-tech { color: hsl(var(--channel-tech)); }
   .text-channel-science { color: hsl(var(--channel-science)); }
@@ -285,6 +289,7 @@
   .text-channel-movies { color: hsl(var(--channel-movies)); }
   .text-channel-nfl { color: hsl(var(--channel-nfl)); }
   .text-channel-cinema80s { color: hsl(var(--channel-cinema80s)); }
+  .text-channel-podcast { color: hsl(var(--channel-podcast)); }
 
   .border-channel-tech { border-color: hsl(var(--channel-tech)); }
   .border-channel-science { border-color: hsl(var(--channel-science)); }
@@ -309,6 +314,7 @@
   .border-channel-movies { border-color: hsl(var(--channel-movies)); }
   .border-channel-nfl { border-color: hsl(var(--channel-nfl)); }
   .border-channel-cinema80s { border-color: hsl(var(--channel-cinema80s)); }
+  .border-channel-podcast { border-color: hsl(var(--channel-podcast)); }
 
   .glass-panel {
     @apply backdrop-blur-md border border-white/10;

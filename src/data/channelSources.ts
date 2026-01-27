@@ -94,5 +94,13 @@ export const CHANNEL_SOURCES: Record<string, { youtubeChannels: string[]; minDur
   art: {
     youtubeChannels: ['UCzM7uTMjhMxb2kFLKWKH7qQ'],
     minDuration: 300, maxDuration: 1800, minViews: 200000
+  },
+  podcast: {
+    youtubeChannels: [
+      'UCzQUP1qoWDoEbmsQxvdjxgQ', // PowerfulJRE
+      'UCAuUUnT6oDeKwE6v1USguen', // TED Talks
+      'UC4eYXhJI4-7wSWc8UNRwD4A', // NPR Tiny Desk
+    ],
+    minDuration: 300, maxDuration: 7200, minViews: 50000
   }
 };

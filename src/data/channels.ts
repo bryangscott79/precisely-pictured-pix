@@ -31,7 +31,8 @@ export type ChannelColor =
   | 'music10s'
   | 'movies'
   | 'nfl'
-  | 'cinema80s';
+  | 'cinema80s'
+  | 'podcast';
 
 export type ChannelCategory = 'education' | 'entertainment' | 'lifestyle' | 'family' | 'hobbies';
 
@@ -48,6 +49,7 @@ export interface Channel {
   premium?: boolean;
   description: string;
   restricted?: boolean;
+  isPodcast?: boolean;
   videos: Video[];
 }
 
@@ -558,6 +560,37 @@ export const channels: Channel[] = [
       { id: 'qeMFqkcPYcg', title: 'Top Gun Scenes', duration: 840 },
       { id: 'FTQbiNvZqaY', title: 'The Breakfast Club', duration: 960 },
       { id: '1w7OgIMMRc4', title: 'Ferris Bueller Moments', duration: 780 },
+    ],
+  },
+  // Podcast Channel
+  {
+    id: 'podcast',
+    name: 'Podcasts',
+    icon: '🎙️',
+    color: 'podcast',
+    category: 'entertainment',
+    contentRating: 'PG-13',
+    description: 'Curated talks and audio content',
+    isPodcast: true,
+    videos: [
+      { id: 'arj7oStGLkU', title: 'Inside the mind of a master procrastinator', duration: 853 },
+      { id: '8jPQjjsBbIc', title: 'How great leaders inspire action', duration: 1081 },
+      { id: 'iCvmsMzlF7o', title: 'The power of vulnerability', duration: 1213 },
+      { id: 'H14bBuluwB8', title: 'Your body language may shape who you are', duration: 1266 },
+      { id: 'ferZnZ0_rSM', title: 'Lizzo: Tiny Desk Concert', duration: 1026 },
+      { id: 'uwUt1fVLb3E', title: 'Mac Miller: Tiny Desk Concert', duration: 1080 },
+      { id: 'QKzobTCIRDw', title: 'Tyler, the Creator: Tiny Desk Concert', duration: 960 },
+      { id: 'fOZ-MySzAac', title: 'H.E.R.: Tiny Desk Concert', duration: 1140 },
+      { id: 'L_Guz73e6fw', title: 'Why we sleep', duration: 1140 },
+      { id: 'RcGyVTAoXEU', title: 'The happy secret to better work', duration: 725 },
+      { id: 'xNvsnPCs0gY', title: 'Jacob Collier: Tiny Desk Concert', duration: 1320 },
+      { id: 'DloZ4vBzYCs', title: 'Thundercat: Tiny Desk Concert', duration: 900 },
+      { id: 'oRSij0gffXA', title: 'How to speak so that people want to listen', duration: 600 },
+      { id: 'Unzc731iCUY', title: 'How to make stress your friend', duration: 870 },
+      { id: 'UF8uR6Z6KLc', title: 'Steve Jobs Stanford Commencement Speech', duration: 912 },
+      { id: 'cef35Fk7YD8', title: 'Dua Lipa: Tiny Desk Concert', duration: 960 },
+      { id: '_J4QPz52Sfo', title: 'How to practice effectively', duration: 270 },
+      { id: 'BQ4yd2W50No', title: 'Sam Smith: Tiny Desk Concert', duration: 900 },
     ],
   },
 ];
