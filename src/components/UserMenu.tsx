@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { useProfiles } from '@/contexts/ProfileContext';
-import { LogOut, User, LogIn, Crown, Settings, Users, Globe } from 'lucide-react';
+import { LogOut, User, LogIn, Crown, Settings, Users, Globe, Youtube } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -21,10 +21,11 @@ interface UserMenuProps {
   onSwitchProfile?: () => void;
   onOpenParentalSettings?: () => void;
   onOpenLanguageSettings?: () => void;
+  onConnectYouTube?: () => void;
 }
 
-export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings, onOpenLanguageSettings }: UserMenuProps) {
-  const { user, signOut, isLoading } = useAuth();
+export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings, onOpenLanguageSettings, onConnectYouTube }: UserMenuProps) {
+  const { user, session, signOut, isLoading } = useAuth();
   const { tier, isPremium, openUpgradeModal } = useUserTier();
   const { activeProfile, isChildProfile } = useProfiles();
   const { language } = useLanguagePreference();
@@ -126,6 +127,15 @@ export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParent
             <User className="w-4 h-4" />
             Profile
           </DropdownMenuItem>
+          {!session?.provider_token && !isChildProfile && (
+            <DropdownMenuItem
+              className="gap-2 cursor-pointer text-red-400 focus:text-red-400"
+              onClick={onConnectYouTube}
+            >
+              <Youtube className="w-4 h-4" />
+              Connect YouTube
+            </DropdownMenuItem>
+          )}
           <DropdownMenuItem
             className="gap-2 cursor-pointer"
             onClick={onOpenLanguageSettings}
