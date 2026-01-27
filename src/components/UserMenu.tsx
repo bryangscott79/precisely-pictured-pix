@@ -127,7 +127,7 @@ export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParent
             <User className="w-4 h-4" />
             Profile
           </DropdownMenuItem>
-          {!session?.provider_token && !isChildProfile && (
+          {!isChildProfile && (
             <DropdownMenuItem
               className="gap-2 cursor-pointer text-red-400 focus:text-red-400"
               onClick={onConnectYouTube}
