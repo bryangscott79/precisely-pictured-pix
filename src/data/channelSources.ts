@@ -143,8 +143,8 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 300000,
   },
   sports: {
-    // Sports highlights from official channels
-    query: '"ESPN" OR "NFL" OR "NBA" highlights official',
+    // Sports highlights - MUST be actual sports content
+    query: '"ESPN" OR "NFL" OR "NBA" OR "NHL" OR "MLB" sports highlights goals touchdowns -kids -song -music -parody -cartoon -animation',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
