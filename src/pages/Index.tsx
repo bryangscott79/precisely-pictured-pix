@@ -31,7 +31,7 @@ import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
-import { getSavedLocalNewsStation, createLocalNewsChannel } from '@/hooks/useLocalNews';
+import { useLocalNewsStation, createLocalNewsChannel } from '@/hooks/useLocalNews';
 
 type ActionType = 'mute' | 'unmute' | 'play' | 'pause' | 'captions-on' | 'captions-off' | null;
 
@@ -46,12 +46,14 @@ export default function Index() {
   const { signInWithGoogle } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
+  // Get local news station reactively
+  const localStation = useLocalNewsStation();
+  
   // Build channel list with optional local news channel
   const availableChannels = useMemo(() => {
     let channelList = [...channels];
     
     // Add local news channel if user has one configured
-    const localStation = getSavedLocalNewsStation();
     if (localStation) {
       const localNewsChannel = createLocalNewsChannel(localStation);
       // Insert at position 1 (after first channel, making it easily accessible)
@@ -66,7 +68,7 @@ export default function Index() {
       if (!isChannelAllowed(c.id)) return false;
       return true;
     });
-  }, [parentalControlsEnabled, isChannelAllowed]);
+  }, [parentalControlsEnabled, isChannelAllowed, localStation]);
 
   // Get saved channel or default to first available
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {
