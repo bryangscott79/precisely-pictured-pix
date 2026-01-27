@@ -16,6 +16,7 @@ import { ParentalControlsModal } from '@/components/ParentalControlsModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PremiumChannelLock } from '@/components/PremiumChannelLock';
+import { LanguageSettingsModal } from '@/components/LanguageSettingsModal';
 import { 
   ProfileSwitcher, 
   ProfileSettings, 
@@ -59,6 +60,7 @@ export default function Index() {
   const [isParentalControlsOpen, setIsParentalControlsOpen] = useState(false);
   const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
+  const [isLanguageSettingsOpen, setIsLanguageSettingsOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
@@ -67,6 +69,7 @@ export default function Index() {
   const [isPlaying, setIsPlaying] = useState(true);
   const [currentVideoId, setCurrentVideoId] = useState<string>('');
   const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
+  const [languageVersion, setLanguageVersion] = useState(0); // Force refresh when language changes
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -85,6 +88,15 @@ export default function Index() {
     }
   }, [searchParams, setSearchParams, checkSubscription]);
 
+  // Listen for language changes to refresh content
+  useEffect(() => {
+    const handleLanguageChange = () => {
+      setLanguageVersion(v => v + 1);
+      toast.success('Language preference updated. Refreshing content...');
+    };
+    window.addEventListener('language-changed', handleLanguageChange);
+    return () => window.removeEventListener('language-changed', handleLanguageChange);
+  }, []);
   // Check if current channel is premium-locked
   const isChannelLocked = currentChannel.premium && !isPremium;
 
@@ -290,6 +302,7 @@ export default function Index() {
           onSignInClick={() => setIsAuthModalOpen(true)}
           onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
           onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
+          onOpenLanguageSettings={() => setIsLanguageSettingsOpen(true)}
         />
       </div>
 
@@ -394,6 +407,12 @@ export default function Index() {
 
       {/* Upgrade Modal */}
       <UpgradeModal />
+
+      {/* Language Settings Modal */}
+      <LanguageSettingsModal 
+        open={isLanguageSettingsOpen}
+        onOpenChange={setIsLanguageSettingsOpen}
+      />
 
       {/* Onboarding for first-time visitors */}
       <OnboardingModal />

@@ -7,6 +7,7 @@ import { AuthProvider } from "@/hooks/useAuth";
 import { ParentalControlsProvider } from "@/hooks/useParentalControls";
 import { UserTierProvider } from "@/contexts/UserTierContext";
 import { ProfileProvider } from "@/contexts/ProfileContext";
+import { LanguageProvider } from "@/hooks/useLanguagePreference";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -18,17 +19,19 @@ const App = () => (
       <UserTierProvider>
         <ProfileProvider>
           <ParentalControlsProvider>
-            <TooltipProvider>
-              <Toaster />
-              <Sonner />
-              <BrowserRouter>
-                <Routes>
-                  <Route path="/" element={<Index />} />
-                  {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                  <Route path="*" element={<NotFound />} />
-                </Routes>
-              </BrowserRouter>
-            </TooltipProvider>
+            <LanguageProvider>
+              <TooltipProvider>
+                <Toaster />
+                <Sonner />
+                <BrowserRouter>
+                  <Routes>
+                    <Route path="/" element={<Index />} />
+                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                    <Route path="*" element={<NotFound />} />
+                  </Routes>
+                </BrowserRouter>
+              </TooltipProvider>
+            </LanguageProvider>
           </ParentalControlsProvider>
         </ProfileProvider>
       </UserTierProvider>

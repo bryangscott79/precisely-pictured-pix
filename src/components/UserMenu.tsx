@@ -1,7 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { useProfiles } from '@/contexts/ProfileContext';
-import { LogOut, User, LogIn, Crown, Settings, Users } from 'lucide-react';
+import { LogOut, User, LogIn, Crown, Settings, Users, Globe } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -13,18 +13,21 @@ import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TierBadge } from '@/components/TierBadge';
 import { cn } from '@/lib/utils';
+import { useLanguagePreference } from '@/hooks/useLanguagePreference';
 
 interface UserMenuProps {
   visible: boolean;
   onSignInClick: () => void;
   onSwitchProfile?: () => void;
   onOpenParentalSettings?: () => void;
+  onOpenLanguageSettings?: () => void;
 }
 
-export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings }: UserMenuProps) {
+export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings, onOpenLanguageSettings }: UserMenuProps) {
   const { user, signOut, isLoading } = useAuth();
   const { tier, isPremium, openUpgradeModal } = useUserTier();
   const { activeProfile, isChildProfile } = useProfiles();
+  const { language } = useLanguagePreference();
 
   if (isLoading) {
     return null;
@@ -122,6 +125,13 @@ export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParent
           <DropdownMenuItem className="gap-2 cursor-pointer">
             <User className="w-4 h-4" />
             Profile
+          </DropdownMenuItem>
+          <DropdownMenuItem
+            className="gap-2 cursor-pointer"
+            onClick={onOpenLanguageSettings}
+          >
+            <Globe className="w-4 h-4" />
+            Language: {language.name}
           </DropdownMenuItem>
           {!isChildProfile && (
             <DropdownMenuItem
