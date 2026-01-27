@@ -310,15 +310,17 @@ export const channels: Channel[] = [
     contentRating: 'PG',
     description: 'Highlights and sports stories',
     videos: [
-      // Verified ESPN & official sports highlights (2024-2025)
-      { id: '8GKmCQOy88Y', title: 'NBA Top 100 Plays of 2024', duration: 1800 },
-      { id: 'LoD9RlPr5RA', title: 'NFL Best Catches 2024-25', duration: 720 },
-      { id: 'h3XeN0WL2cs', title: 'UEFA Champions League Best Goals', duration: 900 },
-      { id: '1r0aU4cj2E0', title: 'MLB Greatest Home Runs', duration: 1080 },
-      { id: 'VN36C_ILOns', title: 'Premier League Top 50 Goals', duration: 1200 },
-      { id: 'ZYcBMgqpIUM', title: 'NHL Best Goals 2024', duration: 840 },
-      { id: '3LzCz2FxAek', title: 'College Football Best Moments', duration: 960 },
-      { id: 'Bs-6RjmEm2A', title: 'Tennis Greatest Rallies', duration: 780 },
+      // Official league/network uploads (more reliable embeds than random highlight compilations)
+      { id: 'j2kvgwLapKk', title: 'NBA: Top 100 Plays (2024-25)', duration: 1500 },
+      { id: '2AoDNDOzXiM', title: "NBA: Top 100 Plays of 2024 (Calendar Year)", duration: 900 },
+      { id: 'Y--mkdhOxwE', title: 'NFL: Top 100 Plays of the 2024 Season', duration: 2280 },
+      { id: '9rSF64PHAvs', title: 'NFL: Top Plays (2024 Regular Season)', duration: 1800 },
+      { id: 'hOo6gXuzJvQ', title: 'NHL: Top 24 Goals from 2024', duration: 900 },
+      { id: 'QX2UEIMdoeM', title: 'NHL: Top 10 Goals (2024-25 Regular Season)', duration: 720 },
+      { id: '_ejSiZrJGts', title: 'ESPN: 1 Hour of Highlights (2024-25 College Football)', duration: 3600 },
+      { id: 'YxGbf4BDdSQ', title: 'FOX CFB: Top 25 Plays of 2024', duration: 1200 },
+      { id: '-hAHQrjC2_E', title: "Premier League: Liverpool's Best Goals (2024/25)", duration: 900 },
+      { id: 'Jgss1ZXZLzw', title: 'Premier League: Goal of the Season Contenders (2024/25)', duration: 900 },
     ],
   },
   {
