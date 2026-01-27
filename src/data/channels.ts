@@ -329,13 +329,14 @@ export const channels: Channel[] = [
     contentRating: 'R',
     description: 'Challenges and epic stunts',
     videos: [
-      // Verified Dude Perfect videos
-      { id: 'DYHxGRl1U9I', title: 'All Sports Golf Battle', duration: 780 },
-      { id: 'vLMvlbT2lws', title: 'Overtime - Best Moments', duration: 900 },
-      { id: 's_8n6DjLjQo', title: 'Giant Darts Battle', duration: 720 },
-      { id: 'LmvEA-eYtg8', title: 'World Record Edition', duration: 840 },
-      { id: 'IwT4PXPQWSQ', title: 'Trick Shots Compilation', duration: 660 },
-      { id: 'Wz4kM9Fhg8A', title: 'Stereotypes: Basketball', duration: 780 },
+      // Verified Dude Perfect videos (2024-2025 uploads)
+      { id: 'dgr4_G8-7F8', title: 'Highest Dunk Wins', duration: 860 },
+      { id: 'GsLopdvhFpk', title: 'Unpredictable Trick Shots 2', duration: 720 },
+      { id: 'idFpAv9nh9E', title: 'Our Longest Trick Shots EVER', duration: 900 },
+      { id: 'jvUX3ocBSCk', title: '20 YouTubers Compete in Trick Shot Contest', duration: 1200 },
+      { id: 'TL5zPys0ufk', title: 'Olympic Mini Games Battle', duration: 840 },
+      { id: 'dw-kwjzXSsA', title: 'Prison Escape Battle', duration: 780 },
+      { id: 'W_i2fKJGrb0', title: 'Dude Perfect Most Viewed Videos', duration: 900 },
     ],
   },
   {
