@@ -8,6 +8,7 @@ import { ParentalControlsProvider } from "@/hooks/useParentalControls";
 import { UserTierProvider } from "@/contexts/UserTierContext";
 import { ProfileProvider } from "@/contexts/ProfileContext";
 import { LanguageProvider } from "@/hooks/useLanguagePreference";
+import { OnboardingProvider } from "@/contexts/OnboardingContext";
 import Index from "./pages/Index";
 import NotFound from "./pages/NotFound";
 
@@ -20,17 +21,19 @@ const App = () => (
         <ProfileProvider>
           <ParentalControlsProvider>
             <LanguageProvider>
-              <TooltipProvider>
-                <Toaster />
-                <Sonner />
-                <BrowserRouter>
-                  <Routes>
-                    <Route path="/" element={<Index />} />
-                    {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
-                    <Route path="*" element={<NotFound />} />
-                  </Routes>
-                </BrowserRouter>
-              </TooltipProvider>
+              <OnboardingProvider>
+                <TooltipProvider>
+                  <Toaster />
+                  <Sonner />
+                  <BrowserRouter>
+                    <Routes>
+                      <Route path="/" element={<Index />} />
+                      {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
+                      <Route path="*" element={<NotFound />} />
+                    </Routes>
+                  </BrowserRouter>
+                </TooltipProvider>
+              </OnboardingProvider>
             </LanguageProvider>
           </ParentalControlsProvider>
         </ProfileProvider>
