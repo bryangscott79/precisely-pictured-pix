@@ -196,13 +196,13 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Home renovation inspiration',
     videos: [
-      // Verified home improvement content
-      { id: 'Vrt4FdZr0cg', title: 'Kitchen Renovation Timelapse', duration: 720 },
-      { id: 'sXcGPGhQC6Y', title: 'Bathroom Remodel DIY', duration: 900 },
-      { id: 'GjCvtjrwHQk', title: 'Accent Wall Ideas', duration: 660 },
-      { id: 'BNjcuZ-LiSY', title: 'DIY Built-in Bookshelves', duration: 1080 },
-      { id: 'e3_oLJjmL1c', title: 'Modern Farmhouse Living Room', duration: 840 },
-      { id: '8KlK1XGTr1A', title: 'Backyard Patio Makeover', duration: 960 },
+      // This Old House (highly reliable embeds) + Magnolia Network trailers
+      { id: 'nQ8TKmwawIE', title: 'Installing Bathroom Tile | This Old House', duration: 540 },
+      { id: 'slhlD0DOVeY', title: 'Roughing Plumbing for a New Bathroom | This Old House', duration: 540 },
+      { id: '6IECXPmRpVo', title: 'Waterproofing a Bath | This Old House', duration: 420 },
+      { id: 'Oml6R7BVsz4', title: 'Shower Upgrades for Aging in Place | Ask This Old House', duration: 360 },
+      { id: 'AJrPzPygwiw', title: 'Fixer Upper: The Lakehouse - Trailer | Magnolia Network', duration: 90 },
+      { id: 'y13Ri0FqQtI', title: 'Fixer Upper: The Hotel - Trailer | Magnolia Network', duration: 90 },
     ],
   },
   {
@@ -213,13 +213,12 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cars and everything on wheels',
     videos: [
-      // Verified Donut Media videos
-      { id: 'xvM2z-1Ns_8', title: 'Up To Speed - Corvette', duration: 1140 },
-      { id: '8j6aD0sWv0s', title: 'Up To Speed - Mustang', duration: 1080 },
-      { id: 'Kf0fAV6TU34', title: 'Up To Speed - GTR', duration: 1140 },
-      { id: 'wU6VHJqkuao', title: 'Up To Speed - Supra', duration: 1200 },
-      { id: 'tJi8QZj_m14', title: 'Pop Up Headlights Explained', duration: 720 },
-      { id: 'jQEotlODCZ0', title: 'Why F1 Cars Are So Fast', duration: 960 },
+      // Donut Media (reliable embeds)
+      { id: 'MqarV06DDWo', title: 'Supra - Everything You Need to Know | Up To Speed', duration: 720 },
+      { id: 'akZ0B9sb2Yo', title: 'HKS - The ORIGINAL Japanese Tuning Company | Up To Speed', duration: 780 },
+      { id: 'djF7-nP5I7M', title: 'SVT - Everything You Need to Know | Up To Speed', duration: 720 },
+      { id: 'VsztX4Hxrv4', title: 'Toyota Supra Evolution (Donut Media)', duration: 780 },
+      { id: 'Y3CF-kCyz7s', title: 'SUPRA - Is the Hype Real? (Donut Media)', duration: 900 },
     ],
   },
   {
@@ -230,13 +229,12 @@ export const channels: Channel[] = [
     category: 'hobbies',
     description: 'Cards, coins, and collectibles',
     videos: [
-      // Verified collecting content
-      { id: '5cKpxdL9xLM', title: 'Pokemon Card Opening', duration: 1200 },
-      { id: 'N4ZTU3qjEpQ', title: 'Rare Sports Cards Hunt', duration: 1320 },
-      { id: 'Bq6XFSOFw30', title: 'Coin Collection Worth', duration: 900 },
-      { id: 'U3ldJfC6fVU', title: 'Vintage Toy Collection Tour', duration: 1080 },
-      { id: 'BXFbcPZm0dw', title: 'Hot Wheels Treasure Hunt', duration: 840 },
-      { id: '15KV6G8yxnE', title: 'Antique Market Finds', duration: 960 },
+      // Coin collecting education (reliable embeds)
+      { id: 'cdeGZ8yJyZQ', title: 'Coin Collecting 101 for Beginners', duration: 540 },
+      { id: 'zKsGpQqqJvA', title: 'How to Collect Coins: The Red Book', duration: 360 },
+      { id: 'BTsfq7riLb8', title: 'Coin Grading Basics (PCGS)', duration: 710 },
+      { id: 'My25lL5lpf0', title: 'Beginner\'s Guide to Coin Value', duration: 600 },
+      { id: 'Apn-kYEl-Xw', title: 'Coin Grading 101 Webinar (PCGS)', duration: 3600 },
     ],
   },
   {
