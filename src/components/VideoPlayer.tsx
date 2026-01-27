@@ -20,6 +20,7 @@ interface YTPlayer {
   setVolume: (volume: number) => void;
   playVideo: () => void;
   pauseVideo: () => void;
+  stopVideo?: () => void;
   mute: () => void;
   unMute: () => void;
   isMuted: () => boolean;
@@ -94,6 +95,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isApiLoaded, setIsApiLoaded] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const [playerInstanceVersion, setPlayerInstanceVersion] = useState(0);
     const currentChannelIdRef = useRef(channel.id);
     const currentVideoIdRef = useRef<string>('');
     const currentVideoIndexRef = useRef<number>(0);
@@ -316,6 +318,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               setIsReady(true);
               if (playerRef.current) {
                 playerRef.current.setVolume(100);
+                try {
+                  // Preserve user's mute preference across player re-initializations
+                  if (isMuted) {
+                    playerRef.current.mute();
+                  }
+                } catch {
+                  // ignore
+                }
                 playerRef.current.playVideo();
               }
             },
@@ -399,7 +409,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setIsReady(false);
         isInitializingRef.current = false;
       };
-    }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos]);
+    }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos, playerInstanceVersion, isMuted]);
 
     // Handle channel changes - load new video from dynamic content
     useEffect(() => {
@@ -408,6 +418,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       
       currentChannelIdRef.current = channel.id;
       failedVideosRef.current.clear(); // Clear failed videos for new channel
+      hasSkippedEndRef.current = false;
       
       // Get videos for the new channel (from cache or static fallback)
       const newVideos = getDynamicVideosForChannel(channel.id);
@@ -416,28 +427,31 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       
       const playback = getCurrentPlaybackDynamic(channel.id, videosToUse);
       currentVideoIndexRef.current = playback.videoIndex;
+      currentVideoIdRef.current = playback.video.id;
       onVideoChange?.(playback.video.title);
 
-      // Mute and pause IMMEDIATELY to stop ghost audio
+      // HARD RESET on channel changes to eliminate ghost audio:
+      // stop/mute/pause, destroy the iframe, then re-initialize fresh for the new channel.
       try {
         playerRef.current.mute();
         playerRef.current.pauseVideo();
+        playerRef.current.stopVideo?.();
       } catch {
         // ignore
       }
-
-      // Small delay to ensure audio is cut before loading new video
-      setTimeout(() => {
-        if (playerRef.current) {
-          safeLoadVideo(playback.video.id, playback.positionInVideo);
-          // Unmute after new video loads
-          try {
-            playerRef.current.unMute();
-          } catch {
-            // ignore
-          }
-        }
-      }, 50);
+      try {
+        playerRef.current.destroy();
+      } catch {
+        // ignore
+      }
+      playerRef.current = null;
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
+      setIsReady(false);
+      setIsPaused(false);
+      isInitializingRef.current = false;
+      setPlayerInstanceVersion((v) => v + 1);
     }, [channel.id, isReady, onVideoChange]);
 
     // Update videos when dynamic videos finish loading
