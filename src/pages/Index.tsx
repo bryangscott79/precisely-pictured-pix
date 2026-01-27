@@ -265,6 +265,7 @@ export default function Index() {
           toggleMute();
           break;
         case 'k':
+        case 'p':
         case ' ':
           e.preventDefault();
           togglePlayPause();

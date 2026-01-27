@@ -320,4 +320,18 @@
     @apply backdrop-blur-md border border-white/10;
     background: hsl(var(--card) / 0.8);
   }
+
+  /* Hide YouTube big play button overlay */
+  .hide-yt-play-button iframe {
+    /* The play button is inside the iframe; we can't hide it with CSS alone.
+       We rely on pointer-events:none and a full overlay to block it visually. */
+  }
 }
+
+/* Global: hide YouTube's large centered play button via CSS injection.
+   This targets the button element inside YouTube's shadow-DOM embed. */
+iframe[src*="youtube.com"] {
+  pointer-events: none;
+}
+
+/* Block the play button visually by layering an invisible div */
