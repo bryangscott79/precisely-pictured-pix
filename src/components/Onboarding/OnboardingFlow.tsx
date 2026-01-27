@@ -29,12 +29,12 @@ export function OnboardingFlow() {
   return (
     <Dialog open={isOnboardingOpen} onOpenChange={(open) => !open && closeOnboarding()}>
       <DialogContent 
-        className="max-w-lg max-h-[90vh] overflow-hidden flex flex-col p-0"
+        className="max-w-lg h-[85vh] max-h-[700px] flex flex-col p-0"
         onInteractOutside={(e) => e.preventDefault()}
       >
         {/* Progress Dots */}
         {state.currentStep !== 'welcome' && state.currentStep !== 'complete' && (
-          <div className="flex justify-center gap-2 pt-6">
+          <div className="flex justify-center gap-2 pt-6 shrink-0">
             {STEPS.slice(1).map((step, i) => (
               <div
                 key={step}
