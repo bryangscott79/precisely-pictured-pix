@@ -1,7 +1,6 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { X, Shield, Lock, Clock, Grid3X3 } from 'lucide-react';
 import { 
-  channels, 
   Channel, 
   ChannelCategory,
   ChannelColor,
@@ -247,35 +246,42 @@ export function ChannelGuide({
   onOpenParentalControls 
 }: ChannelGuideProps) {
   const { enabled: parentalControlsEnabled } = useParentalControls();
-  const availableChannels = getAvailableChannels(parentalControlsEnabled);
+  // Memoize so `availableChannels` doesn't change identity every render.
+  // This prevents schedule update effects from re-running continuously.
+  const availableChannels = useMemo(
+    () => getAvailableChannels(parentalControlsEnabled),
+    [parentalControlsEnabled]
+  );
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [schedules, setSchedules] = useState<Map<string, ScheduleItem[]>>(new Map());
 
   // Update schedules
   useEffect(() => {
-    if (viewMode === 'schedule') {
-      const updateSchedules = () => {
-        const newSchedules = new Map<string, ScheduleItem[]>();
-        availableChannels.forEach(channel => {
-          newSchedules.set(channel.id, getChannelSchedule(channel, 3));
-        });
-        setSchedules(newSchedules);
-      };
+    if (viewMode !== 'schedule') return;
 
-      updateSchedules();
-      const interval = setInterval(updateSchedules, 30000); // Update every 30 seconds
-      return () => clearInterval(interval);
-    }
+    const updateSchedules = () => {
+      const newSchedules = new Map<string, ScheduleItem[]>();
+      availableChannels.forEach(channel => {
+        newSchedules.set(channel.id, getChannelSchedule(channel, 3));
+      });
+      setSchedules(newSchedules);
+    };
+
+    updateSchedules();
+    const interval = setInterval(updateSchedules, 30000); // Update every 30 seconds
+    return () => clearInterval(interval);
   }, [viewMode, availableChannels]);
 
   // Group channels by category
-  const channelsByCategory = categoryOrder.reduce((acc, category) => {
-    const categoryChannels = availableChannels.filter(c => c.category === category);
-    if (categoryChannels.length > 0) {
-      acc[category] = categoryChannels;
-    }
-    return acc;
-  }, {} as Record<ChannelCategory, Channel[]>);
+  const channelsByCategory = useMemo(() => {
+    return categoryOrder.reduce((acc, category) => {
+      const categoryChannels = availableChannels.filter(c => c.category === category);
+      if (categoryChannels.length > 0) {
+        acc[category] = categoryChannels;
+      }
+      return acc;
+    }, {} as Record<ChannelCategory, Channel[]>);
+  }, [availableChannels]);
 
   // Close on escape
   useEffect(() => {
