@@ -50,6 +50,39 @@ export type Database = {
         }
         Relationships: []
       }
+      imported_subscriptions: {
+        Row: {
+          channel_name: string
+          created_at: string
+          id: string
+          is_selected: boolean | null
+          matched_epishow_channel: string | null
+          subscriber_count: number | null
+          user_id: string
+          youtube_channel_id: string
+        }
+        Insert: {
+          channel_name: string
+          created_at?: string
+          id?: string
+          is_selected?: boolean | null
+          matched_epishow_channel?: string | null
+          subscriber_count?: number | null
+          user_id: string
+          youtube_channel_id: string
+        }
+        Update: {
+          channel_name?: string
+          created_at?: string
+          id?: string
+          is_selected?: boolean | null
+          matched_epishow_channel?: string | null
+          subscriber_count?: number | null
+          user_id?: string
+          youtube_channel_id?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           avatar_url: string | null
@@ -113,6 +146,69 @@ export type Database = {
           stripe_subscription_id?: string | null
           updated_at?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_channel_lineup: {
+        Row: {
+          channel_id: string
+          created_at: string
+          id: string
+          is_custom: boolean | null
+          position: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          channel_id: string
+          created_at?: string
+          id?: string
+          is_custom?: boolean | null
+          position: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          channel_id?: string
+          created_at?: string
+          id?: string
+          is_custom?: boolean | null
+          position?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_onboarding: {
+        Row: {
+          completed_at: string | null
+          created_at: string
+          id: string
+          preferences: Json | null
+          selected_interests: string[] | null
+          updated_at: string
+          user_id: string
+          youtube_connected: boolean | null
+        }
+        Insert: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          preferences?: Json | null
+          selected_interests?: string[] | null
+          updated_at?: string
+          user_id: string
+          youtube_connected?: boolean | null
+        }
+        Update: {
+          completed_at?: string | null
+          created_at?: string
+          id?: string
+          preferences?: Json | null
+          selected_interests?: string[] | null
+          updated_at?: string
+          user_id?: string
+          youtube_connected?: boolean | null
         }
         Relationships: []
       }
