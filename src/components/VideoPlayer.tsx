@@ -38,10 +38,38 @@ interface YTPlayer {
   unloadModule?: (module: string) => void;
   getOptions?: (module?: string) => string[];
   setOption?: (module: string, option: string, value: unknown) => void;
+  // Get iframe element
+  getIframe?: () => HTMLIFrameElement | null;
 }
 
 interface YTPlayerEvent {
   data: number;
+}
+
+// Global tracker for the active player instance ID to prevent ghost audio
+let activePlayerId: string | null = null;
+
+// Aggressively remove ALL YouTube iframes except the one we're keeping
+function cleanupOrphanedYouTubeIframes(keepIframeId?: string) {
+  const iframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtube-nocookie.com"]');
+  iframes.forEach((iframe) => {
+    if (keepIframeId && iframe.id === keepIframeId) return;
+    
+    // Try to stop playback before removing
+    try {
+      const win = (iframe as HTMLIFrameElement).contentWindow;
+      if (win) {
+        win.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+        win.postMessage('{"event":"command","func":"mute","args":""}', '*');
+        win.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+      }
+    } catch {
+      // Cross-origin - can't access, just remove
+    }
+    
+    console.log('[VideoPlayer] Removing orphaned iframe:', iframe.id || 'unnamed');
+    iframe.remove();
+  });
 }
 
 declare global {
@@ -343,8 +371,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       currentChannelIdRef.current = channel.id;
       onVideoChange?.(playback.video.title);
 
-      // Create player element
-      const playerId = `yt-player-${Date.now()}`;
+      // CRITICAL: Clean up ALL orphaned iframes before creating new player
+      cleanupOrphanedYouTubeIframes();
+
+      // Create player element with unique ID
+      const playerId = `yt-player-${channel.id}-${Date.now()}`;
+      activePlayerId = playerId; // Track this as the active player
+      
       const playerDiv = document.createElement('div');
       playerDiv.id = playerId;
       playerDiv.style.width = '100%';
@@ -454,6 +487,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             // Mute and pause immediately to prevent ghost audio
             playerRef.current.mute();
             playerRef.current.pauseVideo();
+            playerRef.current.stopVideo?.();
           } catch (e) {
             // Ignore errors
           }
@@ -464,10 +498,13 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           }
           playerRef.current = null;
         }
-        // Also clear the container to remove any orphaned iframes
+        // CRITICAL: Clean up ALL orphaned iframes on unmount
+        cleanupOrphanedYouTubeIframes();
+        
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
         }
+        activePlayerId = null;
         setIsReady(false);
         isInitializingRef.current = false;
       };
@@ -477,6 +514,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     useEffect(() => {
       if (!isReady || !playerRef.current) return;
       if (channel.id === currentChannelIdRef.current) return;
+      
+      console.log('[VideoPlayer] Channel change detected:', currentChannelIdRef.current, '->', channel.id);
       
       currentChannelIdRef.current = channel.id;
       failedVideosRef.current.clear(); // Clear failed videos for new channel
@@ -493,7 +532,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       onVideoChange?.(playback.video.title);
 
       // HARD RESET on channel changes to eliminate ghost audio:
-      // stop/mute/pause, destroy the iframe, then re-initialize fresh for the new channel.
+      // 1. Stop/mute/pause the current player
+      // 2. Destroy the player instance
+      // 3. Clean up ALL orphaned iframes (nuclear option)
+      // 4. Re-initialize fresh for the new channel
       try {
         playerRef.current.mute();
         playerRef.current.pauseVideo();
@@ -507,9 +549,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // ignore
       }
       playerRef.current = null;
+      
+      // CRITICAL: Nuclear cleanup - remove ALL YouTube iframes
+      cleanupOrphanedYouTubeIframes();
+      
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
+      activePlayerId = null;
       setIsReady(false);
       setIsPaused(false);
       isInitializingRef.current = false;
