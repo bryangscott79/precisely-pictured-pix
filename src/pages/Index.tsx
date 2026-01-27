@@ -26,6 +26,7 @@ import {
 import { useParentalControls } from '@/hooks/useParentalControls';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { useProfiles } from '@/contexts/ProfileContext';
+import { useAuth } from '@/hooks/useAuth';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -40,6 +41,7 @@ export default function Index() {
   const { enabled: parentalControlsEnabled } = useParentalControls();
   const { isPremium, checkSubscription, openUpgradeModal } = useUserTier();
   const { activeProfile, isChildProfile, isChannelAllowed, timeRemaining, isBedtimeLocked } = useProfiles();
+  const { signInWithGoogle } = useAuth();
   const [searchParams, setSearchParams] = useSearchParams();
   
   // Get available channels based on profile's content rating
@@ -344,6 +346,7 @@ export default function Index() {
           onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
           onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
           onOpenLanguageSettings={() => setIsLanguageSettingsOpen(true)}
+          onConnectYouTube={() => signInWithGoogle(true)}
         />
       </div>
 
