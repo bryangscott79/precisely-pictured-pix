@@ -47,7 +47,7 @@ export function OnboardingFlow() {
         )}
 
         {/* Content */}
-        <div className="flex-1 overflow-hidden p-6">
+        <div className="flex-1 min-h-0 overflow-hidden p-6 flex flex-col">
           {state.currentStep === 'welcome' && <WelcomeScreen />}
           {state.currentStep === 'interests' && <InterestSelection />}
           {state.currentStep === 'lineup' && <ChannelLineup />}
