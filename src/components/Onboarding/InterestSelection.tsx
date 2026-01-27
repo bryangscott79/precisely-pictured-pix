@@ -70,7 +70,7 @@ export function InterestSelection() {
         </div>
 
         <Button
-          onClick={() => setStep('lineup')}
+          onClick={() => setStep('youtube')}
           disabled={!canContinue}
           className="gap-2"
         >

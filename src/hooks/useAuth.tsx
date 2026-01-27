@@ -6,7 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   isLoading: boolean;
-  signInWithGoogle: () => Promise<void>;
+  signInWithGoogle: (requestYouTubeAccess?: boolean) => Promise<void>;
   signInWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signUpWithEmail: (email: string, password: string) => Promise<{ error: Error | null }>;
   signOut: () => Promise<void>;
@@ -39,12 +39,23 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     return () => subscription.unsubscribe();
   }, []);
 
-  const signInWithGoogle = async () => {
+  const signInWithGoogle = async (requestYouTubeAccess = false) => {
+    const options: any = {
+      redirectTo: window.location.origin,
+    };
+
+    // Request YouTube readonly scope to access user's subscriptions
+    if (requestYouTubeAccess) {
+      options.scopes = 'https://www.googleapis.com/auth/youtube.readonly';
+      options.queryParams = {
+        access_type: 'offline',
+        prompt: 'consent',
+      };
+    }
+
     await supabase.auth.signInWithOAuth({
       provider: 'google',
-      options: {
-        redirectTo: window.location.origin,
-      },
+      options,
     });
   };
 
