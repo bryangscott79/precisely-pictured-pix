@@ -158,28 +158,39 @@ declare global {
 }
 
 // Get current playback based on synchronized schedule using dynamic videos
-function getCurrentPlaybackDynamic(channelId: string, videos: Video[]): { video: Video; videoIndex: number; positionInVideo: number } {
+function getCurrentPlaybackDynamic(channelId: string, videos: Video[]): { video: Video; videoIndex: number; positionInVideo: number } | null {
   if (videos.length === 0) {
-    return { video: { id: '', title: '', duration: 0 }, videoIndex: 0, positionInVideo: 0 };
+    return null;
+  }
+  
+  // Filter out any videos with empty/invalid IDs
+  const validVideos = videos.filter(v => v.id && v.id.length > 5);
+  if (validVideos.length === 0) {
+    return null;
   }
 
-  const totalDuration = videos.reduce((sum, v) => sum + v.duration, 0);
+  const totalDuration = validVideos.reduce((sum, v) => sum + v.duration, 0);
+  if (totalDuration === 0) {
+    // If all durations are 0, just start from first video
+    return { video: validVideos[0], videoIndex: 0, positionInVideo: 0 };
+  }
+  
   const now = Date.now();
   const position = (now / 1000) % totalDuration;
   
   let elapsed = 0;
-  for (let i = 0; i < videos.length; i++) {
-    if (elapsed + videos[i].duration > position) {
+  for (let i = 0; i < validVideos.length; i++) {
+    if (elapsed + validVideos[i].duration > position) {
       return {
-        video: videos[i],
+        video: validVideos[i],
         videoIndex: i,
         positionInVideo: position - elapsed
       };
     }
-    elapsed += videos[i].duration;
+    elapsed += validVideos[i].duration;
   }
   
-  return { video: videos[0], videoIndex: 0, positionInVideo: 0 };
+  return { video: validVideos[0], videoIndex: 0, positionInVideo: 0 };
 }
 
 export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
@@ -218,7 +229,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     };
 
     // If a video is unavailable or stuck loading, skip quickly instead of showing the YouTube error screen.
-    const startPlaybackWatchdog = (expectedVideoId: string, timeoutMs: number = 12000) => {
+    const startPlaybackWatchdog = (expectedVideoId: string, timeoutMs: number = 8000) => {
       clearPlaybackWatchdog();
 
       playbackWatchdogRef.current = setTimeout(() => {
@@ -256,12 +267,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     useEffect(() => {
       if (dynamicVideos.length > 0) {
         // Extra safety: ensure no off-topic titles sneak into the active playlist.
-        videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
-      } else if (!videosLoading) {
-        // If not loading and no dynamic videos, fall back to static
+        const filtered = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
+        if (filtered.length > 0) {
+          videosRef.current = filtered;
+        }
+        // If all got filtered out, keep whatever we had before
+      } else if (!videosLoading && videosRef.current.length === 0) {
+        // If not loading and no dynamic videos and ref still empty, fall back to static
         videosRef.current = channel.videos;
       }
-    }, [dynamicVideos, channel.videos, videosLoading]);
+    }, [dynamicVideos, channel.videos, channel.id, videosLoading]);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -411,11 +426,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     };
 
-    // Get next playable video (skipping failed ones)
-    const getNextPlayableVideo = (startIndex: number): { video: Video; index: number } => {
-      const videos = videosRef.current;
+    // Get next playable video (skipping failed ones and empty IDs)
+    const getNextPlayableVideo = (startIndex: number): { video: Video; index: number } | null => {
+      const videos = videosRef.current.filter(v => v.id && v.id.length > 5);
       if (videos.length === 0) {
-        return { video: { id: '', title: '', duration: 0 }, index: 0 };
+        return null;
       }
 
       for (let offset = 0; offset < videos.length; offset++) {
@@ -433,15 +448,23 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
 
     // Advance to next video
     const advanceToNextVideo = () => {
-      const videos = videosRef.current;
-      if (videos.length === 0) return;
+      const videos = videosRef.current.filter(v => v.id && v.id.length > 5);
+      if (videos.length === 0) {
+        console.warn('[VideoPlayer] No valid videos to advance to');
+        return;
+      }
 
       const nextIndex = (currentVideoIndexRef.current + 1) % videos.length;
-      const { video, index } = getNextPlayableVideo(nextIndex);
+      const result = getNextPlayableVideo(nextIndex);
       
-      currentVideoIndexRef.current = index;
-      onVideoChange?.(video.title);
-      safeLoadVideo(video.id, 0);
+      if (!result) {
+        console.warn('[VideoPlayer] Could not find next playable video');
+        return;
+      }
+      
+      currentVideoIndexRef.current = result.index;
+      onVideoChange?.(result.video.title);
+      safeLoadVideo(result.video.id, 0);
     };
 
     // Initialize player - only once when API is ready and videos are loaded
@@ -450,21 +473,31 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (playerRef.current) return; // Already initialized
       
       // Wait for videos - either from dynamic hook or static fallback
+      // IMPORTANT: useDynamicVideos now provides rotated fallback instantly, so videos should never be empty
       const hasVideos = videosRef.current.length > 0;
-      const stillLoading = videosLoading && dynamicVideos.length === 0;
-      if (stillLoading && !hasVideos) return;
+      const stillLoading = videosLoading && dynamicVideos.length === 0 && !hasVideos;
+      if (stillLoading) return;
       
-      // If still no videos after loading, use static fallback
-      if (!hasVideos) {
+      // If still no videos after loading, use rotated fallback (should not happen now)
+      if (!hasVideos && dynamicVideos.length > 0) {
+        videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
+      } else if (!hasVideos) {
         videosRef.current = channel.videos;
       }
       
       if (videosRef.current.length === 0) return; // Still no videos
       
-      isInitializingRef.current = true;
-      
+      // Get playback position
       const videos = videosRef.current;
       const playback = getCurrentPlaybackDynamic(channel.id, videos);
+      
+      if (!playback || !playback.video.id) {
+        console.warn('[VideoPlayer] No valid playback found');
+        return; // Can't initialize without a valid video
+      }
+      
+      isInitializingRef.current = true;
+      
       currentVideoIdRef.current = playback.video.id;
       currentVideoIndexRef.current = playback.videoIndex;
       currentChannelIdRef.current = channel.id;
@@ -656,12 +689,16 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       failedVideosRef.current.clear(); // Clear failed videos for new channel
       hasSkippedEndRef.current = false;
       
-      // Get videos for the new channel (from cache or static fallback)
+      // Get videos for the new channel (from cache or rotated fallback)
       const newVideos = getDynamicVideosForChannel(channel.id);
       const videosToUse = newVideos.length > 0 ? newVideos : channel.videos;
       videosRef.current = videosToUse;
       
       const playback = getCurrentPlaybackDynamic(channel.id, videosToUse);
+      if (!playback || !playback.video.id) {
+        console.warn('[VideoPlayer] No valid playback for new channel');
+        return;
+      }
       currentVideoIndexRef.current = playback.videoIndex;
       currentVideoIdRef.current = playback.video.id;
       onVideoChange?.(playback.video.title);
@@ -716,8 +753,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (!isReady || !playerRef.current) return;
       if (channel.id !== currentChannelIdRef.current) return;
       
-      // Videos just loaded, update the ref
-      videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
+      // Videos just loaded, update the ref (filter out empty IDs and off-topic titles)
+      const filtered = dynamicVideos.filter((v) => v.id && v.id.length > 5 && isAllowedVideoTitle(channel.id, v.title));
+      if (filtered.length > 0) {
+        videosRef.current = filtered;
+      }
     }, [dynamicVideos, videosLoading, isReady, channel.id]);
 
     // Periodic check for failed videos
