@@ -79,10 +79,9 @@ export const CHANNEL_SOURCES: Record<string, { youtubeChannels: string[]; minDur
     youtubeChannels: ['UCZkURf9tDolFOeuw_4RD7XQ'],
     minDuration: 180, maxDuration: 480, minViews: 100000
   },
-  sports: {
-    youtubeChannels: ['UCSXK6dmhFusgBb1jDrj7Q-w', 'UCTl3QQTvqHFjurroKxexy2Q'],
-    minDuration: 120, maxDuration: 1800, minViews: 100000
-  },
+  // Sports channel uses static content only - dynamic fetching disabled
+  // The YouTube channels for sports often have music/entertainment mixed in
+  // Static content ensures only verified sports highlights play
   collecting: {
     youtubeChannels: ['UCF2pD7SFk-FBmeTCIaC_xUg', 'UCYvL0S6QBwXZDdpZwLdRCmA'],
     minDuration: 300, maxDuration: 1800, minViews: 5000
