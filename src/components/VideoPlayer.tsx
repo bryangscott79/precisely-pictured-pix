@@ -210,6 +210,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             start: Math.floor(playback.positionInVideo),
             origin: window.location.origin,
             playsinline: 1,
+            // Disable end screen and related videos
+            endscreen: 0,
           },
           events: {
             onReady: () => {
@@ -228,11 +230,14 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               }
 
               if (event.data === window.YT.PlayerState.ENDED) {
-                // Video ended, load the next scheduled video
+                // Video ended - immediately load next scheduled video to prevent end screen
                 const live = channelRef.current;
-                const newPlayback = getCurrentPlayback(live);
-                onVideoChange?.(newPlayback.video.title);
-                safeLoadVideo(newPlayback.video.id, newPlayback.positionInVideo);
+                const currentPlayback = getCurrentPlayback(live);
+                const nextIndex = (currentPlayback.videoIndex + 1) % live.videos.length;
+                const nextVideo = live.videos[nextIndex];
+                onVideoChange?.(nextVideo.title);
+                // Load from beginning since this is a fresh video
+                safeLoadVideo(nextVideo.id, 0);
               }
               if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPaused(true);
@@ -352,14 +357,22 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     }, [isReady, onVideoChange]);
 
     return (
-      <div className="absolute inset-0 bg-black">
+      <div className="absolute inset-0 bg-black overflow-hidden">
+        {/* Container with overflow hidden to clip any YouTube overlays */}
         <div 
           ref={containerRef} 
           className="w-full h-full"
-          style={{ pointerEvents: 'none' }}
+          style={{ 
+            pointerEvents: 'none',
+            // Slightly scale up to hide YouTube end screen borders
+            transform: 'scale(1.02)',
+            transformOrigin: 'center center',
+          }}
         />
+        {/* Overlay to block any clicks on YouTube elements */}
+        <div className="absolute inset-0 z-10" style={{ pointerEvents: 'none' }} />
         {!isReady && (
-          <div className="absolute inset-0 flex items-center justify-center bg-background">
+          <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-4 border-muted border-t-foreground rounded-full animate-spin" />
               <p className="text-muted-foreground font-medium">Tuning in to {channel.name}...</p>
