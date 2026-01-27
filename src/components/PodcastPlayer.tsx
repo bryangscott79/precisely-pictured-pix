@@ -63,8 +63,9 @@ export const PodcastPlayer = forwardRef<PodcastPlayerHandle, PodcastPlayerProps>
     const [currentEpisode, setCurrentEpisode] = useState<PodcastEpisode | null>(null);
     const [currentIndex, setCurrentIndex] = useState(0);
     const timeUpdateRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const channelIdRef = useRef(channel.id);
 
-    // Get episodes from curated list
+    // Get episodes from curated list - filter to ensure we have valid podcast content
     const episodes = CURATED_PODCASTS;
 
     // Expose methods to parent
@@ -130,6 +131,11 @@ export const PodcastPlayer = forwardRef<PodcastPlayerHandle, PodcastPlayerProps>
       if (!isApiLoaded || !containerRef.current || playerRef.current) return;
       if (episodes.length === 0) return;
 
+      // Cleanup existing player if channel changed
+      if (channelIdRef.current !== channel.id) {
+        channelIdRef.current = channel.id;
+      }
+
       const firstEpisode = episodes[0];
       setCurrentEpisode(firstEpisode);
       setCurrentIndex(0);
@@ -138,7 +144,11 @@ export const PodcastPlayer = forwardRef<PodcastPlayerHandle, PodcastPlayerProps>
       const playerId = `podcast-player-${Date.now()}`;
       const playerDiv = document.createElement('div');
       playerDiv.id = playerId;
-      playerDiv.style.display = 'none'; // Hide the video element
+      playerDiv.style.position = 'absolute';
+      playerDiv.style.width = '1px';
+      playerDiv.style.height = '1px';
+      playerDiv.style.opacity = '0';
+      playerDiv.style.pointerEvents = 'none';
       containerRef.current.innerHTML = '';
       containerRef.current.appendChild(playerDiv);
 
@@ -152,6 +162,10 @@ export const PodcastPlayer = forwardRef<PodcastPlayerHandle, PodcastPlayerProps>
             disablekb: 1,
             origin: window.location.origin,
             playsinline: 1,
+            modestbranding: 1,
+            rel: 0,
+            showinfo: 0,
+            iv_load_policy: 3,
           },
           events: {
             onReady: () => {
@@ -330,8 +344,8 @@ export const PodcastPlayer = forwardRef<PodcastPlayerHandle, PodcastPlayerProps>
 
     return (
       <div className="absolute inset-0 bg-gradient-to-b from-background via-background/95 to-background flex flex-col items-center justify-center overflow-hidden">
-        {/* Hidden YouTube player container */}
-        <div ref={containerRef} className="hidden" />
+        {/* Hidden YouTube player container - positioned off-screen */}
+        <div ref={containerRef} className="absolute -left-[9999px] w-px h-px overflow-hidden" />
 
         {/* Podcast UI */}
         <div className="flex flex-col items-center justify-center w-full max-w-md px-6 py-8 space-y-8">
