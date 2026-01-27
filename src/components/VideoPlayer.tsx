@@ -368,17 +368,33 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
 
       return () => {
+        // Aggressive cleanup - mute first, then destroy
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
           checkIntervalRef.current = null;
         }
+        if (endScreenCheckRef.current) {
+          clearInterval(endScreenCheckRef.current);
+          endScreenCheckRef.current = null;
+        }
         if (playerRef.current) {
+          try {
+            // Mute and pause immediately to prevent ghost audio
+            playerRef.current.mute();
+            playerRef.current.pauseVideo();
+          } catch (e) {
+            // Ignore errors
+          }
           try {
             playerRef.current.destroy();
           } catch (e) {
             // Ignore destroy errors
           }
           playerRef.current = null;
+        }
+        // Also clear the container to remove any orphaned iframes
+        if (containerRef.current) {
+          containerRef.current.innerHTML = '';
         }
         setIsReady(false);
         isInitializingRef.current = false;
@@ -402,14 +418,26 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       currentVideoIndexRef.current = playback.videoIndex;
       onVideoChange?.(playback.video.title);
 
-      // Cut old audio immediately during channel transitions
+      // Mute and pause IMMEDIATELY to stop ghost audio
       try {
+        playerRef.current.mute();
         playerRef.current.pauseVideo();
       } catch {
         // ignore
       }
 
-      safeLoadVideo(playback.video.id, playback.positionInVideo);
+      // Small delay to ensure audio is cut before loading new video
+      setTimeout(() => {
+        if (playerRef.current) {
+          safeLoadVideo(playback.video.id, playback.positionInVideo);
+          // Unmute after new video loads
+          try {
+            playerRef.current.unMute();
+          } catch {
+            // ignore
+          }
+        }
+      }, 50);
     }, [channel.id, isReady, onVideoChange]);
 
     // Update videos when dynamic videos finish loading

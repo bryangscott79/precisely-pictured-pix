@@ -86,12 +86,12 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     maxDuration: 1800,
   },
   fitness: {
-    query: 'workout fitness exercise home training',
+    query: 'full body workout HIIT cardio gym -cooking -food -recipe',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
     minDuration: 300,
-    maxDuration: 1200,
+    maxDuration: 2400,
   },
   diy: {
     query: 'home improvement renovation DIY project',
