@@ -1,6 +1,7 @@
 import { useAuth } from '@/hooks/useAuth';
 import { useUserTier } from '@/contexts/UserTierContext';
-import { LogOut, User, LogIn, Crown, Settings } from 'lucide-react';
+import { useProfiles } from '@/contexts/ProfileContext';
+import { LogOut, User, LogIn, Crown, Settings, Users } from 'lucide-react';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -16,11 +17,14 @@ import { cn } from '@/lib/utils';
 interface UserMenuProps {
   visible: boolean;
   onSignInClick: () => void;
+  onSwitchProfile?: () => void;
+  onOpenParentalSettings?: () => void;
 }
 
-export function UserMenu({ visible, onSignInClick }: UserMenuProps) {
+export function UserMenu({ visible, onSignInClick, onSwitchProfile, onOpenParentalSettings }: UserMenuProps) {
   const { user, signOut, isLoading } = useAuth();
   const { tier, isPremium, openUpgradeModal } = useUserTier();
+  const { activeProfile, isChildProfile } = useProfiles();
 
   if (isLoading) {
     return null;
@@ -28,18 +32,40 @@ export function UserMenu({ visible, onSignInClick }: UserMenuProps) {
 
   if (!user) {
     return (
-      <Button
-        variant="ghost"
-        size="sm"
-        onClick={onSignInClick}
+      <div
         className={cn(
-          'glass-panel gap-2 transition-all duration-300',
+          'flex items-center gap-2 transition-all duration-300',
           visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
         )}
       >
-        <LogIn className="w-4 h-4" />
-        Sign In
-      </Button>
+        {/* Profile Switcher Button */}
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={onSwitchProfile}
+          className="glass-panel gap-2"
+        >
+          <span className="text-lg">{activeProfile?.avatar || '👤'}</span>
+          <span className="hidden md:inline">{activeProfile?.name || 'Profile'}</span>
+          {isChildProfile && activeProfile && (
+            <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/30 text-blue-300">
+              {activeProfile.maxRating}
+            </span>
+          )}
+        </Button>
+
+        {!isChildProfile && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={onSignInClick}
+            className="glass-panel gap-2"
+          >
+            <LogIn className="w-4 h-4" />
+            Sign In
+          </Button>
+        )}
+      </div>
     );
   }
 
@@ -53,6 +79,22 @@ export function UserMenu({ visible, onSignInClick }: UserMenuProps) {
         visible ? 'opacity-100 translate-y-0' : 'opacity-0 -translate-y-4 pointer-events-none'
       )}
     >
+      {/* Profile Switcher Button */}
+      <Button
+        variant="ghost"
+        size="sm"
+        onClick={onSwitchProfile}
+        className="glass-panel gap-2"
+      >
+        <span className="text-lg">{activeProfile?.avatar || '👤'}</span>
+        <span className="hidden md:inline">{activeProfile?.name || 'Profile'}</span>
+        {isChildProfile && activeProfile && (
+          <span className="text-xs px-1.5 py-0.5 rounded bg-blue-500/30 text-blue-300">
+            {activeProfile.maxRating}
+          </span>
+        )}
+      </Button>
+
       <TierBadge showLabel={false} />
       
       <DropdownMenu>
@@ -81,7 +123,16 @@ export function UserMenu({ visible, onSignInClick }: UserMenuProps) {
             <User className="w-4 h-4" />
             Profile
           </DropdownMenuItem>
-          {!isPremium && (
+          {!isChildProfile && (
+            <DropdownMenuItem
+              className="gap-2 cursor-pointer"
+              onClick={onOpenParentalSettings}
+            >
+              <Users className="w-4 h-4" />
+              Parental Controls
+            </DropdownMenuItem>
+          )}
+          {!isPremium && !isChildProfile && (
             <DropdownMenuItem
               className="gap-2 cursor-pointer text-amber-400 focus:text-amber-400"
               onClick={openUpgradeModal}
@@ -90,7 +141,7 @@ export function UserMenu({ visible, onSignInClick }: UserMenuProps) {
               Upgrade to Premium
             </DropdownMenuItem>
           )}
-          {isPremium && (
+          {isPremium && !isChildProfile && (
             <DropdownMenuItem
               className="gap-2 cursor-pointer"
               onClick={openUpgradeModal}
