@@ -66,12 +66,13 @@ export const channels: Channel[] = [
     category: 'education',
     description: 'Educational science content',
     videos: [
-      { id: 'DLzxrzFCyOs', title: 'Powers of Ten', duration: 564 },
-      { id: 'JTvcpdfGUtQ', title: 'What Is Light?', duration: 492 },
-      { id: 'O_l4Ab5FRf0', title: 'The Water Cycle', duration: 318 },
-      { id: 'NgtMoaUB7kY', title: 'How Do Volcanoes Form?', duration: 426 },
+      // Verified Kurzgesagt & educational science videos
+      { id: 'JWVshkVF0SY', title: 'The Immune System Explained', duration: 427 },
       { id: 'QImCld9YubE', title: 'The Solar System', duration: 588 },
-      { id: 'f7KSfjv4Oq0', title: 'How Stars Are Born', duration: 654 },
+      { id: 'IJhgZBn-LHg', title: 'What Happened Before History', duration: 600 },
+      { id: 'uD4izuDMUQA', title: 'The Egg - A Short Story', duration: 480 },
+      { id: '16W7c0mb-rE', title: 'Black Holes Explained', duration: 378 },
+      { id: 'MUWUHf-rzks', title: 'String Theory Explained', duration: 492 },
     ],
   },
   {

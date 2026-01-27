@@ -336,17 +336,21 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         // If the scheduled video is known-bad, skip forward.
         if (failed?.has(playback.video.id)) {
           const next = getNextPlayable(live, playback.videoIndex + 1);
-          onVideoChange?.(next.video.title);
-          safeLoadVideo(next.video.id, 0);
+          if (currentVideoIdRef.current !== next.video.id) {
+            onVideoChange?.(next.video.title);
+            safeLoadVideo(next.video.id, 0);
+          }
           return;
         }
         
-        // Only switch if the video ID has changed
-        if (currentVideoIdRef.current !== playback.video.id) {
+        // Only switch if we're on the WRONG video entirely (different video ID)
+        // Don't reload if we're already playing the right video - this prevents the restart loop
+        const actualPlaying = getActualVideoId();
+        if (actualPlaying && actualPlaying !== playback.video.id && currentVideoIdRef.current !== playback.video.id) {
           onVideoChange?.(playback.video.title);
           safeLoadVideo(playback.video.id, playback.positionInVideo);
         }
-      }, 3000); // Check every 3 seconds instead of every second
+      }, 5000); // Check every 5 seconds, less aggressive
 
       return () => {
         if (checkIntervalRef.current) {
