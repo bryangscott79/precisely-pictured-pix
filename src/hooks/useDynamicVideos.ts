@@ -70,8 +70,10 @@ export function useDynamicVideos(channelId: string) {
       try {
         console.log(`[${channelId}] Fetching videos with query: "${searchConfig.query}"${currentProgram ? ` (Program: ${currentProgram})` : ''}`);
         // Use YouTube Search API with topic-based queries
+        // Pass channelType to enable content-type-specific filtering (e.g., podcasts vs music)
         const fetched = await fetchVideosFromSearch({
           ...searchConfig,
+          channelType: channelId, // Pass channel ID for content type validation
           limit: 25
         });
 
@@ -131,6 +133,7 @@ export async function preloadChannelVideos(channelId: string): Promise<void> {
   try {
     const fetched = await fetchVideosFromSearch({
       ...searchConfig,
+      channelType: channelId,
       limit: 25
     });
 

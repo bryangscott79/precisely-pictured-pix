@@ -33,6 +33,7 @@ export interface SearchConfig {
   minDuration?: number; // Additional filter in seconds
   maxDuration?: number; // Additional filter in seconds
   minViews?: number; // Minimum view count for quality filtering
+  channelType?: string; // Channel ID for content type validation
 }
 
 // Quality control: Terms to exclude from all searches (UGC, vertical, amateur content)
@@ -46,6 +47,76 @@ const QUALITY_EXCLUSIONS = [
   // Low quality markers
   '-"screen recording"', '-compilation',
 ].join(' ');
+
+// Content type validators based on channel category
+function isContentTypeMatch(video: any, channelType?: string): boolean {
+  const title = video.snippet?.title?.toLowerCase() || '';
+  const channelTitle = video.snippet?.channelTitle?.toLowerCase() || '';
+  const description = video.snippet?.description?.toLowerCase() || '';
+  const duration = parseInt(video.contentDetails?.duration?.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)?.[0] || '0');
+  
+  // For podcasts: MUST be a podcast, NOT a music video
+  if (channelType === 'podcast') {
+    const isPodcast = 
+      title.includes('podcast') || 
+      title.includes('episode') ||
+      title.includes('#') && (title.includes('joe rogan') || title.includes('lex fridman') || title.includes('huberman')) ||
+      channelTitle.includes('podcast') ||
+      channelTitle.includes('joe rogan') ||
+      channelTitle.includes('lex fridman') ||
+      channelTitle.includes('huberman');
+    
+    const isMusic = 
+      title.includes('official video') ||
+      title.includes('music video') ||
+      title.includes('vevo') ||
+      channelTitle.includes('vevo') ||
+      (title.includes('official') && !title.includes('podcast'));
+    
+    if (isMusic || !isPodcast) {
+      console.log(`[Filter] Excluded non-podcast from podcast channel: ${video.snippet?.title}`);
+      return false;
+    }
+    return true;
+  }
+  
+  // For music channels: MUST be music videos
+  if (channelType?.startsWith('music')) {
+    const isMusic = 
+      title.includes('official') ||
+      title.includes('music video') ||
+      title.includes('vevo') ||
+      channelTitle.includes('vevo') ||
+      channelTitle.includes('records');
+    
+    if (!isMusic) {
+      console.log(`[Filter] Excluded non-music from music channel: ${video.snippet?.title}`);
+      return false;
+    }
+    return true;
+  }
+  
+  // For comedy: must be sketch, standup, late night
+  if (channelType === 'comedy') {
+    const isComedy = 
+      title.includes('snl') ||
+      title.includes('saturday night live') ||
+      title.includes('comedy') ||
+      title.includes('standup') ||
+      title.includes('stand up') ||
+      title.includes('sketch') ||
+      title.includes('fallon') ||
+      title.includes('conan') ||
+      title.includes('kimmel') ||
+      channelTitle.includes('comedy') ||
+      channelTitle.includes('snl') ||
+      channelTitle.includes('tonight show');
+    
+    return isComedy;
+  }
+  
+  return true; // Default: allow
+}
 
 // Calculate the publishedAfter date based on uploadDate filter
 function getPublishedAfterDate(uploadDate: UploadDate): string | null {
@@ -199,7 +270,8 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
     minDuration = 60, 
     maxDuration = 3600, 
     limit = 25,
-    minViews = 50000 // Default minimum 50K views for quality
+    minViews = 50000, // Default minimum 50K views for quality
+    channelType
   } = config;
   
   try {
@@ -220,6 +292,11 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
         // Filter: Professional content only
         if (!isProfessionalContent(v)) {
           console.log(`[Filter] Excluded amateur content: ${v.snippet?.title}`);
+          return false;
+        }
+        
+        // Filter: Content type must match channel (e.g., podcasts can't be music videos)
+        if (channelType && !isContentTypeMatch(v, channelType)) {
           return false;
         }
         
