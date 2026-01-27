@@ -11,6 +11,7 @@ import { UserMenu } from '@/components/UserMenu';
 import { AuthModal } from '@/components/AuthModal';
 import { VoteButtons } from '@/components/VoteButtons';
 import { ParentalControlsModal } from '@/components/ParentalControlsModal';
+import { OnboardingModal } from '@/components/OnboardingModal';
 import { useParentalControls } from '@/hooks/useParentalControls';
 
 const IDLE_TIMEOUT = 3000;
@@ -126,16 +127,30 @@ export default function Index() {
     resetIdleTimer();
   }, [availableChannels, currentChannel, resetIdleTimer]);
 
-  // Playback controls
+  // Playback controls - sync state with actual player
   const toggleMute = useCallback(() => {
-    playerRef.current?.toggleMute();
-    setIsMuted(prev => !prev);
+    if (playerRef.current) {
+      playerRef.current.toggleMute();
+      // Get actual state from player after toggle
+      setTimeout(() => {
+        if (playerRef.current) {
+          setIsMuted(playerRef.current.isMuted());
+        }
+      }, 50);
+    }
     resetIdleTimer();
   }, [resetIdleTimer]);
 
   const togglePlayPause = useCallback(() => {
-    playerRef.current?.togglePlayPause();
-    setIsPlaying(prev => !prev);
+    if (playerRef.current) {
+      playerRef.current.togglePlayPause();
+      // Get actual state from player after toggle
+      setTimeout(() => {
+        if (playerRef.current) {
+          setIsPlaying(playerRef.current.isPlaying());
+        }
+      }, 50);
+    }
     resetIdleTimer();
   }, [resetIdleTimer]);
 
@@ -279,6 +294,9 @@ export default function Index() {
         open={isParentalControlsOpen}
         onOpenChange={setIsParentalControlsOpen}
       />
+
+      {/* Onboarding for first-time visitors */}
+      <OnboardingModal />
     </div>
   );
 }
