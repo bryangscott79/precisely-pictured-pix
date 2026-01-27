@@ -48,28 +48,85 @@ interface YTPlayerEvent {
 
 // Global tracker for the active player instance ID to prevent ghost audio
 let activePlayerId: string | null = null;
+let cleanupTimer: ReturnType<typeof setTimeout> | null = null;
+
+// NUCLEAR: Kill all YouTube audio by removing ALL iframes and resetting any audio contexts
+function killAllYouTubeAudio() {
+  // Clear any pending cleanup timers
+  if (cleanupTimer) {
+    clearTimeout(cleanupTimer);
+    cleanupTimer = null;
+  }
+  
+  // Find ALL YouTube iframes in the entire document
+  const iframes = document.querySelectorAll('iframe');
+  iframes.forEach((iframe) => {
+    const src = iframe.src || '';
+    if (src.includes('youtube.com') || src.includes('youtube-nocookie.com')) {
+      // First, try to stop via postMessage (may not work but try anyway)
+      try {
+        const win = iframe.contentWindow;
+        if (win) {
+          // Send multiple stop commands
+          win.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
+          win.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
+          win.postMessage('{"event":"command","func":"mute","args":""}', '*');
+          win.postMessage(JSON.stringify({event: 'command', func: 'stopVideo', args: []}), '*');
+          win.postMessage(JSON.stringify({event: 'command', func: 'pauseVideo', args: []}), '*');
+          win.postMessage(JSON.stringify({event: 'command', func: 'mute', args: []}), '*');
+        }
+      } catch {
+        // Cross-origin - ignore
+      }
+      
+      // Set src to empty to stop loading/playback
+      iframe.src = '';
+      // Remove from DOM
+      console.log('[VideoPlayer] NUCLEAR: Removing iframe:', iframe.id || 'unnamed');
+      iframe.remove();
+    }
+  });
+}
 
 // Aggressively remove ALL YouTube iframes except the one we're keeping
 function cleanupOrphanedYouTubeIframes(keepIframeId?: string) {
-  const iframes = document.querySelectorAll('iframe[src*="youtube.com"], iframe[src*="youtube-nocookie.com"]');
+  const iframes = document.querySelectorAll('iframe');
   iframes.forEach((iframe) => {
+    const src = iframe.src || '';
+    if (!src.includes('youtube.com') && !src.includes('youtube-nocookie.com')) return;
     if (keepIframeId && iframe.id === keepIframeId) return;
     
     // Try to stop playback before removing
     try {
-      const win = (iframe as HTMLIFrameElement).contentWindow;
+      const win = iframe.contentWindow;
       if (win) {
+        win.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
         win.postMessage('{"event":"command","func":"pauseVideo","args":""}', '*');
         win.postMessage('{"event":"command","func":"mute","args":""}', '*');
-        win.postMessage('{"event":"command","func":"stopVideo","args":""}', '*');
       }
     } catch {
       // Cross-origin - can't access, just remove
     }
     
+    // Kill the iframe
+    iframe.src = '';
     console.log('[VideoPlayer] Removing orphaned iframe:', iframe.id || 'unnamed');
     iframe.remove();
   });
+}
+
+// Schedule periodic cleanup to catch any stragglers
+function scheduleCleanup(keepIframeId?: string, delayMs: number = 100) {
+  if (cleanupTimer) {
+    clearTimeout(cleanupTimer);
+  }
+  cleanupTimer = setTimeout(() => {
+    cleanupOrphanedYouTubeIframes(keepIframeId);
+    // Schedule another cleanup after a longer delay
+    cleanupTimer = setTimeout(() => {
+      cleanupOrphanedYouTubeIframes(keepIframeId);
+    }, 500);
+  }, delayMs);
 }
 
 declare global {
@@ -371,8 +428,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       currentChannelIdRef.current = channel.id;
       onVideoChange?.(playback.video.title);
 
-      // CRITICAL: Clean up ALL orphaned iframes before creating new player
-      cleanupOrphanedYouTubeIframes();
+      // CRITICAL: NUCLEAR cleanup before creating new player
+      killAllYouTubeAudio();
 
       // Create player element with unique ID
       const playerId = `yt-player-${channel.id}-${Date.now()}`;
@@ -406,6 +463,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             onReady: () => {
               isInitializingRef.current = false;
               setIsReady(true);
+              
+              // CRITICAL: Schedule cleanup to remove any orphaned iframes that might have been created
+              // This catches ghost audio from any iframes that slipped through
+              scheduleCleanup(playerId, 50);
+              
               if (playerRef.current) {
                 // Apply persisted volume and explicit mute/unmute state.
                 // (After channel switches we hard-reset the player, so we must restore these.)
@@ -473,7 +535,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
 
       return () => {
-        // Aggressive cleanup - mute first, then destroy
+        // NUCLEAR cleanup on unmount - kill all audio first
+        killAllYouTubeAudio();
+        
         if (checkIntervalRef.current) {
           clearInterval(checkIntervalRef.current);
           checkIntervalRef.current = null;
@@ -498,8 +562,6 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           }
           playerRef.current = null;
         }
-        // CRITICAL: Clean up ALL orphaned iframes on unmount
-        cleanupOrphanedYouTubeIframes();
         
         if (containerRef.current) {
           containerRef.current.innerHTML = '';
@@ -507,6 +569,9 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         activePlayerId = null;
         setIsReady(false);
         isInitializingRef.current = false;
+        
+        // Schedule follow-up cleanups to catch any stragglers
+        scheduleCleanup();
       };
     }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos, playerInstanceVersion]);
 
@@ -531,11 +596,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       currentVideoIdRef.current = playback.video.id;
       onVideoChange?.(playback.video.title);
 
-      // HARD RESET on channel changes to eliminate ghost audio:
-      // 1. Stop/mute/pause the current player
-      // 2. Destroy the player instance
-      // 3. Clean up ALL orphaned iframes (nuclear option)
-      // 4. Re-initialize fresh for the new channel
+      // NUCLEAR HARD RESET on channel changes to eliminate ghost audio:
+      // 1. Kill ALL YouTube audio immediately
+      // 2. Stop/mute/pause the current player
+      // 3. Destroy the player instance  
+      // 4. Remove ALL iframes
+      // 5. Re-initialize fresh for the new channel
+      
+      // Step 1: NUCLEAR - Kill everything first
+      killAllYouTubeAudio();
+      
+      // Step 2: Try to gracefully stop current player
       try {
         playerRef.current.mute();
         playerRef.current.pauseVideo();
@@ -543,6 +614,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       } catch {
         // ignore
       }
+      
+      // Step 3: Destroy player instance
       try {
         playerRef.current.destroy();
       } catch {
@@ -550,17 +623,20 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
       playerRef.current = null;
       
-      // CRITICAL: Nuclear cleanup - remove ALL YouTube iframes
-      cleanupOrphanedYouTubeIframes();
-      
+      // Step 4: Clear container
       if (containerRef.current) {
         containerRef.current.innerHTML = '';
       }
+      
+      // Step 5: Reset state and trigger re-initialization
       activePlayerId = null;
       setIsReady(false);
       setIsPaused(false);
       isInitializingRef.current = false;
       setPlayerInstanceVersion((v) => v + 1);
+      
+      // Step 6: Schedule follow-up cleanups to catch any async iframes
+      scheduleCleanup();
     }, [channel.id, isReady, onVideoChange]);
 
     // Update videos when dynamic videos finish loading
