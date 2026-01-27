@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 'react';
 import { Channel, Video } from '@/data/channels';
 import { useDynamicVideos, getDynamicVideosForChannel } from '@/hooks/useDynamicVideos';
+import { isAllowedVideoTitle } from '@/lib/contentGuards';
 
 interface VideoPlayerProps {
   channel: Channel;
@@ -254,7 +255,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     // Update videos ref when dynamic videos change
     useEffect(() => {
       if (dynamicVideos.length > 0) {
-        videosRef.current = dynamicVideos;
+        // Extra safety: ensure no off-topic titles sneak into the active playlist.
+        videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
       } else if (!videosLoading) {
         // If not loading and no dynamic videos, fall back to static
         videosRef.current = channel.videos;
@@ -563,6 +565,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                   setTimeout(() => {
                     const actualTitle = getActualVideoTitle();
                     if (actualTitle) {
+                      // Final runtime guard: if the *actual* playing title is off-topic,
+                      // immediately skip it (prevents bad content even if it somehow got queued).
+                      const activeChannelId = channelRef.current?.id || channel.id;
+                      if (!isAllowedVideoTitle(activeChannelId, actualTitle)) {
+                        const badId = getActualVideoId() || currentVideoIdRef.current;
+                        if (badId) failedVideosRef.current.add(badId);
+                        console.warn(`[VideoPlayer] Off-topic title detected for ${activeChannelId}; skipping: ${actualTitle}`);
+                        setIsTuning(true);
+                        advanceToNextVideo();
+                        return;
+                      }
                       onVideoChange?.(actualTitle);
                     }
                   }, 500);
@@ -704,7 +717,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (channel.id !== currentChannelIdRef.current) return;
       
       // Videos just loaded, update the ref
-      videosRef.current = dynamicVideos;
+      videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
     }, [dynamicVideos, videosLoading, isReady, channel.id]);
 
     // Periodic check for failed videos
