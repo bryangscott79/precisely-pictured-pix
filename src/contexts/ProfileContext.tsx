@@ -21,7 +21,7 @@ export const RATING_CHANNELS: Record<ContentRating, string[]> = {
   'G': ['kids', 'family', 'nature', 'faith'],
   'PG': ['kids', 'family', 'nature', 'faith', 'science', 'history', 'cooking', 'diy', 'art'],
   'PG-13': ['kids', 'family', 'nature', 'faith', 'science', 'history', 'cooking', 'diy', 'art', 
-            'tech', 'maker', 'automotive', 'fitness', 'travel', 'music', 'music80s', 'music90s', 'music00s', 'music10s'],
+            'tech', 'maker', 'automotive', 'fitness', 'travel', 'music', 'music80s', 'music90s', 'music00s', 'music10s', 'podcast'],
   'R': [], // Empty means all channels allowed
 };
 
