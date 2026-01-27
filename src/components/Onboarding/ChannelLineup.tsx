@@ -109,17 +109,17 @@ export function ChannelLineup() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full min-h-0">
       {/* Header */}
-      <div className="text-center mb-6">
+      <div className="text-center mb-4 flex-shrink-0">
         <h2 className="text-2xl font-bold mb-2">Your Channel Lineup</h2>
-        <p className="text-muted-foreground">
+        <p className="text-muted-foreground text-sm">
           Drag to reorder. Your #1 channel plays first.
         </p>
       </div>
 
       {/* Channel List */}
-      <div className="flex-1 overflow-y-auto space-y-2 px-1">
+      <div className="flex-1 min-h-0 overflow-y-auto space-y-2 px-1 -mx-1">
         {lineupChannels.map((item, index) => (
           <div
             key={item.channelId}
@@ -185,7 +185,7 @@ export function ChannelLineup() {
       </div>
 
       {/* Footer */}
-      <div className="mt-6 flex items-center justify-between">
+      <div className="mt-4 pt-4 border-t flex-shrink-0 flex items-center justify-between">
         <Button
           variant="ghost"
           onClick={() => setStep('interests')}
