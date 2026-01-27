@@ -188,14 +188,17 @@ export const channels: Channel[] = [
     icon: '🏠',
     color: 'diy',
     category: 'hobbies',
-    description: 'Home improvement and crafts',
+    description: 'Home renovation and design inspiration',
     videos: [
-      // Home improvement channels
-      { id: 'oG7jKUHtLhI', title: 'DIY Floating Shelves', duration: 900 },
-      { id: 'lc7scxvKQOo', title: 'Home Office Makeover', duration: 1200 },
-      { id: 'hKvO4_IbdgQ', title: 'Bathroom Renovation', duration: 1500 },
-      { id: 'kI9pD-MEhAg', title: 'Kitchen Organization', duration: 720 },
-      { id: 'oCE-3Ys7sPE', title: 'Backyard Transformation', duration: 1080 },
+      // Magnolia Network / Home improvement content
+      { id: 'FhJxwLRLHqE', title: 'Fixer Upper - Full House Transformation', duration: 2580 },
+      { id: 'YQHsXMglC9A', title: 'Modern Farmhouse Kitchen Renovation', duration: 1200 },
+      { id: 'WwpkCjlQ8E4', title: 'DIY Shiplap Wall Tutorial', duration: 780 },
+      { id: 'bPKUBpHEVWE', title: 'Budget Bathroom Makeover', duration: 960 },
+      { id: 'SrCMEy9rZFo', title: 'Open Concept Living Room Design', duration: 1140 },
+      { id: 'Lp7E973zozc', title: 'Farmhouse Style Decorating Tips', duration: 840 },
+      { id: 'VQH8ZTgna3Q', title: 'Kitchen Cabinet Painting Tutorial', duration: 1320 },
+      { id: 'q15GT7C3dDw', title: 'Outdoor Patio Transformation', duration: 1080 },
     ],
   },
   {
@@ -304,14 +307,15 @@ export const channels: Channel[] = [
     color: 'comedy',
     category: 'entertainment',
     description: 'Sketches, stand-up, and funny videos',
-    restricted: true,
     videos: [
-      // Comedy Central & sketch comedy
-      { id: 'k1tsGGz-Qw0', title: 'Key & Peele Substitute Teacher', duration: 300 },
-      { id: 'IHfiMoJUDVQ', title: 'Key & Peele Text Message', duration: 240 },
-      { id: '14WE3A0PwVs', title: 'SNL Best Of', duration: 600 },
-      { id: 'st21dIMaGMs', title: 'Impractical Jokers Clip', duration: 480 },
-      { id: 'kZlXWp6vFdE', title: 'Stand Up Comedy Set', duration: 720 },
+      // Comedy sketches & stand-up
+      { id: 'k1tsGGz-Qw0', title: 'Key & Peele - Substitute Teacher', duration: 300 },
+      { id: 'IHfiMoJUDVQ', title: 'Key & Peele - Text Message Confusion', duration: 240 },
+      { id: '14WE3A0PwVs', title: 'SNL Best Sketches Compilation', duration: 600 },
+      { id: 'st21dIMaGMs', title: 'Impractical Jokers - Best Moments', duration: 480 },
+      { id: 'j-emlcBvI5g', title: 'Whose Line Is It Anyway - Best Of', duration: 720 },
+      { id: '4m1EFMoRFvY', title: 'Gabriel Iglesias - Fluffy Stand Up', duration: 540 },
+      { id: 'WZjYoLbVZsM', title: 'Trevor Noah - Comedy Special', duration: 660 },
     ],
   },
   {
