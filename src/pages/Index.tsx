@@ -16,8 +16,14 @@ import { ParentalControlsModal } from '@/components/ParentalControlsModal';
 import { OnboardingModal } from '@/components/OnboardingModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PremiumChannelLock } from '@/components/PremiumChannelLock';
+import { 
+  ProfileSwitcher, 
+  ProfileSettings, 
+  TimeLimitWarning 
+} from '@/components/ParentalControls';
 import { useParentalControls } from '@/hooks/useParentalControls';
 import { useUserTier } from '@/contexts/UserTierContext';
+import { useProfiles } from '@/contexts/ProfileContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -29,8 +35,17 @@ export default function Index() {
   const isMobile = useIsMobile();
   const { enabled: parentalControlsEnabled } = useParentalControls();
   const { isPremium, checkSubscription, openUpgradeModal } = useUserTier();
+  const { activeProfile, isChildProfile, isChannelAllowed, timeRemaining, isBedtimeLocked } = useProfiles();
   const [searchParams, setSearchParams] = useSearchParams();
-  const availableChannels = getAvailableChannels(parentalControlsEnabled);
+  
+  // Get available channels based on profile's content rating
+  const availableChannels = channels.filter(c => {
+    // First apply parental controls (legacy)
+    if (parentalControlsEnabled && c.restricted) return false;
+    // Then apply profile-based content filtering
+    if (!isChannelAllowed(c.id)) return false;
+    return true;
+  });
 
   // Get saved channel or default to first available
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {
@@ -42,6 +57,8 @@ export default function Index() {
   const [isGuideOpen, setIsGuideOpen] = useState(false);
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isParentalControlsOpen, setIsParentalControlsOpen] = useState(false);
+  const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
+  const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
   const [switchDirection, setSwitchDirection] = useState<'up' | 'down' | null>(null);
@@ -271,8 +288,13 @@ export default function Index() {
         <UserMenu 
           visible={showUI && !isGuideOpen}
           onSignInClick={() => setIsAuthModalOpen(true)}
+          onSwitchProfile={() => setIsProfileSwitcherOpen(true)}
+          onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
         />
       </div>
+
+      {/* Time Limit Warning */}
+      <TimeLimitWarning />
 
       {/* Guide Button */}
       <GuideButton 
@@ -282,7 +304,7 @@ export default function Index() {
 
       {/* Playback Controls */}
       <PlaybackControls
-        visible={showUI && !isGuideOpen && !isChannelLocked}
+        visible={showUI && !isGuideOpen && !isChannelLocked && !isBedtimeLocked && (timeRemaining === null || timeRemaining > 0)}
         isMuted={isMuted}
         isPlaying={isPlaying}
         onToggleMute={toggleMute}
@@ -339,7 +361,7 @@ export default function Index() {
         onClose={() => setIsGuideOpen(false)}
         currentChannel={currentChannel}
         onChannelSelect={handleChannelSelect}
-        onOpenParentalControls={() => setIsParentalControlsOpen(true)}
+        onOpenParentalControls={() => setIsProfileSettingsOpen(true)}
       />
 
       {/* Auth Modal */}
@@ -348,7 +370,23 @@ export default function Index() {
         onClose={() => setIsAuthModalOpen(false)}
       />
 
-      {/* Parental Controls Modal */}
+      {/* Profile Switcher */}
+      <ProfileSwitcher
+        open={isProfileSwitcherOpen}
+        onOpenChange={setIsProfileSwitcherOpen}
+        onOpenSettings={() => {
+          setIsProfileSwitcherOpen(false);
+          setIsProfileSettingsOpen(true);
+        }}
+      />
+
+      {/* Profile Settings (Parental Controls) */}
+      <ProfileSettings
+        open={isProfileSettingsOpen}
+        onOpenChange={setIsProfileSettingsOpen}
+      />
+
+      {/* Legacy Parental Controls Modal */}
       <ParentalControlsModal
         open={isParentalControlsOpen}
         onOpenChange={setIsParentalControlsOpen}

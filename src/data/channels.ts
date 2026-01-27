@@ -35,17 +35,27 @@ export type ChannelColor =
 
 export type ChannelCategory = 'education' | 'entertainment' | 'lifestyle' | 'family' | 'hobbies';
 
+// Content ratings for parental controls
+export type ContentRating = 'G' | 'PG' | 'PG-13' | 'R';
+
 export interface Channel {
   id: string;
   name: string;
   icon: string;
   color: ChannelColor;
   category: ChannelCategory;
+  contentRating: ContentRating;
   premium?: boolean;
   description: string;
   restricted?: boolean;
   videos: Video[];
 }
+
+// Content rating definitions
+// G: Kids, Family, Nature, Faith
+// PG: + Science, History, Cooking, DIY, Art
+// PG-13: + Technology, Maker, Automotive, Fitness, Travel, Music
+// R: All channels including Comedy, Teen, Gaming
 
 // All video IDs are verified embeddable YouTube videos from official channels
 export const channels: Channel[] = [
@@ -56,6 +66,7 @@ export const channels: Channel[] = [
     icon: '💻',
     color: 'tech',
     category: 'education',
+    contentRating: 'PG-13',
     description: 'Tech explainers and reviews',
     videos: [
       // Verified Fireship videos
@@ -75,6 +86,7 @@ export const channels: Channel[] = [
     icon: '🔬',
     color: 'science',
     category: 'education',
+    contentRating: 'PG',
     description: 'Educational science content',
     videos: [
       // Verified Kurzgesagt videos
@@ -93,6 +105,7 @@ export const channels: Channel[] = [
     icon: '📜',
     color: 'history',
     category: 'education',
+    contentRating: 'PG',
     description: 'Historical documentaries',
     videos: [
       // Verified Oversimplified videos
@@ -110,6 +123,7 @@ export const channels: Channel[] = [
     icon: '🌿',
     color: 'nature',
     category: 'education',
+    contentRating: 'G',
     description: 'Wildlife documentaries',
     videos: [
       // Verified BBC Earth & nature content
@@ -129,6 +143,7 @@ export const channels: Channel[] = [
     icon: '🍳',
     color: 'cooking',
     category: 'lifestyle',
+    contentRating: 'PG',
     description: 'Recipes and cooking techniques',
     videos: [
       // Verified Babish & cooking content
@@ -146,6 +161,7 @@ export const channels: Channel[] = [
     icon: '💪',
     color: 'fitness',
     category: 'lifestyle',
+    contentRating: 'PG-13',
     description: 'Workouts and health tips',
     videos: [
       // Verified fitness content
@@ -163,6 +179,7 @@ export const channels: Channel[] = [
     icon: '✈️',
     color: 'travel',
     category: 'lifestyle',
+    contentRating: 'PG-13',
     description: 'Explore the world',
     videos: [
       // Verified 4K travel content
@@ -181,6 +198,7 @@ export const channels: Channel[] = [
     icon: '🔧',
     color: 'maker',
     category: 'hobbies',
+    contentRating: 'PG-13',
     description: 'DIY and engineering projects',
     videos: [
       // Verified Mark Rober videos
@@ -198,6 +216,7 @@ export const channels: Channel[] = [
     icon: '🏠',
     color: 'diy',
     category: 'hobbies',
+    contentRating: 'PG',
     description: 'Home renovation inspiration',
     videos: [
       // This Old House (highly reliable embeds) + Magnolia Network trailers
@@ -215,6 +234,7 @@ export const channels: Channel[] = [
     icon: '🚗',
     color: 'automotive',
     category: 'hobbies',
+    contentRating: 'PG-13',
     description: 'Cars and everything on wheels',
     videos: [
       // Donut Media (reliable embeds)
@@ -231,6 +251,7 @@ export const channels: Channel[] = [
     icon: '🎴',
     color: 'collecting',
     category: 'hobbies',
+    contentRating: 'PG',
     description: 'Cards, coins, and collectibles',
     videos: [
       // Coin collecting education (reliable embeds)
@@ -247,6 +268,7 @@ export const channels: Channel[] = [
     icon: '🎨',
     color: 'art',
     category: 'hobbies',
+    contentRating: 'PG',
     description: 'Creative tutorials',
     videos: [
       // Verified art content
@@ -266,6 +288,7 @@ export const channels: Channel[] = [
     icon: '🎮',
     color: 'gaming',
     category: 'entertainment',
+    contentRating: 'R',
     description: 'Game reviews and gameplay',
     videos: [
       // Verified gaming content
@@ -283,6 +306,7 @@ export const channels: Channel[] = [
     icon: '⚽',
     color: 'sports',
     category: 'entertainment',
+    contentRating: 'PG',
     description: 'Highlights and sports stories',
     videos: [
       // Verified sports content
@@ -300,6 +324,7 @@ export const channels: Channel[] = [
     icon: '🔥',
     color: 'teen',
     category: 'entertainment',
+    contentRating: 'R',
     description: 'Challenges and epic stunts',
     videos: [
       // Verified Dude Perfect videos
@@ -317,6 +342,7 @@ export const channels: Channel[] = [
     icon: '😂',
     color: 'comedy',
     category: 'entertainment',
+    contentRating: 'R',
     description: 'Sketches and funny videos',
     videos: [
       // Verified comedy content
@@ -334,6 +360,7 @@ export const channels: Channel[] = [
     icon: '🎵',
     color: 'music',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Music videos and performances',
     videos: [
       // Verified VEVO music videos
@@ -353,6 +380,7 @@ export const channels: Channel[] = [
     icon: '📼',
     color: 'music80s',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Classic 80s music videos',
     videos: [
       // Verified 80s VEVO hits
@@ -372,6 +400,7 @@ export const channels: Channel[] = [
     icon: '💿',
     color: 'music90s',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Iconic 90s music videos',
     videos: [
       // Verified 90s VEVO hits
@@ -391,6 +420,7 @@ export const channels: Channel[] = [
     icon: '📱',
     color: 'music00s',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Hit music from the 2000s',
     videos: [
       // Verified 2000s VEVO hits
@@ -410,6 +440,7 @@ export const channels: Channel[] = [
     icon: '🔥',
     color: 'music10s',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Top hits from the 2010s',
     videos: [
       // Verified 2010s VEVO hits
@@ -431,6 +462,7 @@ export const channels: Channel[] = [
     icon: '🧸',
     color: 'kids',
     category: 'family',
+    contentRating: 'G',
     description: 'Fun content for young viewers',
     videos: [
       // Verified Cocomelon & kids content
@@ -448,6 +480,7 @@ export const channels: Channel[] = [
     icon: '👨‍👩‍👧‍👦',
     color: 'family',
     category: 'family',
+    contentRating: 'G',
     description: 'Content for the whole family',
     videos: [
       // Verified Art for Kids Hub
@@ -465,6 +498,7 @@ export const channels: Channel[] = [
     icon: '✝️',
     color: 'faith',
     category: 'family',
+    contentRating: 'G',
     description: 'Inspirational content',
     videos: [
       // Verified BibleProject videos
@@ -484,6 +518,7 @@ export const channels: Channel[] = [
     icon: '🎬',
     color: 'movies',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Classic and popular movie clips',
     premium: true,
     videos: [
@@ -499,6 +534,7 @@ export const channels: Channel[] = [
     icon: '🏈',
     color: 'nfl',
     category: 'entertainment',
+    contentRating: 'PG',
     description: 'NFL game highlights and analysis',
     premium: true,
     videos: [
@@ -514,6 +550,7 @@ export const channels: Channel[] = [
     icon: '📽️',
     color: 'cinema80s',
     category: 'entertainment',
+    contentRating: 'PG-13',
     description: 'Iconic 80s movie content',
     premium: true,
     videos: [
