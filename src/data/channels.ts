@@ -28,7 +28,10 @@ export type ChannelColor =
   | 'music80s'
   | 'music90s'
   | 'music00s'
-  | 'music10s';
+  | 'music10s'
+  | 'movies'
+  | 'nfl'
+  | 'cinema80s';
 
 export type ChannelCategory = 'education' | 'entertainment' | 'lifestyle' | 'family' | 'hobbies';
 
@@ -38,6 +41,7 @@ export interface Channel {
   icon: string;
   color: ChannelColor;
   category: ChannelCategory;
+  premium?: boolean;
   description: string;
   restricted?: boolean;
   videos: Video[];
@@ -470,6 +474,53 @@ export const channels: Channel[] = [
       { id: 'Q0BrP8bqj0c', title: 'The Book of Exodus', duration: 420 },
       { id: 'tuu-VQ2Wzgk', title: 'Spiritual Beings', duration: 390 },
       { id: 'MvGcqFJy2uA', title: 'The Gospel of Luke', duration: 480 },
+    ],
+  },
+  
+  // === PREMIUM CHANNELS ===
+  {
+    id: 'movies',
+    name: 'Movies',
+    icon: '🎬',
+    color: 'movies',
+    category: 'entertainment',
+    description: 'Classic and popular movie clips',
+    premium: true,
+    videos: [
+      { id: 'JfVOs4VSpmA', title: 'Movie Trailers Collection', duration: 1200 },
+      { id: 'vKQi3bBA1y8', title: 'Greatest Movie Scenes', duration: 1800 },
+      { id: 'sY1S34973zA', title: 'Classic Film Moments', duration: 1500 },
+      { id: 'iAqJyWp2sKg', title: 'Behind The Scenes', duration: 1320 },
+    ],
+  },
+  {
+    id: 'nfl',
+    name: 'NFL Highlights',
+    icon: '🏈',
+    color: 'nfl',
+    category: 'entertainment',
+    description: 'NFL game highlights and analysis',
+    premium: true,
+    videos: [
+      { id: 'qi1LMIUOOAI', title: 'Greatest NFL Plays Ever', duration: 1200 },
+      { id: 'TlRTvxMGhgY', title: 'Super Bowl Highlights', duration: 1500 },
+      { id: 'J2p7lFfBwZI', title: 'Top 100 NFL Plays', duration: 1800 },
+      { id: 'Pd3N5kkJOJI', title: 'NFL Season Recap', duration: 1320 },
+    ],
+  },
+  {
+    id: 'cinema80s',
+    name: '80s Cinema',
+    icon: '📽️',
+    color: 'cinema80s',
+    category: 'entertainment',
+    description: 'Iconic 80s movie content',
+    premium: true,
+    videos: [
+      { id: 'sOnqjkJTMaA', title: 'Back to the Future Clips', duration: 900 },
+      { id: 'qeMFqkcPYcg', title: 'Top Gun Scenes', duration: 840 },
+      { id: 'FTQbiNvZqaY', title: 'The Breakfast Club', duration: 960 },
+      { id: '1w7OgIMMRc4', title: 'Ferris Bueller Moments', duration: 780 },
     ],
   },
 ];

@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Shield, Lock, Clock, Grid3X3 } from 'lucide-react';
+import { X, Shield, Lock, Clock, Grid3X3, Crown } from 'lucide-react';
 import { 
   Channel, 
   ChannelCategory,
@@ -14,6 +14,7 @@ import {
   ScheduleItem
 } from '@/data/channels';
 import { useParentalControls } from '@/hooks/useParentalControls';
+import { useUserTier } from '@/contexts/UserTierContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface ChannelGuideProps {
@@ -49,6 +50,9 @@ const colorClasses: Record<ChannelColor, { bg: string; border: string; text: str
   music90s: { bg: 'bg-channel-music90s', border: 'border-channel-music90s', text: 'text-channel-music90s' },
   music00s: { bg: 'bg-channel-music00s', border: 'border-channel-music00s', text: 'text-channel-music00s' },
   music10s: { bg: 'bg-channel-music10s', border: 'border-channel-music10s', text: 'text-channel-music10s' },
+  movies: { bg: 'bg-channel-movies', border: 'border-channel-movies', text: 'text-channel-movies' },
+  nfl: { bg: 'bg-channel-nfl', border: 'border-channel-nfl', text: 'text-channel-nfl' },
+  cinema80s: { bg: 'bg-channel-cinema80s', border: 'border-channel-cinema80s', text: 'text-channel-cinema80s' },
 };
 
 type ViewMode = 'grid' | 'schedule';
@@ -56,11 +60,13 @@ type ViewMode = 'grid' | 'schedule';
 function ChannelCard({ 
   channel, 
   isActive, 
-  onClick 
+  onClick,
+  isLocked,
 }: { 
   channel: Channel; 
   isActive: boolean; 
   onClick: () => void;
+  isLocked: boolean;
 }) {
   const [playback, setPlayback] = useState(() => getCurrentPlayback(channel));
   const [nextVideo, setNextVideo] = useState(() => getNextVideo(channel, playback.videoIndex));
@@ -94,7 +100,13 @@ function ChannelCard({
         <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
           <div className="flex items-center gap-2">
             <h3 className="font-display font-bold text-xs md:text-sm">{channel.name}</h3>
-            {isActive && (
+            {isLocked && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-semibold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-400 border border-amber-500/30">
+                <Crown className="w-2.5 h-2.5" />
+                Premium
+              </span>
+            )}
+            {isActive && !isLocked && (
               <span className="live-badge text-[8px] md:text-[9px]">
                 <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
                 Watching
@@ -246,6 +258,7 @@ export function ChannelGuide({
   onOpenParentalControls 
 }: ChannelGuideProps) {
   const { enabled: parentalControlsEnabled } = useParentalControls();
+  const { isPremium } = useUserTier();
   // Memoize so `availableChannels` doesn't change identity every render.
   // This prevents schedule update effects from re-running continuously.
   const availableChannels = useMemo(
@@ -378,6 +391,7 @@ export function ChannelGuide({
                         key={channel.id}
                         channel={channel}
                         isActive={channel.id === currentChannel.id}
+                        isLocked={!!channel.premium && !isPremium}
                         onClick={() => {
                           onChannelSelect(channel);
                           onClose();

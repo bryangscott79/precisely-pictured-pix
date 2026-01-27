@@ -64,6 +64,11 @@
     --channel-music90s: 270 75% 55%;
     --channel-music00s: 200 85% 55%;
     --channel-music10s: 15 90% 55%;
+    
+    /* Premium channel colors */
+    --channel-movies: 45 95% 50%;
+    --channel-nfl: 220 85% 50%;
+    --channel-cinema80s: 350 80% 55%;
   }
 
   .dark {
@@ -253,6 +258,9 @@
   .bg-channel-fitness { background-color: hsl(var(--channel-fitness)); }
   .bg-channel-travel { background-color: hsl(var(--channel-travel)); }
   .bg-channel-art { background-color: hsl(var(--channel-art)); }
+  .bg-channel-movies { background-color: hsl(var(--channel-movies)); }
+  .bg-channel-nfl { background-color: hsl(var(--channel-nfl)); }
+  .bg-channel-cinema80s { background-color: hsl(var(--channel-cinema80s)); }
 
   .text-channel-tech { color: hsl(var(--channel-tech)); }
   .text-channel-science { color: hsl(var(--channel-science)); }
@@ -274,6 +282,9 @@
   .text-channel-fitness { color: hsl(var(--channel-fitness)); }
   .text-channel-travel { color: hsl(var(--channel-travel)); }
   .text-channel-art { color: hsl(var(--channel-art)); }
+  .text-channel-movies { color: hsl(var(--channel-movies)); }
+  .text-channel-nfl { color: hsl(var(--channel-nfl)); }
+  .text-channel-cinema80s { color: hsl(var(--channel-cinema80s)); }
 
   .border-channel-tech { border-color: hsl(var(--channel-tech)); }
   .border-channel-science { border-color: hsl(var(--channel-science)); }
@@ -295,4 +306,12 @@
   .border-channel-fitness { border-color: hsl(var(--channel-fitness)); }
   .border-channel-travel { border-color: hsl(var(--channel-travel)); }
   .border-channel-art { border-color: hsl(var(--channel-art)); }
+  .border-channel-movies { border-color: hsl(var(--channel-movies)); }
+  .border-channel-nfl { border-color: hsl(var(--channel-nfl)); }
+  .border-channel-cinema80s { border-color: hsl(var(--channel-cinema80s)); }
+
+  .glass-panel {
+    @apply backdrop-blur-md border border-white/10;
+    background: hsl(var(--card) / 0.8);
+  }
 }
