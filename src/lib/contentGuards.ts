@@ -24,6 +24,47 @@ const GLOBAL_BLOCK_TERMS: string[] = [
   'days of the week',
 ];
 
+// Spanish/foreign language indicators - block these on non-Spanish channels
+const FOREIGN_LANGUAGE_TERMS: string[] = [
+  // Spanish indicators
+  'en español',
+  'en espanol',
+  'español',
+  'espanol',
+  'latino',
+  'latinoamérica',
+  'latinoamerica',
+  'subtitulado',
+  'doblado',
+  'doblaje',
+  'versión en',
+  'version en',
+  // Portuguese
+  'em português',
+  'em portugues',
+  'dublado',
+  'dublagem',
+  'legendado',
+  // German
+  'auf deutsch',
+  'synchronisiert',
+  // Italian
+  'in italiano',
+  'doppiato',
+  // French
+  'en français',
+  'en francais',
+  'doublé',
+  // Russian
+  'на русском',
+  'дубляж',
+  // Generic dubbed/translated indicators
+  '(dub)',
+  '(dubbed)',
+  '(sub)',
+  '(subbed)',
+];
+
 // Sports should never be music/parody/animations.
 const SPORTS_EXTRA_BLOCK_TERMS: string[] = [
   'song',
@@ -36,7 +77,7 @@ const SPORTS_EXTRA_BLOCK_TERMS: string[] = [
   'cover',
 ];
 
-// Minimal set of “this is clearly sports” signals.
+// Minimal set of "this is clearly sports" signals.
 // If none appear, we treat it as off-topic for sports channels.
 const SPORTS_ALLOW_TERMS: string[] = [
   'highlights',
@@ -90,14 +131,32 @@ export function isAllowedVideoTitle(channelId: string, title: string): boolean {
   // Kids/family channels are allowed to show kids terms.
   if (ch === 'kids' || ch === 'family') return true;
 
+  // Block foreign language content on all non-music channels
+  // (Music channels may have valid international hits)
+  if (!ch.startsWith('music')) {
+    if (includesAny(t, FOREIGN_LANGUAGE_TERMS)) {
+      console.log(`[ContentGuard] Blocked foreign language content: "${title}" on channel ${channelId}`);
+      return false;
+    }
+  }
+
   // Global block terms for all other channels.
-  if (includesAny(t, GLOBAL_BLOCK_TERMS)) return false;
+  if (includesAny(t, GLOBAL_BLOCK_TERMS)) {
+    console.log(`[ContentGuard] Blocked kids content: "${title}" on channel ${channelId}`);
+    return false;
+  }
 
   // Sports/NFL extra strictness.
   if (ch === 'sports' || ch === 'nfl') {
-    if (includesAny(t, SPORTS_EXTRA_BLOCK_TERMS)) return false;
+    if (includesAny(t, SPORTS_EXTRA_BLOCK_TERMS)) {
+      console.log(`[ContentGuard] Blocked music/parody on sports: "${title}"`);
+      return false;
+    }
     // Require at least one sports signal.
-    if (!includesAny(t, SPORTS_ALLOW_TERMS)) return false;
+    if (!includesAny(t, SPORTS_ALLOW_TERMS)) {
+      console.log(`[ContentGuard] Blocked non-sports content: "${title}"`);
+      return false;
+    }
   }
 
   return true;
