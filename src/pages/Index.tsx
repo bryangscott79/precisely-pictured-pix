@@ -17,6 +17,7 @@ import { OnboardingModal } from '@/components/OnboardingModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PremiumChannelLock } from '@/components/PremiumChannelLock';
 import { LanguageSettingsModal } from '@/components/LanguageSettingsModal';
+import { ActionFeedback } from '@/components/ActionFeedback';
 import { 
   ProfileSwitcher, 
   ProfileSettings, 
@@ -28,6 +29,8 @@ import { useProfiles } from '@/contexts/ProfileContext';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
+
+type ActionType = 'mute' | 'unmute' | 'play' | 'pause' | 'captions-on' | 'captions-off' | null;
 
 const IDLE_TIMEOUT = 3000;
 const CHANNEL_SWITCH_DISPLAY_TIME = 1500;
@@ -75,6 +78,8 @@ export default function Index() {
   const [currentVideoId, setCurrentVideoId] = useState<string>('');
   const [currentVideoTitle, setCurrentVideoTitle] = useState<string>('');
   const [languageVersion, setLanguageVersion] = useState(0); // Force refresh when language changes
+  const [currentAction, setCurrentAction] = useState<ActionType>(null);
+  const [captionsOn, setCaptionsOn] = useState(false);
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -199,7 +204,9 @@ export default function Index() {
       // Get actual state from player after toggle
       setTimeout(() => {
         if (playerRef.current) {
-          setIsMuted(playerRef.current.isMuted());
+          const nowMuted = playerRef.current.isMuted();
+          setIsMuted(nowMuted);
+          setCurrentAction(nowMuted ? 'mute' : 'unmute');
         }
       }, 50);
     }
@@ -212,12 +219,24 @@ export default function Index() {
       // Get actual state from player after toggle
       setTimeout(() => {
         if (playerRef.current) {
-          setIsPlaying(playerRef.current.isPlaying());
+          const nowPlaying = playerRef.current.isPlaying();
+          setIsPlaying(nowPlaying);
+          setCurrentAction(nowPlaying ? 'play' : 'pause');
         }
       }, 50);
     }
     resetIdleTimer();
   }, [resetIdleTimer]);
+
+  const toggleCaptions = useCallback(() => {
+    if (playerRef.current) {
+      playerRef.current.toggleCaptions();
+      const newState = !captionsOn;
+      setCaptionsOn(newState);
+      setCurrentAction(newState ? 'captions-on' : 'captions-off');
+    }
+    resetIdleTimer();
+  }, [resetIdleTimer, captionsOn]);
 
   const setPlayerVolume = useCallback((newVolume: number) => {
     const v = Math.max(0, Math.min(100, Math.round(newVolume)));
@@ -272,14 +291,14 @@ export default function Index() {
           break;
         case 'c':
           e.preventDefault();
-          playerRef.current?.toggleCaptions();
+          toggleCaptions();
           break;
       }
     };
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [isGuideOpen, switchChannel, resetIdleTimer, toggleMute, togglePlayPause]);
+  }, [isGuideOpen, switchChannel, resetIdleTimer, toggleMute, togglePlayPause, toggleCaptions]);
 
   // Handle channel selection from guide
   const handleChannelSelect = useCallback((channel: Channel) => {
@@ -440,6 +459,12 @@ export default function Index() {
 
       {/* Onboarding for first-time visitors */}
       <OnboardingModal />
+
+      {/* Action Feedback Overlay */}
+      <ActionFeedback 
+        action={currentAction} 
+        onComplete={() => setCurrentAction(null)} 
+      />
     </div>
   );
 }

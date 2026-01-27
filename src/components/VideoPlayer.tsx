@@ -471,7 +471,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setIsReady(false);
         isInitializingRef.current = false;
       };
-    }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos, playerInstanceVersion, isMuted]);
+    }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos, playerInstanceVersion]);
 
     // Handle channel changes - load new video from dynamic content
     useEffect(() => {
