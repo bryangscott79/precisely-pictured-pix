@@ -14,25 +14,80 @@ export interface FetchedVideo {
   duration: number;
 }
 
-// Get channel's uploads playlist ID
-async function getUploadsPlaylistId(channelId: string): Promise<string | null> {
-  const res = await fetch(
-    `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
-  );
-  const data = await res.json();
-  return data.items?.[0]?.contentDetails?.relatedPlaylists?.uploads || null;
+export type VideoDuration = 'short' | 'medium' | 'long' | 'any';
+export type UploadDate = 'today' | 'week' | 'month' | 'year' | 'any';
+export type SortOrder = 'relevance' | 'viewCount' | 'date' | 'rating';
+
+export interface SearchConfig {
+  query: string;
+  duration?: VideoDuration; // short (<4min), medium (4-20min), long (>20min)
+  uploadDate?: UploadDate;
+  order?: SortOrder;
+  safeSearch?: 'none' | 'moderate' | 'strict';
+  limit?: number;
+  minDuration?: number; // Additional filter in seconds
+  maxDuration?: number; // Additional filter in seconds
 }
 
-// Get video IDs from playlist
-async function getPlaylistVideos(playlistId: string, maxResults = 50): Promise<string[]> {
-  const res = await fetch(
-    `${BASE_URL}/playlistItems?part=contentDetails&playlistId=${playlistId}&maxResults=${maxResults}&key=${YOUTUBE_API_KEY}`
-  );
-  const data = await res.json();
-  return data.items?.map((item: any) => item.contentDetails.videoId) || [];
+// Calculate the publishedAfter date based on uploadDate filter
+function getPublishedAfterDate(uploadDate: UploadDate): string | null {
+  const now = new Date();
+  switch (uploadDate) {
+    case 'today':
+      now.setHours(0, 0, 0, 0);
+      return now.toISOString();
+    case 'week':
+      now.setDate(now.getDate() - 7);
+      return now.toISOString();
+    case 'month':
+      now.setMonth(now.getMonth() - 1);
+      return now.toISOString();
+    case 'year':
+      now.setFullYear(now.getFullYear() - 1);
+      return now.toISOString();
+    default:
+      return null;
+  }
 }
 
-// Get video details
+// Search for videos using YouTube Search API
+async function searchVideos(config: SearchConfig): Promise<string[]> {
+  const params = new URLSearchParams({
+    part: 'snippet',
+    type: 'video',
+    q: config.query,
+    maxResults: String(Math.min(config.limit || 25, 50)),
+    order: config.order || 'relevance',
+    safeSearch: config.safeSearch || 'moderate',
+    regionCode: 'US',
+    relevanceLanguage: 'en',
+    videoEmbeddable: 'true',
+    key: YOUTUBE_API_KEY,
+  });
+
+  // Add duration filter if specified
+  if (config.duration && config.duration !== 'any') {
+    params.append('videoDuration', config.duration);
+  }
+
+  // Add upload date filter if specified
+  const publishedAfter = getPublishedAfterDate(config.uploadDate || 'any');
+  if (publishedAfter) {
+    params.append('publishedAfter', publishedAfter);
+  }
+
+  const res = await fetch(`${BASE_URL}/search?${params}`);
+  const data = await res.json();
+  
+  if (data.error) {
+    console.error('YouTube Search API error:', data.error);
+    return [];
+  }
+
+  return data.items?.map((item: any) => item.id.videoId).filter(Boolean) || [];
+}
+
+// Get video details (duration, statistics)
 async function getVideoDetails(videoIds: string[]): Promise<any[]> {
   if (!videoIds.length) return [];
   const res = await fetch(
@@ -42,7 +97,33 @@ async function getVideoDetails(videoIds: string[]): Promise<any[]> {
   return data.items || [];
 }
 
-// Main function: fetch videos from a YouTube channel
+// Main function: search videos using YouTube Search API with filters
+export async function fetchVideosFromSearch(config: SearchConfig): Promise<FetchedVideo[]> {
+  const { minDuration = 60, maxDuration = 3600, limit = 25 } = config;
+  
+  try {
+    const videoIds = await searchVideos({ ...config, limit: 50 }); // Fetch more to filter
+    if (!videoIds.length) return [];
+    
+    const details = await getVideoDetails(videoIds);
+    
+    return details
+      .map(v => ({
+        id: v.id,
+        title: v.snippet.title,
+        duration: parseDuration(v.contentDetails.duration),
+        views: parseInt(v.statistics?.viewCount || '0')
+      }))
+      .filter(v => v.duration >= minDuration && v.duration <= maxDuration)
+      .slice(0, limit)
+      .map(({ id, title, duration }) => ({ id, title, duration }));
+  } catch (error) {
+    console.error('YouTube Search API error:', error);
+    return [];
+  }
+}
+
+// Legacy function for backward compatibility with channel-based fetching
 export async function fetchVideosFromChannel(
   channelId: string,
   options: { minDuration?: number; maxDuration?: number; minViews?: number; limit?: number } = {}
@@ -50,10 +131,21 @@ export async function fetchVideosFromChannel(
   const { minDuration = 60, maxDuration = 3600, minViews = 0, limit = 25 } = options;
   
   try {
-    const playlistId = await getUploadsPlaylistId(channelId);
+    // Get channel's uploads playlist ID
+    const channelRes = await fetch(
+      `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+    );
+    const channelData = await channelRes.json();
+    const playlistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
     if (!playlistId) return [];
     
-    const videoIds = await getPlaylistVideos(playlistId, 50);
+    // Get video IDs from playlist
+    const playlistRes = await fetch(
+      `${BASE_URL}/playlistItems?part=contentDetails&playlistId=${playlistId}&maxResults=50&key=${YOUTUBE_API_KEY}`
+    );
+    const playlistData = await playlistRes.json();
+    const videoIds = playlistData.items?.map((item: any) => item.contentDetails.videoId) || [];
+    
     const details = await getVideoDetails(videoIds);
     
     return details

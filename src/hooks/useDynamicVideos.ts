@@ -1,10 +1,10 @@
 import { useState, useEffect } from 'react';
-import { fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo } from '@/services/youtubeService';
-import { CHANNEL_SOURCES } from '@/data/channelSources';
+import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo } from '@/services/youtubeService';
+import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { channels } from '@/data/channels';
 
 const videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number }> = {};
-const CACHE_DURATION = 60 * 60 * 1000;
+const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
 
 export function useDynamicVideos(channelId: string) {
   const [videos, setVideos] = useState<FetchedVideo[]>([]);
@@ -35,10 +35,10 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
-      // Check if this channel has dynamic sources
-      const sources = CHANNEL_SOURCES[channelId];
-      if (!sources) {
-        // No dynamic source for this channel, use static
+      // Check if this channel has search config
+      const searchConfig = CHANNEL_SEARCH_CONFIG[channelId];
+      if (!searchConfig) {
+        // No search config for this channel, use static
         setVideos(staticVideos);
         setUsingFallback(true);
         setLoading(false);
@@ -46,21 +46,15 @@ export function useDynamicVideos(channelId: string) {
       }
 
       try {
-        const allVideos: FetchedVideo[] = [];
-        for (const ytChannelId of sources.youtubeChannels) {
-          const fetched = await fetchVideosFromChannel(ytChannelId, {
-            minDuration: sources.minDuration,
-            maxDuration: sources.maxDuration,
-            minViews: sources.minViews,
-            limit: 15
-          });
-          allVideos.push(...fetched);
-        }
+        // Use YouTube Search API with topic-based queries
+        const fetched = await fetchVideosFromSearch({
+          ...searchConfig,
+          limit: 25
+        });
 
-        if (allVideos.length > 0) {
-          const shuffled = allVideos.sort(() => Math.random() - 0.5).slice(0, 25);
-          videoCache[channelId] = { videos: shuffled, timestamp: Date.now() };
-          setVideos(shuffled);
+        if (fetched.length > 0) {
+          videoCache[channelId] = { videos: fetched, timestamp: Date.now() };
+          setVideos(fetched);
           setUsingFallback(false);
         } else {
           // API returned nothing, use static fallback
@@ -106,26 +100,19 @@ export async function preloadChannelVideos(channelId: string): Promise<void> {
     return;
   }
 
-  const sources = CHANNEL_SOURCES[channelId];
-  if (!sources) {
+  const searchConfig = CHANNEL_SEARCH_CONFIG[channelId];
+  if (!searchConfig) {
     return;
   }
 
   try {
-    const allVideos: FetchedVideo[] = [];
-    for (const ytChannelId of sources.youtubeChannels) {
-      const fetched = await fetchVideosFromChannel(ytChannelId, {
-        minDuration: sources.minDuration,
-        maxDuration: sources.maxDuration,
-        minViews: sources.minViews,
-        limit: 15
-      });
-      allVideos.push(...fetched);
-    }
+    const fetched = await fetchVideosFromSearch({
+      ...searchConfig,
+      limit: 25
+    });
 
-    if (allVideos.length > 0) {
-      const shuffled = allVideos.sort(() => Math.random() - 0.5).slice(0, 25);
-      videoCache[channelId] = { videos: shuffled, timestamp: Date.now() };
+    if (fetched.length > 0) {
+      videoCache[channelId] = { videos: fetched, timestamp: Date.now() };
     }
   } catch (error) {
     console.error('Error preloading videos:', error);
