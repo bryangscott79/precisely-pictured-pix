@@ -2,7 +2,7 @@ import { createContext, useContext, useState, useEffect, ReactNode, useCallback 
 import { useAuth } from '@/hooks/useAuth';
 import { supabase } from '@/integrations/supabase/client';
 
-export type OnboardingStep = 'welcome' | 'interests' | 'youtube' | 'lineup' | 'complete';
+export type OnboardingStep = 'welcome' | 'interests' | 'localnews' | 'youtube' | 'lineup' | 'complete';
 
 export interface ChannelLineupItem {
   channelId: string;

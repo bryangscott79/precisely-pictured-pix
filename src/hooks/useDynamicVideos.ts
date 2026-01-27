@@ -4,9 +4,11 @@ import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
 import { isAllowedVideoTitle } from '@/lib/contentGuards';
+import { getSavedLocalNewsStation } from '@/hooks/useLocalNews';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+const LOCAL_NEWS_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes for local news (fresher content)
 
 // Clear cache when language changes
 if (typeof window !== 'undefined') {
@@ -76,9 +78,10 @@ export function useDynamicVideos(channelId: string) {
       // Create a cache key that includes the program name for scheduled channels
       const cacheKey = currentProgram ? `${channelId}:${currentProgram}` : channelId;
       
-      // Check cache first
+      // Check cache first (use shorter cache for local news)
       const cached = videoCache[cacheKey];
-      if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
+      const cacheDuration = channelId === 'localnews' ? LOCAL_NEWS_CACHE_DURATION : CACHE_DURATION;
+      if (cached && Date.now() - cached.timestamp < cacheDuration) {
         setVideos(cached.videos);
         setUsingFallback(false);
         setLoading(false);
@@ -95,7 +98,21 @@ export function useDynamicVideos(channelId: string) {
       }
 
       // Get base search config
-      const baseConfig = CHANNEL_SEARCH_CONFIG[channelId];
+      let baseConfig = CHANNEL_SEARCH_CONFIG[channelId];
+      
+      // Special handling for local news channel
+      if (channelId === 'localnews') {
+        const station = getSavedLocalNewsStation();
+        if (station) {
+          // Override the search query with the user's selected station
+          baseConfig = {
+            ...baseConfig,
+            query: station.youtubeSearchQuery,
+          };
+          console.log(`[localnews] Using station: ${station.name} - Query: "${station.youtubeSearchQuery}"`);
+        }
+      }
+      
       if (!baseConfig) {
         // No search config for this channel, use rotated fallback
         setVideos(fallbackVideos);

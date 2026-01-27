@@ -72,6 +72,9 @@
     
     /* Podcast channel color */
     --channel-podcast: 280 65% 50%;
+    
+    /* Local news channel color */
+    --channel-localnews: 0 75% 50%;
   }
 
   .dark {
@@ -265,6 +268,7 @@
   .bg-channel-nfl { background-color: hsl(var(--channel-nfl)); }
   .bg-channel-cinema80s { background-color: hsl(var(--channel-cinema80s)); }
   .bg-channel-podcast { background-color: hsl(var(--channel-podcast)); }
+  .bg-channel-localnews { background-color: hsl(var(--channel-localnews)); }
 
   .text-channel-tech { color: hsl(var(--channel-tech)); }
   .text-channel-science { color: hsl(var(--channel-science)); }
@@ -290,6 +294,7 @@
   .text-channel-nfl { color: hsl(var(--channel-nfl)); }
   .text-channel-cinema80s { color: hsl(var(--channel-cinema80s)); }
   .text-channel-podcast { color: hsl(var(--channel-podcast)); }
+  .text-channel-localnews { color: hsl(var(--channel-localnews)); }
 
   .border-channel-tech { border-color: hsl(var(--channel-tech)); }
   .border-channel-science { border-color: hsl(var(--channel-science)); }
@@ -315,6 +320,7 @@
   .border-channel-nfl { border-color: hsl(var(--channel-nfl)); }
   .border-channel-cinema80s { border-color: hsl(var(--channel-cinema80s)); }
   .border-channel-podcast { border-color: hsl(var(--channel-podcast)); }
+  .border-channel-localnews { border-color: hsl(var(--channel-localnews)); }
 
   .glass-panel {
     @apply backdrop-blur-xl border border-white/10;
