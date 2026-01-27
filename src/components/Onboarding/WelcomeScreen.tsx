@@ -9,7 +9,8 @@ export function WelcomeScreen() {
   const { user } = useAuth();
 
   const handleGoogleSignIn = async () => {
-    await signInWithGoogle();
+    // Request YouTube access to import subscriptions
+    await signInWithGoogle(true);
   };
 
   // If user is already signed in, skip to interests
