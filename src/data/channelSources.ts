@@ -221,6 +221,14 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minDuration: 120,
     maxDuration: 600,
   },
+  podcast: {
+    query: 'podcast full episode interview Joe Rogan Lex Fridman',
+    duration: 'long', // Podcasts are long-form
+    uploadDate: 'week', // Fresh episodes
+    order: 'viewCount',
+    minDuration: 1800, // At least 30 min
+    maxDuration: 14400, // Up to 4 hours
+  },
 };
 
 // Legacy channel-based sources (fallback if search doesn't work)

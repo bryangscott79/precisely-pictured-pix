@@ -1,7 +1,6 @@
 import { useEffect, useState, useCallback, useRef } from 'react';
 import { channels, Channel, getCurrentPlayback, getAvailableChannels } from '@/data/channels';
 import { VideoPlayer, VideoPlayerHandle } from '@/components/VideoPlayer';
-import { PodcastPlayer, PodcastPlayerHandle } from '@/components/PodcastPlayer';
 import { InfoBar } from '@/components/InfoBar';
 import { ChannelGuide } from '@/components/ChannelGuide';
 import { ChannelSwitcher } from '@/components/ChannelSwitcher';
@@ -71,7 +70,7 @@ export default function Index() {
   
   const idleTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const channelSwitchTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const playerRef = useRef<VideoPlayerHandle | PodcastPlayerHandle>(null);
+  const playerRef = useRef<VideoPlayerHandle>(null);
 
   // Handle upgrade success/cancel from Stripe redirect
   useEffect(() => {
@@ -270,24 +269,14 @@ export default function Index() {
 
   return (
     <div className="relative w-screen h-screen overflow-hidden bg-background crt-effect">
-      {/* Video or Podcast Player */}
-      {currentChannel.isPodcast ? (
-        <PodcastPlayer 
-          ref={playerRef}
-          channel={currentChannel}
-          onVideoChange={(title) => {
-            setCurrentVideoTitle(title);
-          }}
-        />
-      ) : (
-        <VideoPlayer 
-          ref={playerRef}
-          channel={currentChannel}
-          onVideoChange={(title) => {
-            setCurrentVideoTitle(title);
-          }}
-        />
-      )}
+      {/* Video Player */}
+      <VideoPlayer 
+        ref={playerRef}
+        channel={currentChannel}
+        onVideoChange={(title) => {
+          setCurrentVideoTitle(title);
+        }}
+      />
 
       {/* Premium Channel Lock Overlay */}
       {isChannelLocked && (
