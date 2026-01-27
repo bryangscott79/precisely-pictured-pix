@@ -157,6 +157,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       }
     };
 
+    const getActualVideoTitle = (): string => {
+      try {
+        const data = playerRef.current?.getVideoData?.();
+        return data?.title || '';
+      } catch {
+        return '';
+      }
+    };
+
     const markFailed = (channelId: string, videoId: string) => {
       if (!videoId) return;
       if (!failedByChannelRef.current[channelId]) {
@@ -248,19 +257,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               } else if (event.data === window.YT.PlayerState.PLAYING) {
                 setIsPaused(false);
 
-                // Guardrail: if anything other than this channel's allowlist is playing, force back.
-                const live = channelRef.current;
+                // When video starts playing, update title with actual YouTube title
                 const playingId = getActualVideoId();
                 if (playingId) {
                   currentVideoIdRef.current = playingId;
-
-                  const isAllowed = live.videos.some((v) => v.id === playingId);
-                  if (!isAllowed) {
-                    const pb = getCurrentPlayback(live);
-                    onVideoChange?.(pb.video.title);
-                    safeLoadVideo(pb.video.id, pb.positionInVideo);
-                    return;
-                  }
+                  
+                  // Use actual YouTube title instead of our hardcoded one
+                  setTimeout(() => {
+                    const actualTitle = getActualVideoTitle();
+                    if (actualTitle) {
+                      onVideoChange?.(actualTitle);
+                    }
+                  }, 500); // Small delay to ensure title is available
                 }
               }
             },
@@ -320,7 +328,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       safeLoadVideo(playback.video.id, playback.positionInVideo);
     }, [channel.id, isReady, onVideoChange]);
 
-    // Periodic sync check - ensure we're playing the right video
+    // Periodic sync check - only check for failed videos, not schedule sync
+    // We trust that once a video starts, it should play to completion
     useEffect(() => {
       if (!isReady) return;
 
@@ -347,14 +356,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           return;
         }
         
-        // Only switch if we're on the WRONG video entirely (different video ID)
-        // Don't reload if we're already playing the right video - this prevents the restart loop
-        const actualPlaying = getActualVideoId();
-        if (actualPlaying && actualPlaying !== playback.video.id && currentVideoIdRef.current !== playback.video.id) {
-          onVideoChange?.(playback.video.title);
-          safeLoadVideo(playback.video.id, playback.positionInVideo);
-        }
-      }, 5000); // Check every 5 seconds, less aggressive
+        // DON'T force sync during playback - this causes the restart loop
+        // Videos should play from start to finish once loaded
+        // Schedule sync only happens on channel change or video end
+      }, 10000); // Check every 10 seconds, just for failed video recovery
 
       return () => {
         if (checkIntervalRef.current) {
