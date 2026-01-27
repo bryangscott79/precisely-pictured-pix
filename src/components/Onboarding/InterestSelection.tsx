@@ -29,7 +29,7 @@ export function InterestSelection() {
                 key={interest.id}
                 onClick={() => toggleInterest(interest.id)}
                 className={cn(
-                  'relative flex flex-col items-center justify-center p-4 rounded-xl border-2 transition-all duration-200',
+                  'relative flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200',
                   'hover:border-primary/50 hover:bg-primary/5',
                   isSelected
                     ? 'border-primary bg-primary/10'
@@ -41,8 +41,13 @@ export function InterestSelection() {
                     <Check className="w-4 h-4 text-primary" />
                   </div>
                 )}
-                <span className="text-3xl mb-2">{interest.icon}</span>
+                <span className="text-2xl mb-1">{interest.icon}</span>
                 <span className="text-sm font-medium">{interest.label}</span>
+                {interest.examples && (
+                  <span className="text-[10px] text-muted-foreground mt-0.5 text-center leading-tight">
+                    {interest.examples}
+                  </span>
+                )}
               </button>
             );
           })}
