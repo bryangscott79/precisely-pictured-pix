@@ -270,6 +270,10 @@ export default function Index() {
           e.preventDefault();
           togglePlayPause();
           break;
+        case 'c':
+          e.preventDefault();
+          playerRef.current?.toggleCaptions();
+          break;
       }
     };
 

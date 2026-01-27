@@ -10,6 +10,7 @@ interface VideoPlayerProps {
 export interface VideoPlayerHandle {
   togglePlayPause: () => void;
   toggleMute: () => void;
+  toggleCaptions: () => void;
   setVolume: (volume: number) => void;
   getVolume: () => number;
   isMuted: () => boolean;
@@ -32,6 +33,11 @@ interface YTPlayer {
   getCurrentTime: () => number;
   getDuration: () => number;
   destroy: () => void;
+  // Caption controls
+  loadModule?: (module: string) => void;
+  unloadModule?: (module: string) => void;
+  getOptions?: (module?: string) => string[];
+  setOption?: (module: string, option: string, value: unknown) => void;
 }
 
 interface YTPlayerEvent {
@@ -163,6 +169,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           }
         } catch (e) {
           console.error('Error toggling mute:', e);
+        }
+      },
+      toggleCaptions: () => {
+        if (!playerRef.current || !isReady) return;
+        try {
+          const options = playerRef.current.getOptions?.('captions');
+          if (options && options.length > 0) {
+            // Captions module is loaded, check if visible
+            const currentTrack = playerRef.current.getOptions?.('captions');
+            if (currentTrack && currentTrack.includes('track')) {
+              // Try to toggle - unload if loaded
+              playerRef.current.unloadModule?.('captions');
+            } else {
+              playerRef.current.loadModule?.('captions');
+            }
+          } else {
+            // Load captions module
+            playerRef.current.loadModule?.('captions');
+          }
+        } catch (e) {
+          console.error('Error toggling captions:', e);
         }
       },
       setVolume: (volume: number) => {
