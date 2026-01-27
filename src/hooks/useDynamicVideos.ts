@@ -3,8 +3,16 @@ import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo } from '@/serv
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { channels } from '@/data/channels';
 
-const videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number }> = {};
+let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number }> = {};
 const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
+
+// Clear cache when language changes
+if (typeof window !== 'undefined') {
+  window.addEventListener('language-changed', () => {
+    console.log('Language changed - clearing video cache');
+    videoCache = {};
+  });
+}
 
 export function useDynamicVideos(channelId: string) {
   const [videos, setVideos] = useState<FetchedVideo[]>([]);

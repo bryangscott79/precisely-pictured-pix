@@ -1,3 +1,5 @@
+import { getStoredLanguage } from '@/hooks/useLanguagePreference';
+
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
@@ -55,6 +57,9 @@ function getPublishedAfterDate(uploadDate: UploadDate): string | null {
 
 // Search for videos using YouTube Search API
 async function searchVideos(config: SearchConfig): Promise<string[]> {
+  // Get user's language preference
+  const langPref = getStoredLanguage();
+  
   const params = new URLSearchParams({
     part: 'snippet',
     type: 'video',
@@ -62,8 +67,8 @@ async function searchVideos(config: SearchConfig): Promise<string[]> {
     maxResults: String(Math.min(config.limit || 25, 50)),
     order: config.order || 'relevance',
     safeSearch: config.safeSearch || 'moderate',
-    regionCode: 'US',
-    relevanceLanguage: 'en',
+    regionCode: langPref.regionCode,
+    relevanceLanguage: langPref.code,
     videoEmbeddable: 'true',
     key: YOUTUBE_API_KEY,
   });
