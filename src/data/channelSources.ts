@@ -118,7 +118,7 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     maxDuration: 2400,
   },
   comedy: {
-    query: 'comedy standup funny sketch',
+    query: 'stand up comedy special SNL Jimmy Fallon Conan late night show American comedian',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
