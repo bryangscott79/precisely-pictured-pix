@@ -53,7 +53,55 @@ function isContentTypeMatch(video: any, channelType?: string): boolean {
   const title = video.snippet?.title?.toLowerCase() || '';
   const channelTitle = video.snippet?.channelTitle?.toLowerCase() || '';
   const description = video.snippet?.description?.toLowerCase() || '';
-  const duration = parseInt(video.contentDetails?.duration?.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/)?.[0] || '0');
+  
+  // Global exclusions for ALL channels - kids content in wrong places
+  const kidsIndicators = [
+    'nursery', 'preschool', 'toddler', 'cocomelon', 'pinkfong', 'baby shark',
+    'kids song', 'children song', 'learning for kids', 'abc song', 'phonics',
+    'sesame street', 'peppa pig', 'paw patrol', 'bluey'
+  ];
+  
+  // Don't apply kids filter to kids/family channels
+  if (channelType !== 'kids' && channelType !== 'family') {
+    for (const indicator of kidsIndicators) {
+      if (title.includes(indicator) || channelTitle.includes(indicator)) {
+        console.log(`[Filter] Excluded kids content from ${channelType} channel: ${video.snippet?.title}`);
+        return false;
+      }
+    }
+  }
+  
+  // For sports: MUST be from official sports sources
+  if (channelType === 'sports' || channelType === 'nfl') {
+    const officialSportsChannels = [
+      'espn', 'nfl', 'nba', 'mlb', 'nhl', 'mls', 'premier league', 
+      'uefa', 'fifa', 'fox sports', 'cbs sports', 'nbc sports',
+      'bleacher report', 'house of highlights', 'sportscenter',
+      'sky sports', 'bt sport', 'dazn', 'tennis channel',
+      'pga tour', 'wwe', 'ufc', 'bellator'
+    ];
+    
+    const isSportsChannel = officialSportsChannels.some(ch => channelTitle.includes(ch));
+    const hasSportsKeywords = ['highlights', 'goals', 'touchdown', 'home run', 'dunk', 'knockout', 
+                               'game recap', 'best plays', 'top 10', 'season'].some(kw => title.includes(kw));
+    
+    // Must be from a sports channel OR have sports keywords AND not be kids/music content
+    const isKidsOrMusic = title.includes('song') || title.includes('music') || 
+                          title.includes('parody') || title.includes('cartoon') ||
+                          title.includes('animation') || title.includes('funny');
+    
+    if (isKidsOrMusic) {
+      console.log(`[Filter] Excluded non-sports content: ${video.snippet?.title}`);
+      return false;
+    }
+    
+    if (!isSportsChannel && !hasSportsKeywords) {
+      console.log(`[Filter] Excluded from sports - not sports channel/content: ${video.snippet?.title}`);
+      return false;
+    }
+    
+    return true;
+  }
   
   // For podcasts: MUST be a podcast, NOT a music video
   if (channelType === 'podcast') {
