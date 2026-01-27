@@ -1,6 +1,9 @@
 const YOUTUBE_API_KEY = import.meta.env.VITE_YOUTUBE_API_KEY;
 const BASE_URL = 'https://www.googleapis.com/youtube/v3';
 
+// Debug: Log if API key is configured (not the key itself)
+console.log('YouTube API configured:', !!YOUTUBE_API_KEY);
+
 // Convert ISO 8601 duration (PT4M13S) to seconds
 function parseDuration(duration: string): number {
   const match = duration.match(/PT(?:(\d+)H)?(?:(\d+)M)?(?:(\d+)S)?/);

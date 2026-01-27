@@ -29,6 +29,7 @@ export function useDynamicVideos(channelId: string) {
 
       // If YouTube API not configured, use static videos immediately
       if (!isYouTubeConfigured()) {
+        console.log(`[${channelId}] YouTube API not configured, using static fallback`);
         setVideos(staticVideos);
         setUsingFallback(true);
         setLoading(false);
@@ -46,6 +47,7 @@ export function useDynamicVideos(channelId: string) {
       }
 
       try {
+        console.log(`[${channelId}] Fetching videos with query: "${searchConfig.query}"`);
         // Use YouTube Search API with topic-based queries
         const fetched = await fetchVideosFromSearch({
           ...searchConfig,
