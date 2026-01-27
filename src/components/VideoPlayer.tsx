@@ -140,7 +140,7 @@ declare global {
           events?: {
             onReady?: () => void;
             onStateChange?: (event: YTPlayerEvent) => void;
-            onError?: () => void;
+            onError?: (event?: any) => void;
           };
         }
       ) => YTPlayer;
@@ -189,6 +189,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const [isApiLoaded, setIsApiLoaded] = useState(false);
     const [isMuted, setIsMuted] = useState(false);
     const [isPaused, setIsPaused] = useState(false);
+    const [isTuning, setIsTuning] = useState(true);
     const [playerInstanceVersion, setPlayerInstanceVersion] = useState(0);
     const getInitialVolume = (): number => {
       const stored = localStorage.getItem('epishow_volume');
@@ -202,10 +203,45 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     const channelRef = useRef(channel);
     const checkIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
     const endScreenCheckRef = useRef<ReturnType<typeof setInterval> | null>(null);
+    const playbackWatchdogRef = useRef<ReturnType<typeof setTimeout> | null>(null);
     const isInitializingRef = useRef(false);
     const failedVideosRef = useRef<Set<string>>(new Set());
     const hasSkippedEndRef = useRef(false);
     const videosRef = useRef<Video[]>([]);
+
+    const clearPlaybackWatchdog = () => {
+      if (playbackWatchdogRef.current) {
+        clearTimeout(playbackWatchdogRef.current);
+        playbackWatchdogRef.current = null;
+      }
+    };
+
+    // If a video is unavailable or stuck loading, skip quickly instead of showing the YouTube error screen.
+    const startPlaybackWatchdog = (expectedVideoId: string, timeoutMs: number = 12000) => {
+      clearPlaybackWatchdog();
+
+      playbackWatchdogRef.current = setTimeout(() => {
+        if (!playerRef.current || !isReady) return;
+        const actualId = getActualVideoId() || currentVideoIdRef.current;
+        if (!actualId || actualId !== expectedVideoId) return;
+
+        try {
+          const state = playerRef.current.getPlayerState?.();
+          const isPlayingNow = state === window.YT.PlayerState.PLAYING;
+          if (!isPlayingNow) {
+            failedVideosRef.current.add(expectedVideoId);
+            console.warn(`[VideoPlayer] Watchdog timeout; skipping video: ${expectedVideoId}`);
+            setIsTuning(true);
+            advanceToNextVideo();
+          }
+        } catch {
+          // If state can't be read, fail safe by skipping
+          failedVideosRef.current.add(expectedVideoId);
+          setIsTuning(true);
+          advanceToNextVideo();
+        }
+      }, timeoutMs);
+    };
 
     // Use dynamic videos hook
     const { videos: dynamicVideos, loading: videosLoading } = useDynamicVideos(channel.id);
@@ -340,6 +376,10 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (!playerRef.current || !isReady) return false;
       
       try {
+        // Keep our own "tuning" overlay up until the player reports PLAYING.
+        setIsTuning(true);
+        startPlaybackWatchdog(videoId);
+
         if (typeof playerRef.current.loadVideoById === 'function') {
           playerRef.current.loadVideoById({ videoId, startSeconds });
           currentVideoIdRef.current = videoId;
@@ -463,6 +503,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             onReady: () => {
               isInitializingRef.current = false;
               setIsReady(true);
+              setIsTuning(true);
               
               // CRITICAL: Schedule cleanup to remove any orphaned iframes that might have been created
               // This catches ghost audio from any iframes that slipped through
@@ -484,6 +525,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                   // ignore
                 }
                 playerRef.current.playVideo();
+
+                // If the first video is unavailable / blocked, don't get stuck on an error screen.
+                if (currentVideoIdRef.current) {
+                  startPlaybackWatchdog(currentVideoIdRef.current);
+                }
               }
             },
             onStateChange: (event: YTPlayerEvent) => {
@@ -497,10 +543,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                 // Video ended - immediately load next video to prevent end screen
                 advanceToNextVideo();
               }
+              if (event.data === window.YT.PlayerState.BUFFERING) {
+                // Treat prolonged buffering as a failure via watchdog.
+                setIsTuning(true);
+              }
               if (event.data === window.YT.PlayerState.PAUSED) {
                 setIsPaused(true);
+                setIsTuning(false);
               } else if (event.data === window.YT.PlayerState.PLAYING) {
                 setIsPaused(false);
+                setIsTuning(false);
+                clearPlaybackWatchdog();
 
                 // When video starts playing, update title with actual YouTube title
                 const playingId = getActualVideoId();
@@ -516,15 +569,17 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
                 }
               }
             },
-            onError: () => {
+            onError: (err?: any) => {
               // Mark video as failed and skip to next immediately
               const failedId = currentVideoIdRef.current;
               if (failedId) {
                 failedVideosRef.current.add(failedId);
-                console.warn(`Video ${failedId} failed, skipping to next`);
+                console.warn(`[VideoPlayer] Video failed (skipping): ${failedId}`, err);
               }
               
               // Skip immediately - don't wait
+              setIsTuning(true);
+              clearPlaybackWatchdog();
               advanceToNextVideo();
             },
           },
@@ -546,6 +601,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
           clearInterval(endScreenCheckRef.current);
           endScreenCheckRef.current = null;
         }
+        clearPlaybackWatchdog();
         if (playerRef.current) {
           try {
             // Mute and pause immediately to prevent ghost audio
@@ -568,6 +624,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         }
         activePlayerId = null;
         setIsReady(false);
+        setIsTuning(true);
         isInitializingRef.current = false;
         
         // Schedule follow-up cleanups to catch any stragglers
@@ -632,6 +689,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       activePlayerId = null;
       setIsReady(false);
       setIsPaused(false);
+      setIsTuning(true);
       isInitializingRef.current = false;
       setPlayerInstanceVersion((v) => v + 1);
       
@@ -748,6 +806,15 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
               <p className="text-muted-foreground font-medium">
                 {videosLoading ? 'Loading channel content...' : `Tuning in to ${channel.name}...`}
               </p>
+            </div>
+          </div>
+        )}
+
+        {(isReady && !videosLoading && isTuning) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-20">
+            <div className="flex flex-col items-center gap-4">
+              <div className="w-12 h-12 border-4 border-muted border-t-foreground rounded-full animate-spin" />
+              <p className="text-muted-foreground font-medium">Loading a playable video…</p>
             </div>
           </div>
         )}
