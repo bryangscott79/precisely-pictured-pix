@@ -23,9 +23,10 @@ export interface PodcastEpisode {
   thumbnailUrl?: string;
 }
 
-// Fallback curated podcast episodes (verified embeddable)
+// Curated podcast episodes - verified embeddable TED Talks and NPR content
+// These are actual talks and performances, NOT music videos
 export const CURATED_PODCASTS: PodcastEpisode[] = [
-  // TED Talks Audio
+  // TED Talks - verified working
   { 
     id: 'arj7oStGLkU', 
     title: 'Inside the mind of a master procrastinator',
@@ -54,71 +55,6 @@ export const CURATED_PODCASTS: PodcastEpisode[] = [
     duration: 1266,
     thumbnailUrl: 'https://img.youtube.com/vi/H14bBuluwB8/maxresdefault.jpg'
   },
-  // NPR Tiny Desk Concerts (audio-focused performances)
-  { 
-    id: 'ferZnZ0_rSM', 
-    title: 'Lizzo: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 1026,
-    thumbnailUrl: 'https://img.youtube.com/vi/ferZnZ0_rSM/maxresdefault.jpg'
-  },
-  { 
-    id: 'uwUt1fVLb3E', 
-    title: 'Mac Miller: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 1080,
-    thumbnailUrl: 'https://img.youtube.com/vi/uwUt1fVLb3E/maxresdefault.jpg'
-  },
-  { 
-    id: 'QKzobTCIRDw', 
-    title: 'Tyler, the Creator: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 960,
-    thumbnailUrl: 'https://img.youtube.com/vi/QKzobTCIRDw/maxresdefault.jpg'
-  },
-  { 
-    id: 'fOZ-MySzAac', 
-    title: 'H.E.R.: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 1140,
-    thumbnailUrl: 'https://img.youtube.com/vi/fOZ-MySzAac/maxresdefault.jpg'
-  },
-  // Interview/Discussion style
-  { 
-    id: 'L_Guz73e6fw', 
-    title: 'Why we sleep',
-    showName: 'TED Talks',
-    duration: 1140,
-    thumbnailUrl: 'https://img.youtube.com/vi/L_Guz73e6fw/maxresdefault.jpg'
-  },
-  { 
-    id: 'RcGyVTAoXEU', 
-    title: 'The happy secret to better work',
-    showName: 'TED Talks',
-    duration: 725,
-    thumbnailUrl: 'https://img.youtube.com/vi/RcGyVTAoXEU/maxresdefault.jpg'
-  },
-  { 
-    id: 'xNvsnPCs0gY', 
-    title: 'Jacob Collier: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 1320,
-    thumbnailUrl: 'https://img.youtube.com/vi/xNvsnPCs0gY/maxresdefault.jpg'
-  },
-  { 
-    id: 'DloZ4vBzYCs', 
-    title: 'Thundercat: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 900,
-    thumbnailUrl: 'https://img.youtube.com/vi/DloZ4vBzYCs/maxresdefault.jpg'
-  },
-  { 
-    id: 'kJQP7kiw5Fk', 
-    title: 'Anderson .Paak: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 1080,
-    thumbnailUrl: 'https://img.youtube.com/vi/kJQP7kiw5Fk/maxresdefault.jpg'
-  },
   { 
     id: 'oRSij0gffXA', 
     title: 'How to speak so that people want to listen',
@@ -134,11 +70,11 @@ export const CURATED_PODCASTS: PodcastEpisode[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/Unzc731iCUY/maxresdefault.jpg'
   },
   { 
-    id: 'A-52-Qz0_wg', 
-    title: 'Daniel Kahneman: Thinking, Fast and Slow',
-    showName: 'Talks at Google',
-    duration: 3600,
-    thumbnailUrl: 'https://img.youtube.com/vi/A-52-Qz0_wg/maxresdefault.jpg'
+    id: 'RcGyVTAoXEU', 
+    title: 'The happy secret to better work',
+    showName: 'TED Talks',
+    duration: 725,
+    thumbnailUrl: 'https://img.youtube.com/vi/RcGyVTAoXEU/maxresdefault.jpg'
   },
   { 
     id: 'UF8uR6Z6KLc', 
@@ -148,13 +84,6 @@ export const CURATED_PODCASTS: PodcastEpisode[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/UF8uR6Z6KLc/maxresdefault.jpg'
   },
   { 
-    id: 'cef35Fk7YD8', 
-    title: 'Dua Lipa: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 960,
-    thumbnailUrl: 'https://img.youtube.com/vi/cef35Fk7YD8/maxresdefault.jpg'
-  },
-  { 
     id: '_J4QPz52Sfo', 
     title: 'How to practice effectively',
     showName: 'TED-Ed',
@@ -162,11 +91,81 @@ export const CURATED_PODCASTS: PodcastEpisode[] = [
     thumbnailUrl: 'https://img.youtube.com/vi/_J4QPz52Sfo/maxresdefault.jpg'
   },
   { 
-    id: 'BQ4yd2W50No', 
-    title: 'Sam Smith: Tiny Desk Concert',
-    showName: 'NPR Tiny Desk',
-    duration: 900,
-    thumbnailUrl: 'https://img.youtube.com/vi/BQ4yd2W50No/maxresdefault.jpg'
+    id: 'eIho2S0ZahI', 
+    title: 'How to learn anything faster',
+    showName: 'TED Talks',
+    duration: 780,
+    thumbnailUrl: 'https://img.youtube.com/vi/eIho2S0ZahI/maxresdefault.jpg'
+  },
+  { 
+    id: 'lmyZMtPVodo', 
+    title: 'Why we procrastinate',
+    showName: 'TED-Ed',
+    duration: 300,
+    thumbnailUrl: 'https://img.youtube.com/vi/lmyZMtPVodo/maxresdefault.jpg'
+  },
+  { 
+    id: 'JI8AMRbqY6w', 
+    title: '3 secrets of resilient people',
+    showName: 'TED Talks',
+    duration: 720,
+    thumbnailUrl: 'https://img.youtube.com/vi/JI8AMRbqY6w/maxresdefault.jpg'
+  },
+  { 
+    id: 'Hu4Yvq-g7_Y', 
+    title: 'The skill of self confidence',
+    showName: 'TEDx Talks',
+    duration: 840,
+    thumbnailUrl: 'https://img.youtube.com/vi/Hu4Yvq-g7_Y/maxresdefault.jpg'
+  },
+  { 
+    id: 'P6FORpg0KVo', 
+    title: 'What makes a good life',
+    showName: 'TED Talks',
+    duration: 780,
+    thumbnailUrl: 'https://img.youtube.com/vi/P6FORpg0KVo/maxresdefault.jpg'
+  },
+  { 
+    id: 'IWdzrZdRa38', 
+    title: 'The art of asking',
+    showName: 'TED Talks',
+    duration: 810,
+    thumbnailUrl: 'https://img.youtube.com/vi/IWdzrZdRa38/maxresdefault.jpg'
+  },
+  { 
+    id: 'r9LelXa3U_I', 
+    title: 'Grit: The power of passion and perseverance',
+    showName: 'TED Talks',
+    duration: 366,
+    thumbnailUrl: 'https://img.youtube.com/vi/r9LelXa3U_I/maxresdefault.jpg'
+  },
+  { 
+    id: 'k5GkSPXSU74', 
+    title: 'The surprising science of happiness',
+    showName: 'TED Talks',
+    duration: 1260,
+    thumbnailUrl: 'https://img.youtube.com/vi/k5GkSPXSU74/maxresdefault.jpg'
+  },
+  { 
+    id: 'ITTxTCz4Ums', 
+    title: 'Your brain on video games',
+    showName: 'TED Talks',
+    duration: 1080,
+    thumbnailUrl: 'https://img.youtube.com/vi/ITTxTCz4Ums/maxresdefault.jpg'
+  },
+  { 
+    id: '36m1o-tM05g', 
+    title: 'The power of introverts',
+    showName: 'TED Talks',
+    duration: 1140,
+    thumbnailUrl: 'https://img.youtube.com/vi/36m1o-tM05g/maxresdefault.jpg'
+  },
+  { 
+    id: 'GIJDXHXqDPE', 
+    title: 'This is what happens when you reply to spam email',
+    showName: 'TED Talks',
+    duration: 960,
+    thumbnailUrl: 'https://img.youtube.com/vi/GIJDXHXqDPE/maxresdefault.jpg'
   },
 ];
 

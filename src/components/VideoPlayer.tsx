@@ -117,10 +117,11 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     useEffect(() => {
       if (dynamicVideos.length > 0) {
         videosRef.current = dynamicVideos;
-      } else {
+      } else if (!videosLoading) {
+        // If not loading and no dynamic videos, fall back to static
         videosRef.current = channel.videos;
       }
-    }, [dynamicVideos, channel.videos]);
+    }, [dynamicVideos, channel.videos, videosLoading]);
 
     // Expose methods to parent
     useImperativeHandle(ref, () => ({
@@ -261,7 +262,18 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     useEffect(() => {
       if (!isApiLoaded || !containerRef.current || isInitializingRef.current) return;
       if (playerRef.current) return; // Already initialized
-      if (videosLoading || videosRef.current.length === 0) return; // Wait for videos
+      
+      // Wait for videos - either from dynamic hook or static fallback
+      const hasVideos = videosRef.current.length > 0;
+      const stillLoading = videosLoading && dynamicVideos.length === 0;
+      if (stillLoading && !hasVideos) return;
+      
+      // If still no videos after loading, use static fallback
+      if (!hasVideos) {
+        videosRef.current = channel.videos;
+      }
+      
+      if (videosRef.current.length === 0) return; // Still no videos
       
       isInitializingRef.current = true;
       
@@ -372,7 +384,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
         setIsReady(false);
         isInitializingRef.current = false;
       };
-    }, [isApiLoaded, videosLoading]);
+    }, [isApiLoaded, videosLoading, dynamicVideos.length, channel.id, channel.videos]);
 
     // Handle channel changes - load new video from dynamic content
     useEffect(() => {

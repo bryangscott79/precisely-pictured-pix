@@ -15,6 +15,7 @@ export function useDynamicVideos(channelId: string) {
     async function loadVideos() {
       setLoading(true);
       
+      // Check cache first
       const cached = videoCache[channelId];
       if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
         setVideos(cached.videos);
@@ -22,20 +23,24 @@ export function useDynamicVideos(channelId: string) {
         return;
       }
 
+      // Get static channel for fallback
+      const staticChannel = channels.find(c => c.id === channelId);
+      const staticVideos = staticChannel?.videos || [];
+
+      // If YouTube API not configured, use static videos immediately
       if (!isYouTubeConfigured()) {
-        const staticChannel = channels.find(c => c.id === channelId);
-        if (staticChannel) {
-          setVideos(staticChannel.videos);
-          setUsingFallback(true);
-        }
+        setVideos(staticVideos);
+        setUsingFallback(true);
         setLoading(false);
         return;
       }
 
+      // Check if this channel has dynamic sources
       const sources = CHANNEL_SOURCES[channelId];
       if (!sources) {
-        const staticChannel = channels.find(c => c.id === channelId);
-        if (staticChannel) setVideos(staticChannel.videos);
+        // No dynamic source for this channel, use static
+        setVideos(staticVideos);
+        setUsingFallback(true);
         setLoading(false);
         return;
       }
@@ -56,20 +61,18 @@ export function useDynamicVideos(channelId: string) {
           const shuffled = allVideos.sort(() => Math.random() - 0.5).slice(0, 25);
           videoCache[channelId] = { videos: shuffled, timestamp: Date.now() };
           setVideos(shuffled);
+          setUsingFallback(false);
         } else {
-          const staticChannel = channels.find(c => c.id === channelId);
-          if (staticChannel) {
-            setVideos(staticChannel.videos);
-            setUsingFallback(true);
-          }
+          // API returned nothing, use static fallback
+          console.warn(`No videos fetched for ${channelId}, using static fallback`);
+          setVideos(staticVideos);
+          setUsingFallback(true);
         }
       } catch (error) {
         console.error('Error fetching videos:', error);
-        const staticChannel = channels.find(c => c.id === channelId);
-        if (staticChannel) {
-          setVideos(staticChannel.videos);
-          setUsingFallback(true);
-        }
+        // Error occurred, use static fallback
+        setVideos(staticVideos);
+        setUsingFallback(true);
       }
       
       setLoading(false);
