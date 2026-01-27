@@ -130,15 +130,13 @@ export function OnboardingProvider({ children }: { children: ReactNode }) {
 
         if (!data || !data.completed_at) {
           // User hasn't completed onboarding
-          if (data) {
-            setState({
-              currentStep: 'interests',
-              selectedInterests: data.selected_interests || [],
-              youtubeConnected: data.youtube_connected || false,
-              channelLineup: [],
-              isCompleted: false,
-            });
-          }
+          setState({
+            currentStep: 'interests', // Skip welcome for logged-in users
+            selectedInterests: data?.selected_interests || [],
+            youtubeConnected: data?.youtube_connected || false,
+            channelLineup: [],
+            isCompleted: false,
+          });
           setIsOnboardingOpen(true);
         } else {
           // Load saved lineup
