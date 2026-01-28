@@ -435,6 +435,7 @@ export default function Index() {
         isOpen={isGuideOpen}
         onClose={() => setIsGuideOpen(false)}
         currentChannel={currentChannel}
+        channels={availableChannels}
         onChannelSelect={handleChannelSelect}
         onOpenParentalControls={() => setIsProfileSettingsOpen(true)}
       />
