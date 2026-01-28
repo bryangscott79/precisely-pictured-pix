@@ -21,6 +21,8 @@ interface ChannelGuideProps {
   isOpen: boolean;
   onClose: () => void;
   currentChannel: Channel;
+  /** Optional override to display a custom/filtered lineup (e.g., Local News injection, profile filtering). */
+  channels?: Channel[];
   onChannelSelect: (channel: Channel) => void;
   onOpenParentalControls: () => void;
 }
@@ -256,6 +258,7 @@ export function ChannelGuide({
   isOpen, 
   onClose, 
   currentChannel, 
+  channels,
   onChannelSelect,
   onOpenParentalControls 
 }: ChannelGuideProps) {
@@ -264,8 +267,8 @@ export function ChannelGuide({
   // Memoize so `availableChannels` doesn't change identity every render.
   // This prevents schedule update effects from re-running continuously.
   const availableChannels = useMemo(
-    () => getAvailableChannels(parentalControlsEnabled),
-    [parentalControlsEnabled]
+    () => channels ?? getAvailableChannels(parentalControlsEnabled),
+    [channels, parentalControlsEnabled]
   );
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [schedules, setSchedules] = useState<Map<string, ScheduleItem[]>>(new Map());
