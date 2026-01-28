@@ -1,201 +1,200 @@
 import { SearchConfig } from '@/services/youtubeService';
 
-// DIRECT, LITERAL search queries for each channel
-// Each query is specifically designed to return ONLY content matching the channel purpose
-// Uses exact channel names, show names, and content types to ensure accuracy
+// UPDATED: Prioritize RECENT + TRENDING content, not all-time popular
+// Using 'date' order with recency filters to get fresh content
+// Broader queries to capture more variety while maintaining quality
 
 export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
   // === EDUCATION ===
   tech: {
-    // Tech reviews and explainers from major tech channels
-    query: '"MKBHD" OR "Linus Tech Tips" OR "Marques Brownlee" tech review',
+    // Tech news and reviews - prioritize recent uploads
+    query: 'tech review 2025 OR tech news today OR gadget review new',
     duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
+    uploadDate: 'week', // Recent content
+    order: 'relevance', // Balance relevance + recency
     minDuration: 300,
     maxDuration: 1800,
-    minViews: 100000,
+    minViews: 50000, // Lowered to capture newer videos
   },
   science: {
-    // Science education from verified science educators
-    query: '"Veritasium" OR "Kurzgesagt" OR "SmarterEveryDay" science',
+    // Science - mix of recent and trending
+    query: 'science explained OR scientific discovery 2025 OR physics chemistry biology documentary',
     duration: 'medium',
     uploadDate: 'month',
-    order: 'viewCount',
+    order: 'relevance',
     minDuration: 300,
     maxDuration: 2400,
-    minViews: 500000,
+    minViews: 100000,
   },
   history: {
-    // History documentaries and educational content
-    query: '"OverSimplified" OR "Kings and Generals" OR "History Channel" documentary',
+    // History - broader query for variety
+    query: 'history documentary OR historical event explained OR ancient history modern',
     duration: 'long',
-    uploadDate: 'year',
+    uploadDate: 'month',
+    order: 'viewCount',
+    minDuration: 600,
+    maxDuration: 3600,
+    minViews: 200000,
+  },
+  nature: {
+    // Nature documentaries - broader
+    query: 'nature documentary 4K OR wildlife animals planet earth ocean',
+    duration: 'long',
+    uploadDate: 'month',
     order: 'viewCount',
     minDuration: 600,
     maxDuration: 3600,
     minViews: 300000,
-  },
-  nature: {
-    // Nature documentaries from major networks
-    query: '"BBC Earth" OR "National Geographic" wildlife documentary',
-    duration: 'long',
-    uploadDate: 'year',
-    order: 'viewCount',
-    minDuration: 600,
-    maxDuration: 3600,
-    minViews: 500000,
   },
 
   // === LIFESTYLE ===
   cooking: {
-    // Cooking shows from celebrity chefs and cooking channels
-    query: '"Gordon Ramsay" OR "Babish" OR "Joshua Weissman" cooking recipe',
+    // Cooking - fresh recipes trending
+    query: 'cooking recipe chef OR how to cook meal tutorial kitchen',
     duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
+    uploadDate: 'week',
+    order: 'relevance',
     minDuration: 300,
     maxDuration: 1800,
-    minViews: 200000,
+    minViews: 100000,
   },
   fitness: {
-    // Workout videos from fitness channels
-    query: '"POPSUGAR Fitness" OR "Blogilates" OR "Athlean-X" workout',
+    // Fitness - fresh workouts
+    query: 'workout routine OR home workout OR gym training fitness exercise',
     duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
+    uploadDate: 'week',
+    order: 'relevance',
     minDuration: 300,
     maxDuration: 2400,
-    minViews: 300000,
+    minViews: 100000,
   },
   travel: {
-    // Travel documentaries and destination videos
-    query: 'travel documentary 4K destination beautiful scenery',
+    // Travel - scenic and recent
+    query: 'travel vlog 4K OR travel documentary destination beautiful',
     duration: 'medium',
     uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 300,
-    maxDuration: 2400,
-    minViews: 200000,
-  },
-
-  // === HOBBIES ===
-  maker: {
-    // Maker/engineering projects from top creators
-    query: '"Mark Rober" OR "Adam Savage Tested" OR "Simone Giertz" build project',
-    duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 400,
-    maxDuration: 2400,
-    minViews: 200000,
-  },
-  diy: {
-    // Home improvement and DIY from TV shows
-    query: '"This Old House" OR "Magnolia Network" home renovation DIY',
-    duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 300,
-    maxDuration: 1800,
-    minViews: 50000,
-  },
-  automotive: {
-    // Car content from major automotive channels
-    query: '"Donut Media" OR "Doug DeMuro" OR "Top Gear" car review',
-    duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 400,
-    maxDuration: 1800,
-    minViews: 200000,
-  },
-  collecting: {
-    // Collectibles, cards, coins
-    query: '"Antiques Roadshow" OR "PSA" sports cards collectibles grading',
-    duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 300,
-    maxDuration: 1800,
-    minViews: 30000,
-  },
-  art: {
-    // Art tutorials and painting
-    query: '"Bob Ross" painting OR art tutorial masterclass professional',
-    duration: 'medium',
-    uploadDate: 'year',
     order: 'viewCount',
     minDuration: 300,
     maxDuration: 2400,
     minViews: 100000,
   },
 
+  // === HOBBIES ===
+  maker: {
+    // Maker/DIY projects - trending builds
+    query: 'build project DIY OR engineering maker craft creation',
+    duration: 'medium',
+    uploadDate: 'month',
+    order: 'relevance',
+    minDuration: 400,
+    maxDuration: 2400,
+    minViews: 100000,
+  },
+  diy: {
+    // Home improvement
+    query: 'home improvement DIY OR renovation project how to fix repair',
+    duration: 'medium',
+    uploadDate: 'month',
+    order: 'relevance',
+    minDuration: 300,
+    maxDuration: 1800,
+    minViews: 30000,
+  },
+  automotive: {
+    // Cars - new reviews and news
+    query: 'car review 2025 OR new car test drive OR automotive news',
+    duration: 'medium',
+    uploadDate: 'week',
+    order: 'relevance',
+    minDuration: 400,
+    maxDuration: 1800,
+    minViews: 100000,
+  },
+  collecting: {
+    // Collectibles - trending
+    query: 'collectibles rare OR sports cards OR antiques collection valuable',
+    duration: 'medium',
+    uploadDate: 'month',
+    order: 'relevance',
+    minDuration: 300,
+    maxDuration: 1800,
+    minViews: 20000,
+  },
+  art: {
+    // Art tutorials
+    query: 'art tutorial painting OR drawing lesson artist masterclass',
+    duration: 'medium',
+    uploadDate: 'month',
+    order: 'viewCount',
+    minDuration: 300,
+    maxDuration: 2400,
+    minViews: 50000,
+  },
+
   // === ENTERTAINMENT ===
   gaming: {
-    // Gaming from major gaming outlets
-    query: '"IGN" OR "GameSpot" game review gameplay trailer',
+    // Gaming - VERY current
+    query: 'gaming news 2025 OR new game review OR game trailer gameplay',
     duration: 'medium',
     uploadDate: 'week',
-    order: 'viewCount',
+    order: 'date', // Most recent gaming content
     minDuration: 300,
     maxDuration: 1800,
-    minViews: 300000,
+    minViews: 100000,
   },
   sports: {
-    // Sports highlights - ONLY from official sports accounts
-    // Very strict query to prevent kids content, songs, parodies from appearing
-    query: '"ESPN" "NFL" "NBA" "NHL" "MLB" "Premier League" highlights official -kids -song -music -parody -cartoon -animation -nursery -preschool -toddler -children -family -funny -compilation -remix -cover',
+    // Sports highlights - TODAY's content
+    query: 'sports highlights today OR NBA NFL MLB NHL highlights best plays',
     duration: 'medium',
     uploadDate: 'week',
-    order: 'viewCount',
+    order: 'date', // Most recent sports
     minDuration: 180,
     maxDuration: 1800,
-    minViews: 500000, // Higher threshold to ensure official content
+    minViews: 100000,
   },
   nfl: {
-    // NFL specific content
-    query: '"NFL" official highlights touchdowns best plays',
+    // NFL - current season
+    query: 'NFL highlights 2025 OR NFL best plays touchdowns',
     duration: 'medium',
     uploadDate: 'week',
-    order: 'viewCount',
+    order: 'date',
     minDuration: 180,
     maxDuration: 1800,
-    minViews: 200000,
+    minViews: 50000,
   },
   teen: {
-    // Teen entertainment - challenges and stunts
-    query: '"Dude Perfect" OR "MrBeast" challenge trick shot',
+    // Teen entertainment - viral/trending
+    query: 'challenge viral OR MrBeast OR Dude Perfect trick shot stunt',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
     minDuration: 300,
     maxDuration: 1800,
-    minViews: 1000000,
+    minViews: 500000,
   },
   comedy: {
-    // Comedy from TV shows and late night
-    query: '"SNL" OR "Saturday Night Live" OR "Jimmy Fallon" OR "Conan" comedy sketch',
+    // Comedy - recent sketches and clips
+    query: 'comedy sketch funny OR late night show clip OR stand up comedian',
     duration: 'medium',
     uploadDate: 'week',
     order: 'viewCount',
     minDuration: 180,
     maxDuration: 1200,
-    minViews: 300000,
+    minViews: 200000,
   },
   movies: {
-    // Movie trailers from studios
-    query: 'official movie trailer 2024 2025 film studio',
+    // Movie trailers - CURRENT releases
+    query: 'official movie trailer 2025 OR new film trailer upcoming',
     duration: 'short',
-    uploadDate: 'month',
-    order: 'viewCount',
+    uploadDate: 'week',
+    order: 'date',
     minDuration: 60,
     maxDuration: 300,
-    minViews: 500000,
+    minViews: 100000,
   },
   cinema80s: {
-    // Classic 80s movie clips
-    query: '80s movie scene classic film iconic remastered',
+    // Classic 80s movie clips - all time
+    query: '80s movie scene classic film iconic 1980s',
     duration: 'medium',
     uploadDate: 'any',
     order: 'viewCount',
@@ -204,20 +203,19 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 500000,
   },
 
-  // === MUSIC CHANNELS - Very specific to era ===
+  // === MUSIC CHANNELS ===
   music: {
-    // Current music videos from VEVO
-    query: 'official music video VEVO 2024 2025',
+    // Current trending music
+    query: 'official music video 2025 OR new song music video trending',
     duration: 'short',
     uploadDate: 'week',
-    order: 'viewCount',
+    order: 'viewCount', // Trending music
     minDuration: 120,
     maxDuration: 600,
-    minViews: 1000000,
+    minViews: 500000,
   },
   music80s: {
-    // 1980s music videos only
-    query: '1980s official music video remastered hits',
+    query: '1980s official music video remastered 80s hits',
     duration: 'short',
     uploadDate: 'any',
     order: 'viewCount',
@@ -226,8 +224,7 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 5000000,
   },
   music90s: {
-    // 1990s music videos only
-    query: '1990s official music video remastered hits',
+    query: '1990s official music video 90s hits remastered',
     duration: 'short',
     uploadDate: 'any',
     order: 'viewCount',
@@ -236,7 +233,6 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 5000000,
   },
   music00s: {
-    // 2000s music videos only
     query: '2000s official music video hits throwback',
     duration: 'short',
     uploadDate: 'any',
@@ -246,7 +242,6 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
     minViews: 5000000,
   },
   music10s: {
-    // 2010s music videos only
     query: '2010s official music video VEVO hits',
     duration: 'short',
     uploadDate: 'any',
@@ -258,63 +253,55 @@ export const CHANNEL_SEARCH_CONFIG: Record<string, SearchConfig> = {
 
   // === FAMILY CHANNELS ===
   kids: {
-    // Kids content from major children's networks
-    query: '"Sesame Street" OR "CoComelon" OR "Bluey" kids official',
+    query: 'kids show episode OR children cartoon educational fun',
     duration: 'short',
     uploadDate: 'month',
     order: 'viewCount',
     safeSearch: 'strict',
     minDuration: 60,
     maxDuration: 600,
-    minViews: 1000000,
+    minViews: 500000,
   },
   family: {
-    // Family-friendly entertainment
-    query: '"America\'s Funniest Home Videos" OR "AFV" family funny clean',
+    query: 'family friendly funny videos OR family entertainment clean',
     duration: 'medium',
     uploadDate: 'month',
     order: 'viewCount',
     safeSearch: 'strict',
     minDuration: 300,
     maxDuration: 1200,
-    minViews: 100000,
-  },
-  faith: {
-    // Faith-based content from major ministries
-    query: '"BibleProject" OR "Joel Osteen" OR "TD Jakes" sermon message',
-    duration: 'medium',
-    uploadDate: 'month',
-    order: 'viewCount',
-    minDuration: 300,
-    maxDuration: 3600,
     minViews: 50000,
   },
+  faith: {
+    query: 'sermon message church OR bible teaching faith inspiration',
+    duration: 'medium',
+    uploadDate: 'week',
+    order: 'date',
+    minDuration: 300,
+    maxDuration: 3600,
+    minViews: 10000,
+  },
 
-  // === PODCASTS - CRITICAL: Must be actual podcast episodes ===
+  // === PODCASTS ===
   podcast: {
-    // ONLY full podcast episodes from major podcasters
-    // Exclude music by requiring "podcast" and "episode" in results
-    query: '"Joe Rogan Experience" OR "Lex Fridman Podcast" OR "Huberman Lab" full episode',
+    query: 'podcast full episode interview 2025 OR podcast conversation',
     duration: 'long',
     uploadDate: 'week',
     order: 'date', // Most recent episodes
-    minDuration: 2400, // At least 40 minutes - this is key to filter out non-podcasts
-    maxDuration: 14400, // Up to 4 hours
-    minViews: 50000,
+    minDuration: 2400, // At least 40 minutes
+    maxDuration: 14400,
+    minViews: 20000,
   },
   
   // === LOCAL NEWS ===
-  // This is a dynamic channel - the search query is generated based on user's selected station
-  // See useLocalNews.ts and useDynamicVideos.ts for implementation
   localnews: {
-    // Default query - will be overridden by user's selected station
     query: 'local news live today',
     duration: 'any',
     uploadDate: 'today',
     order: 'date',
-    minDuration: 0, // Live streams can be any length
-    maxDuration: 0, // No max for live
-    minViews: 0, // Live streams may have lower view counts
+    minDuration: 0,
+    maxDuration: 0,
+    minViews: 0,
   },
 };
 

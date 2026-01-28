@@ -7,8 +7,8 @@ import { isAllowedVideoTitle } from '@/lib/contentGuards';
 import { getSavedLocalNewsStation } from '@/hooks/useLocalNews';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
-const CACHE_DURATION = 60 * 60 * 1000; // 1 hour
-const LOCAL_NEWS_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes for local news (fresher content)
+const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours - longer cache to reduce API calls
+const LOCAL_NEWS_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for local news
 
 // Clear cache when language changes
 if (typeof window !== 'undefined') {
@@ -131,7 +131,7 @@ export function useDynamicVideos(channelId: string) {
         const fetched = await fetchVideosFromSearch({
           ...searchConfig,
           channelType: channelId, // Pass channel ID for content type validation
-          limit: 25
+          limit: 15 // Reduced from 25 to save API quota
         });
 
         // Final title-only guard (catches cases where search/metadata filtering misses).
@@ -175,32 +175,21 @@ export function getDynamicVideosForChannel(channelId: string): FetchedVideo[] {
 }
 
 // Preload videos for a channel (useful for preloading next channel)
+// DISABLED to reduce API quota usage - rely on cache from loadVideos instead
 export async function preloadChannelVideos(channelId: string): Promise<void> {
+  // Check if already cached - if so, skip entirely
   const cached = videoCache[channelId];
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return; // Already cached
+    return; // Already cached, no API call needed
   }
-
+  
+  // Don't preload if not configured
   if (!isYouTubeConfigured()) {
     return;
   }
-
-  const searchConfig = CHANNEL_SEARCH_CONFIG[channelId];
-  if (!searchConfig) {
-    return;
-  }
-
-  try {
-    const fetched = await fetchVideosFromSearch({
-      ...searchConfig,
-      channelType: channelId,
-      limit: 25
-    });
-
-    if (fetched.length > 0) {
-      videoCache[channelId] = { videos: fetched, timestamp: Date.now() };
-    }
-  } catch (error) {
-    console.error('Error preloading videos:', error);
-  }
+  
+  // Skip preloading entirely to save quota - videos will load when user switches
+  // This saves ~150 API units per channel that would otherwise be preloaded
+  console.log(`[${channelId}] Skipping preload to save API quota`);
+  return;
 }

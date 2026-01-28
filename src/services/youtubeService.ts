@@ -323,8 +323,8 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
   } = config;
   
   try {
-    // Fetch more videos to account for filtering
-    const videoIds = await searchVideos({ ...config, limit: 50 });
+    // Fetch fewer videos to save API quota (each video detail costs 1 unit)
+    const videoIds = await searchVideos({ ...config, limit: 25 });
     if (!videoIds.length) return [];
     
     const details = await getVideoDetails(videoIds);
