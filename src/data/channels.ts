@@ -626,9 +626,20 @@ export function getAvailableChannels(parentalControlsEnabled: boolean): Channel[
   return channels;
 }
 
+// Placeholder video for channels that are still loading
+const LOADING_VIDEO: Video = {
+  id: 'loading',
+  title: 'Loading...',
+  duration: 60,
+};
+
 // Calculate total duration for a channel
 export function getChannelDuration(channel: Channel): number {
-  return channel.videos.reduce((acc, video) => acc + video.duration, 0);
+  if (!channel.videos || channel.videos.length === 0) {
+    return 60; // Return minimal duration to prevent divide-by-zero
+  }
+  const total = channel.videos.reduce((acc, video) => acc + (video.duration || 0), 0);
+  return total > 0 ? total : 60; // Ensure we never return 0
 }
 
 // Get current video and position based on time
@@ -638,6 +649,16 @@ export function getCurrentPlayback(channel: Channel): {
   positionInVideo: number;
   progress: number;
 } {
+  // Handle empty/loading channels
+  if (!channel.videos || channel.videos.length === 0) {
+    return { 
+      video: LOADING_VIDEO, 
+      videoIndex: 0, 
+      positionInVideo: 0, 
+      progress: 0 
+    };
+  }
+
   const totalDuration = getChannelDuration(channel);
   const now = new Date();
   const secondsSinceMidnight = 
@@ -652,17 +673,19 @@ export function getCurrentPlayback(channel: Channel): {
   let accumulated = 0;
   for (let i = 0; i < channel.videos.length; i++) {
     const video = channel.videos[i];
-    if (accumulated + video.duration > positionInLoop) {
+    const videoDuration = video.duration || 60;
+    if (accumulated + videoDuration > positionInLoop) {
       const positionInVideo = positionInLoop - accumulated;
-      const progress = (positionInVideo / video.duration) * 100;
+      const progress = (positionInVideo / videoDuration) * 100;
       return { video, videoIndex: i, positionInVideo, progress };
     }
-    accumulated += video.duration;
+    accumulated += videoDuration;
   }
   
   // Fallback to first video
+  const firstVideo = channel.videos[0];
   return { 
-    video: channel.videos[0], 
+    video: firstVideo, 
     videoIndex: 0, 
     positionInVideo: 0, 
     progress: 0 
@@ -671,8 +694,11 @@ export function getCurrentPlayback(channel: Channel): {
 
 // Get next video
 export function getNextVideo(channel: Channel, currentIndex: number): Video {
+  if (!channel.videos || channel.videos.length === 0) {
+    return LOADING_VIDEO;
+  }
   const nextIndex = (currentIndex + 1) % channel.videos.length;
-  return channel.videos[nextIndex];
+  return channel.videos[nextIndex] || LOADING_VIDEO;
 }
 
 // Get schedule for the next N hours
@@ -684,6 +710,17 @@ export interface ScheduleItem {
 }
 
 export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): ScheduleItem[] {
+  // Handle empty/loading channels
+  if (!channel.videos || channel.videos.length === 0) {
+    const now = new Date();
+    return [{
+      video: LOADING_VIDEO,
+      startTime: now,
+      endTime: new Date(now.getTime() + 60000),
+      isNowPlaying: true,
+    }];
+  }
+
   const schedule: ScheduleItem[] = [];
   const now = new Date();
   const endTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
@@ -702,11 +739,12 @@ export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): Sc
   let currentVideoIndex = 0;
   for (let i = 0; i < channel.videos.length; i++) {
     const video = channel.videos[i];
-    if (accumulated + video.duration > positionInLoop) {
+    const videoDuration = video.duration || 60;
+    if (accumulated + videoDuration > positionInLoop) {
       currentVideoIndex = i;
       break;
     }
-    accumulated += video.duration;
+    accumulated += videoDuration;
   }
   
   // Calculate when the current video started
@@ -717,8 +755,11 @@ export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): Sc
   let videoIndex = currentVideoIndex;
   while (currentTime < endTime) {
     const video = channel.videos[videoIndex];
+    if (!video) break; // Safety check
+    
+    const videoDuration = video.duration || 60;
     const videoStartTime = new Date(currentTime);
-    const videoEndTime = new Date(currentTime.getTime() + video.duration * 1000);
+    const videoEndTime = new Date(currentTime.getTime() + videoDuration * 1000);
     
     const isNowPlaying = videoStartTime <= now && now < videoEndTime;
     
