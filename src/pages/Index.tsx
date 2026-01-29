@@ -74,7 +74,8 @@ export default function Index() {
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {
     const savedChannelId = localStorage.getItem('epishow-last-channel');
     const saved = availableChannels.find(c => c.id === savedChannelId);
-    return saved || availableChannels[0];
+    // Ensure we always have a valid channel (fallback to static channels if needed)
+    return saved || availableChannels[0] || channels[0];
   });
   
   const [isGuideOpen, setIsGuideOpen] = useState(false);
