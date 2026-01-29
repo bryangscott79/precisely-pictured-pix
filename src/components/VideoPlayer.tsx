@@ -267,7 +267,8 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
     useEffect(() => {
       if (dynamicVideos.length > 0) {
         // Extra safety: ensure no off-topic titles sneak into the active playlist.
-        const filtered = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
+        // Also guard against undefined entries in the array
+        const filtered = dynamicVideos.filter((v) => v && v.title && isAllowedVideoTitle(channel.id, v.title));
         if (filtered.length > 0) {
           videosRef.current = filtered;
         }
@@ -480,7 +481,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       
       // If still no videos after loading, use rotated fallback (should not happen now)
       if (!hasVideos && dynamicVideos.length > 0) {
-        videosRef.current = dynamicVideos.filter((v) => isAllowedVideoTitle(channel.id, v.title));
+        videosRef.current = dynamicVideos.filter((v) => v && v.title && isAllowedVideoTitle(channel.id, v.title));
       } else if (!hasVideos) {
         videosRef.current = channel.videos;
       }
@@ -754,7 +755,7 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
       if (channel.id !== currentChannelIdRef.current) return;
       
       // Videos just loaded, update the ref (filter out empty IDs and off-topic titles)
-      const filtered = dynamicVideos.filter((v) => v.id && v.id.length > 5 && isAllowedVideoTitle(channel.id, v.title));
+      const filtered = dynamicVideos.filter((v) => v && v.id && v.id.length > 5 && v.title && isAllowedVideoTitle(channel.id, v.title));
       if (filtered.length > 0) {
         videosRef.current = filtered;
       }
