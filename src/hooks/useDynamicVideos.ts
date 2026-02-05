@@ -8,10 +8,20 @@ import { getSavedLocalNewsStation } from '@/hooks/useLocalNews';
 import { applyTuningToVideos, augmentQueryWithTuning, isVideoBlockedById } from '@/hooks/useAlgorithmTuning';
 import { isCustomChannel, CUSTOM_CHANNEL_PREFIX } from '@/hooks/useCustomChannels';
 
-let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
-const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours - longer cache to reduce API calls
-const LOCAL_NEWS_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for local news
-const CUSTOM_CHANNEL_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours for custom channels
+let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string; timeBlock?: string }> = {};
+const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour - shorter for TV-like freshness (content still varies by time block)
+const LOCAL_NEWS_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes for local news
+const CUSTOM_CHANNEL_CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour for custom channels
+
+// Get current time block name for cache invalidation
+function getCurrentTimeBlockName(): string {
+  const hour = new Date().getHours();
+  if (hour >= 6 && hour < 10) return 'morning';
+  if (hour >= 10 && hour < 14) return 'midday';
+  if (hour >= 14 && hour < 18) return 'afternoon';
+  if (hour >= 18 && hour < 22) return 'primetime';
+  return 'latenight';
+}
 
 // Storage for custom channel search configs (set by components that have access to useCustomChannels)
 let customChannelConfigs: Record<string, SearchConfig> = {};
@@ -112,15 +122,21 @@ export function useDynamicVideos(channelId: string) {
       
       // Create a cache key that includes the program name for scheduled channels
       const cacheKey = currentProgram ? `${channelId}:${currentProgram}` : channelId;
-      
+      const currentTimeBlock = getCurrentTimeBlockName();
+
       // Check cache first (use shorter cache for local news, custom channels)
+      // Also invalidate if time block changed (TV-like scheduling)
       const cached = videoCache[cacheKey];
       const cacheDuration = channelId === 'localnews'
         ? LOCAL_NEWS_CACHE_DURATION
         : isCustomChannel(channelId)
           ? CUSTOM_CHANNEL_CACHE_DURATION
           : CACHE_DURATION;
-      if (cached && Date.now() - cached.timestamp < cacheDuration) {
+      const cacheValid = cached &&
+        Date.now() - cached.timestamp < cacheDuration &&
+        cached.timeBlock === currentTimeBlock;
+
+      if (cacheValid) {
         setVideos(cached.videos);
         setUsingFallback(false);
         setLoading(false);
@@ -198,7 +214,12 @@ export function useDynamicVideos(channelId: string) {
         const tuned = applyTuningToVideos(guarded, channelId);
 
         if (tuned.length > 0) {
-          videoCache[cacheKey] = { videos: tuned, timestamp: Date.now(), programName: currentProgram || undefined };
+          videoCache[cacheKey] = {
+            videos: tuned,
+            timestamp: Date.now(),
+            programName: currentProgram || undefined,
+            timeBlock: currentTimeBlock
+          };
           setVideos(tuned);
           setUsingFallback(false);
         } else {

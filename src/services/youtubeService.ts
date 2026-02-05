@@ -38,14 +38,20 @@ export interface SearchConfig {
 
 // Quality control: Terms to exclude from all searches (UGC, vertical, amateur content)
 const QUALITY_EXCLUSIONS = [
-  // Language exclusions (dubbed content)
+  // Language exclusions (non-English content)
   '-doblado', '-dublado', '-dublagem', '-synchronisiert', '-doppiato', '-дубляж', '-吹替',
+  '-hindi', '-हिंदी', '-bollywood', '-tamil', '-telugu', '-kannada', '-malayalam', '-marathi',
+  '-भोजपुरी', '-punjabi', '-bengali', '-gujarati', '-odia', '-assamese',
+  '-korean', '-한국어', '-日本語', '-japanese', '-中文', '-chinese', '-thai', '-vietnamese',
+  '-arabic', '-العربية', '-turkish', '-türkçe', '-russian', '-русский',
+  '-spanish', '-español', '-portuguese', '-português', '-french', '-français', '-german', '-deutsch',
+  '-italian', '-italiano', '-indonesian', '-bahasa',
   // UGC/amateur markers
   '-vlog', '-shorts', '-TikTok', '-"my first"', '-amateur', '-reaction',
   // Vertical video indicators
   '-vertical', '-#shorts', '-"phone recording"',
   // Low quality markers
-  '-"screen recording"', '-compilation',
+  '-"screen recording"', '-compilation', '-"full movie"', '-"full film"',
 ].join(' ');
 
 // Content type validators based on channel category
@@ -187,6 +193,45 @@ function getPublishedAfterDate(uploadDate: UploadDate): string | null {
   }
 }
 
+// Get time-based programming block (like TV scheduling)
+function getTimeBlock(): { name: string; seed: number } {
+  const now = new Date();
+  const hour = now.getHours();
+  const dayOfYear = Math.floor((now.getTime() - new Date(now.getFullYear(), 0, 0).getTime()) / 86400000);
+
+  // 4-hour programming blocks that change throughout the day
+  let blockName: string;
+  if (hour >= 6 && hour < 10) blockName = 'morning';
+  else if (hour >= 10 && hour < 14) blockName = 'midday';
+  else if (hour >= 14 && hour < 18) blockName = 'afternoon';
+  else if (hour >= 18 && hour < 22) blockName = 'primetime';
+  else blockName = 'latenight';
+
+  // Seed based on day + block for consistent programming within each block
+  const blockIndex = ['morning', 'midday', 'afternoon', 'primetime', 'latenight'].indexOf(blockName);
+  const seed = dayOfYear * 10 + blockIndex;
+
+  return { name: blockName, seed };
+}
+
+// Deterministic shuffle for consistent ordering within a time block
+function seededShuffle<T>(array: T[], seed: number): T[] {
+  const result = [...array];
+  let currentSeed = seed;
+
+  const random = () => {
+    currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
+    return currentSeed / 0x7fffffff;
+  };
+
+  for (let i = result.length - 1; i > 0; i--) {
+    const j = Math.floor(random() * (i + 1));
+    [result[i], result[j]] = [result[j], result[i]];
+  }
+
+  return result;
+}
+
 // Search for videos using YouTube Search API
 async function searchVideos(config: SearchConfig): Promise<string[]> {
   // Force English for consistent, professional content
@@ -255,6 +300,64 @@ function isLandscapeVideo(video: any): boolean {
     return aspectRatio > 1.3;
   }
   return true; // Assume landscape if no dimensions
+}
+
+// Check if content is primarily English
+function isEnglishContent(video: any): boolean {
+  const title = video.snippet?.title || '';
+  const channelTitle = video.snippet?.channelTitle || '';
+  const description = video.snippet?.description || '';
+  const combined = `${title} ${channelTitle} ${description}`.toLowerCase();
+
+  // Non-English script detection (Devanagari, Arabic, CJK, Cyrillic, Thai, etc.)
+  const nonLatinScripts = /[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\u0400-\u04FF\u0E00-\u0E7F\uAC00-\uD7AF\u1100-\u11FF]/;
+  if (nonLatinScripts.test(title) || nonLatinScripts.test(channelTitle)) {
+    console.log(`[Filter] Non-English script detected: ${title}`);
+    return false;
+  }
+
+  // Common non-English words/phrases in titles
+  const nonEnglishIndicators = [
+    // Hindi/Indian
+    'hindi', 'हिंदी', 'bollywood', 'desi', 'bhojpuri', 'tamil', 'telugu', 'kannada',
+    'malayalam', 'marathi', 'punjabi', 'bengali', 'gujarati', 'indian movie',
+    'south indian', 'zee tv', 'sony sab', 'colors tv', 't-series', 'saregama',
+    // Spanish
+    'español', 'latino', 'telenovela', 'en español', 'spanish',
+    // Portuguese
+    'português', 'brasileir', 'em português',
+    // Korean
+    '한국', 'korean', 'k-pop', 'k-drama', 'kpop', 'kdrama',
+    // Japanese
+    '日本', 'anime', 'japanese', 'j-pop', 'jpop',
+    // Chinese
+    '中文', 'chinese', 'mandarin', 'cantonese',
+    // Arabic
+    'العربية', 'arabic',
+    // Russian
+    'русский', 'russian',
+    // Thai
+    'ไทย', 'thai',
+    // Vietnamese
+    'việt', 'vietnamese',
+    // Turkish
+    'türk', 'turkish',
+    // Indonesian
+    'indonesia', 'bahasa',
+    // French
+    'français', 'french',
+    // German
+    'deutsch', 'german',
+  ];
+
+  for (const indicator of nonEnglishIndicators) {
+    if (combined.includes(indicator)) {
+      console.log(`[Filter] Non-English indicator "${indicator}" found: ${title}`);
+      return false;
+    }
+  }
+
+  return true;
 }
 
 // Check if video title/channel suggests professional content
@@ -328,32 +431,37 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
     if (!videoIds.length) return [];
     
     const details = await getVideoDetails(videoIds);
-    
-    return details
+
+    const filtered = details
       .filter(v => {
+        // Filter: English content only (strongest filter first)
+        if (!isEnglishContent(v)) {
+          return false;
+        }
+
         // Filter: Landscape only
         if (!isLandscapeVideo(v)) {
           console.log(`[Filter] Excluded vertical/square video: ${v.snippet?.title}`);
           return false;
         }
-        
+
         // Filter: Professional content only
         if (!isProfessionalContent(v)) {
           console.log(`[Filter] Excluded amateur content: ${v.snippet?.title}`);
           return false;
         }
-        
+
         // Filter: Content type must match channel (e.g., podcasts can't be music videos)
         if (channelType && !isContentTypeMatch(v, channelType)) {
           return false;
         }
-        
+
         // Filter: Minimum view count
         const views = parseInt(v.statistics?.viewCount || '0');
         if (views < minViews) {
           return false;
         }
-        
+
         return true;
       })
       .map(v => ({
@@ -363,7 +471,19 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
         views: parseInt(v.statistics?.viewCount || '0')
       }))
       .filter(v => v.duration >= minDuration && v.duration <= maxDuration)
-      .sort((a, b) => b.views - a.views) // Sort by popularity
+      .sort((a, b) => b.views - a.views); // Sort by popularity first
+
+    // Get time block for TV-like scheduling
+    const timeBlock = getTimeBlock();
+
+    // Take top videos by views, then shuffle based on time block
+    // This ensures quality content but different order each programming block
+    const topVideos = filtered.slice(0, Math.min(filtered.length, limit * 2));
+    const shuffled = seededShuffle(topVideos, timeBlock.seed);
+
+    console.log(`[Schedule] Time block: ${timeBlock.name}, seed: ${timeBlock.seed}, videos: ${shuffled.length}`);
+
+    return shuffled
       .slice(0, limit)
       .map(({ id, title, duration }) => ({ id, title, duration }));
   } catch (error) {
