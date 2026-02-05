@@ -19,10 +19,10 @@ import { PremiumChannelLock } from '@/components/PremiumChannelLock';
 import { LanguageSettingsModal } from '@/components/LanguageSettingsModal';
 import { ActionFeedback } from '@/components/ActionFeedback';
 import { ProfileSettingsModal } from '@/components/ProfileSettingsModal';
-import { 
-  ProfileSwitcher, 
-  ProfileSettings, 
-  TimeLimitWarning 
+import {
+  ProfileSwitcher,
+  ProfileSettings,
+  TimeLimitWarning
 } from '@/components/ParentalControls';
 import { useParentalControls } from '@/hooks/useParentalControls';
 import { useUserTier } from '@/contexts/UserTierContext';
@@ -32,6 +32,8 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import { useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useLocalNewsStation, createLocalNewsChannel } from '@/hooks/useLocalNews';
+import { useCustomChannels, toChannelFormat, getCustomChannelSearchConfig } from '@/hooks/useCustomChannels';
+import { registerCustomChannelConfig, unregisterCustomChannelConfig } from '@/hooks/useDynamicVideos';
 
 type ActionType = 'mute' | 'unmute' | 'play' | 'pause' | 'captions-on' | 'captions-off' | null;
 
@@ -48,18 +50,43 @@ export default function Index() {
   
   // Get local news station reactively
   const localStation = useLocalNewsStation();
-  
-  // Build channel list with optional local news channel
+
+  // Get custom channels
+  const {
+    channels: customChannels,
+    channelsAsChannelFormat: customChannelsAsChannels,
+  } = useCustomChannels();
+
+  // Register custom channel configs for video loading
+  useEffect(() => {
+    console.log('[Index] Registering custom channels:', customChannels.length);
+    customChannels.forEach((ch) => {
+      const config = getCustomChannelSearchConfig(ch);
+      console.log(`[Index] Registering config for ${ch.channelId}:`, config);
+      registerCustomChannelConfig(ch.channelId, config);
+    });
+
+    return () => {
+      customChannels.forEach((ch) => {
+        unregisterCustomChannelConfig(ch.channelId);
+      });
+    };
+  }, [customChannels]);
+
+  // Build channel list with optional local news channel and custom channels
   const availableChannels = useMemo(() => {
     let channelList = [...channels];
-    
+
     // Add local news channel if user has one configured
     if (localStation) {
       const localNewsChannel = createLocalNewsChannel(localStation);
       // Insert at position 1 (after first channel, making it easily accessible)
       channelList = [channelList[0], localNewsChannel, ...channelList.slice(1)];
     }
-    
+
+    // Add custom channels at the end
+    channelList = [...channelList, ...customChannelsAsChannels];
+
     // Apply parental controls and profile-based filtering
     return channelList.filter(c => {
       // First apply parental controls (legacy)
@@ -68,7 +95,7 @@ export default function Index() {
       if (!isChannelAllowed(c.id)) return false;
       return true;
     });
-  }, [parentalControlsEnabled, isChannelAllowed, localStation]);
+  }, [parentalControlsEnabled, isChannelAllowed, localStation, customChannelsAsChannels]);
 
   // Get saved channel or default to first available
   const [currentChannel, setCurrentChannel] = useState<Channel>(() => {

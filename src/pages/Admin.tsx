@@ -27,6 +27,7 @@ import { Link } from 'react-router-dom';
 // Admin email whitelist - add your admin emails here
 const ADMIN_EMAILS = [
   'bryangscott79@gmail.com',
+  'bryan@bryanscott.com',
   // Add more admin emails as needed
 ];
 

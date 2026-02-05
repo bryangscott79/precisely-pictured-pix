@@ -1,7 +1,10 @@
 import { useEffect, useState } from 'react';
 import { Channel, ChannelColor, getCurrentPlayback, getNextVideo, formatTime } from '@/data/channels';
 import { getCurrentProgram } from '@/data/scheduledProgramming';
-import { ChevronRight, Calendar } from 'lucide-react';
+import { ChevronRight, Calendar, Sparkles } from 'lucide-react';
+import { getTuningProfile } from '@/hooks/useAlgorithmTuning';
+import { useAuth } from '@/hooks/useAuth';
+import { isCustomChannel } from '@/hooks/useCustomChannels';
 
 interface InfoBarProps {
   channel: Channel;
@@ -42,9 +45,24 @@ const colorClasses: Record<ChannelColor, string> = {
 };
 
 export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
+  const { user } = useAuth();
   const [playback, setPlayback] = useState(() => getCurrentPlayback(channel));
   const [nextVideo, setNextVideo] = useState(() => getNextVideo(channel, playback.videoIndex));
   const [currentProgram, setCurrentProgram] = useState<string | null>(null);
+  const [preferenceCount, setPreferenceCount] = useState(0);
+
+  // Check if user has personalization active
+  useEffect(() => {
+    const profile = getTuningProfile();
+    const count = profile.boostedKeywords.length +
+      profile.suppressedKeywords.length +
+      profile.blockedVideoIds.length +
+      Object.keys(profile.boostedChannels).length;
+    setPreferenceCount(count);
+  }, [channel]);
+
+  const isPersonalized = preferenceCount > 0 || user;
+  const isCustom = isCustomChannel(channel.id);
 
   useEffect(() => {
     const interval = setInterval(() => {
@@ -98,6 +116,21 @@ export function InfoBar({ channel, visible, currentVideoTitle }: InfoBarProps) {
               <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-primary/20 text-primary-foreground">
                 <Calendar className="w-3 h-3" />
                 {currentProgram}
+              </span>
+            )}
+            {isCustom && (
+              <span className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-300 border border-purple-500/30">
+                <Sparkles className="w-3 h-3" />
+                Custom
+              </span>
+            )}
+            {isPersonalized && !isCustom && (
+              <span
+                className="flex items-center gap-1 text-xs px-2 py-0.5 rounded bg-gradient-to-r from-blue-500/20 to-cyan-500/20 text-blue-300 border border-blue-500/30"
+                title={preferenceCount > 0 ? `${preferenceCount} preferences tuning your feed` : 'Personalized content'}
+              >
+                <Sparkles className="w-3 h-3" />
+                {user ? 'For You' : 'Tuned'}
               </span>
             )}
           </div>

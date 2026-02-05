@@ -307,55 +307,83 @@ function isLandscapeVideo(video: any): boolean {
 function isEnglishContent(video: any): boolean {
   const title = video.snippet?.title || '';
   const channelTitle = video.snippet?.channelTitle || '';
-  const description = video.snippet?.description || '';
-  const combined = `${title} ${channelTitle} ${description}`.toLowerCase();
+  const description = video.snippet?.description?.slice(0, 500) || ''; // Only first 500 chars
+  const combinedLower = `${title} ${channelTitle}`.toLowerCase();
 
   // Non-English script detection (Devanagari, Arabic, CJK, Cyrillic, Thai, etc.)
-  const nonLatinScripts = /[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\u0400-\u04FF\u0E00-\u0E7F\uAC00-\uD7AF\u1100-\u11FF]/;
+  // Check title and channel name (not description as it may have multi-language)
+  const nonLatinScripts = /[\u0900-\u097F\u0600-\u06FF\u4E00-\u9FFF\u3040-\u309F\u30A0-\u30FF\u0400-\u04FF\u0E00-\u0E7F\uAC00-\uD7AF\u1100-\u11FF\u0980-\u09FF\u0A00-\u0A7F\u0B00-\u0B7F\u0C00-\u0C7F\u0C80-\u0CFF\u0D00-\u0D7F]/;
   if (nonLatinScripts.test(title) || nonLatinScripts.test(channelTitle)) {
     console.log(`[Filter] Non-English script detected: ${title}`);
     return false;
   }
 
+  // Indian channel names (very common source of non-English content)
+  const indianChannelPatterns = [
+    'zee', 'sony', 'star', 'colors', 't-series', 'tseries', 'saregama', 'tips official',
+    'aaj tak', 'india tv', 'abp', 'ndtv', 'republic', 'wion', 'times now',
+    'zee news', 'news18', 'india today', 'dd news', 'rajshri', 'shemaroo',
+    'goldmines', 'pen movies', 'ultra movie', 'wave music', 'bhojpuri',
+    'speed records', 'white hill', 'anand audio', 'lahari music'
+  ];
+
+  for (const pattern of indianChannelPatterns) {
+    if (channelTitle.toLowerCase().includes(pattern)) {
+      console.log(`[Filter] Indian channel detected "${pattern}": ${channelTitle}`);
+      return false;
+    }
+  }
+
   // Common non-English words/phrases in titles
   const nonEnglishIndicators = [
-    // Hindi/Indian
+    // Hindi/Indian (expanded)
     'hindi', 'हिंदी', 'bollywood', 'desi', 'bhojpuri', 'tamil', 'telugu', 'kannada',
-    'malayalam', 'marathi', 'punjabi', 'bengali', 'gujarati', 'indian movie',
-    'south indian', 'zee tv', 'sony sab', 'colors tv', 't-series', 'saregama',
+    'malayalam', 'marathi', 'punjabi', 'bengali', 'gujarati', 'odia', 'assamese',
+    'indian movie', 'south indian', 'dub', 'dubbed', 'full movie hindi',
+    'new hindi', 'latest hindi', 'superhit', 'blockbuster hindi',
     // Spanish
-    'español', 'latino', 'telenovela', 'en español', 'spanish',
+    'español', 'latino', 'telenovela', 'en español', 'pelicula',
+    'capitulo', 'novela', 'musica latina',
     // Portuguese
-    'português', 'brasileir', 'em português',
+    'português', 'brasileir', 'em português', 'dublado', 'legendado',
     // Korean
-    '한국', 'korean', 'k-pop', 'k-drama', 'kpop', 'kdrama',
+    '한국', 'korean drama', 'k-pop', 'k-drama', 'kpop', 'kdrama', 'eng sub',
     // Japanese
-    '日本', 'anime', 'japanese', 'j-pop', 'jpop',
+    '日本', 'japanese', 'j-pop', 'jpop', 'vtuber',
     // Chinese
-    '中文', 'chinese', 'mandarin', 'cantonese',
+    '中文', 'chinese', 'mandarin', 'cantonese', 'canto',
     // Arabic
-    'العربية', 'arabic',
+    'العربية', 'arabic', 'مترجم',
     // Russian
-    'русский', 'russian',
+    'русский', 'russian', 'на русском',
     // Thai
-    'ไทย', 'thai',
+    'ไทย', 'thai', 'lakorn',
     // Vietnamese
-    'việt', 'vietnamese',
+    'việt', 'vietnamese', 'phim',
     // Turkish
-    'türk', 'turkish',
+    'türk', 'turkish', 'dizi',
     // Indonesian
-    'indonesia', 'bahasa',
-    // French
-    'français', 'french',
+    'indonesia', 'bahasa', 'sinetron',
+    // French (only if clearly non-English)
+    'français', 'en français', 'vostfr', 'vf',
     // German
-    'deutsch', 'german',
+    'deutsch', 'auf deutsch', 'german',
+    // Generic dub/sub indicators
+    'sub indo', 'sub español', 'legendas', 'sottotitoli'
   ];
 
   for (const indicator of nonEnglishIndicators) {
-    if (combined.includes(indicator)) {
+    if (combinedLower.includes(indicator)) {
       console.log(`[Filter] Non-English indicator "${indicator}" found: ${title}`);
       return false;
     }
+  }
+
+  // Additional check: if title has very few English characters (mostly special chars or emojis)
+  const englishChars = title.replace(/[^a-zA-Z]/g, '');
+  if (title.length > 10 && englishChars.length < title.length * 0.3) {
+    console.log(`[Filter] Low English character ratio: ${title}`);
+    return false;
   }
 
   return true;
