@@ -331,10 +331,13 @@ export const CURATED_CHANNELS: Record<string, string[]> = {
     'UCo_q6aOlvPH7M-j_XGWVgXg', // Bleacher Report
   ],
 
-  // Music
+  // Music - Official artist channels and music videos
   music: [
-    'UC-9-kyTW8ZkZNDHQJ6FgpwQ', // Music
-    'UCVHFbqXqoYvEWM1Ddxl0QKg', // Vevo
+    'UCIwFjwMjI0y7PDBVEO9-bkQ', // Justin Bieber
+    'UC0WP5P-ufpRfjbNrmOWwLBQ', // The Weeknd
+    'UC0RhatS1pyxInC00YKjjBqQ', // Bruno Mars
+    'UCqECaJ8Gagnn7YCbPEzWH6g', // Taylor Swift
+    'UCsRM0YB_dabtEPGPTKo-gcw', // Ariana Grande
   ],
 
   // Nature/Documentary
