@@ -166,24 +166,26 @@ export function getCustomChannelSearchConfig(channel: CustomChannel): SearchConf
   if (isSports) {
     return {
       query: channel.searchQuery,
-      duration: 'medium',
-      uploadDate: 'week',    // Recent sports content
-      order: 'date',         // Most recent first
-      minDuration: 60,       // Highlights can be short
-      maxDuration: 3600,
-      minViews: 1000,        // Lower threshold for recent content
+      duration: 'any',       // Accept any duration for sports
+      uploadDate: 'month',   // Allow up to a month of content
+      order: 'relevance',    // Relevance first for better matches
+      minDuration: 30,       // Highlights can be short
+      maxDuration: 7200,     // Up to 2 hours
+      minViews: 0,           // Don't filter by views
+      channelType: channel.channelId, // CRITICAL: Mark as custom channel for relaxed filtering
     };
   }
 
   if (isCards) {
     return {
       query: channel.searchQuery,
-      duration: 'medium',
-      uploadDate: 'week',
-      order: 'date',
-      minDuration: 300,
+      duration: 'any',
+      uploadDate: 'month',
+      order: 'relevance',
+      minDuration: 60,
       maxDuration: 7200,     // Card breaks can be long
-      minViews: 500,         // Niche content
+      minViews: 0,           // Niche content
+      channelType: channel.channelId, // CRITICAL: Mark as custom channel for relaxed filtering
     };
   }
 
@@ -193,9 +195,10 @@ export function getCustomChannelSearchConfig(channel: CustomChannel): SearchConf
     duration: 'medium',
     uploadDate: 'month',
     order: 'relevance',
-    minDuration: 300,     // At least 5 minutes
+    minDuration: 60,      // At least 1 minute
     maxDuration: 3600,    // Max 1 hour
-    minViews: 5000,       // Lower threshold
+    minViews: 0,          // Don't filter by views for custom channels
+    channelType: channel.channelId, // CRITICAL: Mark as custom channel for relaxed filtering
   };
 }
 

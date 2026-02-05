@@ -17,6 +17,7 @@ import { OnboardingModal } from '@/components/OnboardingModal';
 import { UpgradeModal } from '@/components/UpgradeModal';
 import { PremiumChannelLock } from '@/components/PremiumChannelLock';
 import { LanguageSettingsModal } from '@/components/LanguageSettingsModal';
+import { LocalNewsSettingsModal } from '@/components/LocalNewsSettingsModal';
 import { ActionFeedback } from '@/components/ActionFeedback';
 import { ProfileSettingsModal } from '@/components/ProfileSettingsModal';
 import {
@@ -111,6 +112,7 @@ export default function Index() {
   const [isProfileSwitcherOpen, setIsProfileSwitcherOpen] = useState(false);
   const [isProfileSettingsOpen, setIsProfileSettingsOpen] = useState(false);
   const [isLanguageSettingsOpen, setIsLanguageSettingsOpen] = useState(false);
+  const [isLocalNewsSettingsOpen, setIsLocalNewsSettingsOpen] = useState(false);
   const [isAccountSettingsOpen, setIsAccountSettingsOpen] = useState(false);
   const [showUI, setShowUI] = useState(true);
   const [showChannelSwitcher, setShowChannelSwitcher] = useState(false);
@@ -509,13 +511,20 @@ export default function Index() {
         onOpenChange={setIsAccountSettingsOpen}
         onOpenLanguageSettings={() => setIsLanguageSettingsOpen(true)}
         onOpenParentalSettings={() => setIsProfileSettingsOpen(true)}
+        onOpenLocalNewsSettings={() => setIsLocalNewsSettingsOpen(true)}
         onConnectYouTube={() => signInWithGoogle(true)}
       />
 
       {/* Language Settings Modal */}
-      <LanguageSettingsModal 
+      <LanguageSettingsModal
         open={isLanguageSettingsOpen}
         onOpenChange={setIsLanguageSettingsOpen}
+      />
+
+      {/* Local News Settings Modal */}
+      <LocalNewsSettingsModal
+        open={isLocalNewsSettingsOpen}
+        onOpenChange={setIsLocalNewsSettingsOpen}
       />
 
       {/* Onboarding for first-time visitors */}

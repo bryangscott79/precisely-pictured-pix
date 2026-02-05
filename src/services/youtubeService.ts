@@ -238,23 +238,35 @@ async function searchVideos(config: SearchConfig): Promise<string[]> {
   // Force English for consistent, professional content
   const languageCode = 'en';
   const regionCode = 'US';
-  
-  // Enhance query with quality exclusions
-  const enhancedQuery = `${config.query} ${QUALITY_EXCLUSIONS}`;
-  
+
+  // Check if this is a custom channel (use simpler search without exclusions)
+  const isCustomChannel = config.channelType?.startsWith('custom-');
+
+  // For custom channels, use the query as-is without aggressive exclusions
+  // This ensures search terms like "Denver Broncos" actually find relevant content
+  const enhancedQuery = isCustomChannel
+    ? config.query
+    : `${config.query} ${QUALITY_EXCLUSIONS}`;
+
+  console.log(`[YouTube Search] Query: "${enhancedQuery}", isCustom: ${isCustomChannel}`);
+
   const params = new URLSearchParams({
     part: 'snippet',
     type: 'video',
     q: enhancedQuery,
     maxResults: String(Math.min(config.limit || 25, 50)),
-    order: config.order || 'viewCount', // Default to view count for quality
+    order: config.order || 'relevance', // Use relevance for better custom channel results
     safeSearch: config.safeSearch || 'moderate',
     regionCode: regionCode,
     relevanceLanguage: languageCode,
     videoEmbeddable: 'true',
-    videoDefinition: 'high', // Only HD content
     key: YOUTUBE_API_KEY,
   });
+
+  // Only require HD for non-custom channels
+  if (!isCustomChannel) {
+    params.append('videoDefinition', 'high');
+  }
 
   // Add duration filter if specified
   if (config.duration && config.duration !== 'any') {
@@ -455,6 +467,9 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
     youtubeChannelId
   } = config;
 
+  // Check if this is a custom channel or local news (use relaxed filtering)
+  const isCustomOrLocal = channelType?.startsWith('custom-') || channelType === 'localnews';
+
   try {
     // If we have a specific YouTube channel ID, fetch from that channel
     if (youtubeChannelId) {
@@ -463,18 +478,34 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
         minDuration: minDuration || 0,
         maxDuration: maxDuration || 7200,
         minViews: 0, // Don't filter by views for specific channels
-        limit: limit || 25
+        limit: limit || 25,
+        skipFilters: true
       });
     }
 
     // Fetch fewer videos to save API quota (each video detail costs 1 unit)
     const videoIds = await searchVideos({ ...config, limit: 25 });
-    if (!videoIds.length) return [];
+    console.log(`[YouTube] Search returned ${videoIds.length} video IDs`);
+    if (!videoIds.length) {
+      console.warn(`[YouTube] No videos found for: "${config.query}"`);
+      return [];
+    }
 
     const details = await getVideoDetails(videoIds);
+    console.log(`[YouTube] Got details for ${details.length} videos`);
 
     const filtered = details
       .filter(v => {
+        // For custom channels and local news, use minimal filtering
+        if (isCustomOrLocal) {
+          // Only check landscape
+          if (!isLandscapeVideo(v)) {
+            console.log(`[Filter] Excluded vertical: ${v.snippet?.title}`);
+            return false;
+          }
+          return true;
+        }
+
         // Filter: English content only (strongest filter first)
         if (!isEnglishContent(v)) {
           return false;

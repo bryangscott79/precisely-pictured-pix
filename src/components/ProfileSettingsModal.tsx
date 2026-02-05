@@ -2,25 +2,27 @@ import { useState } from 'react';
 import { useAuth } from '@/hooks/useAuth';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { useLanguagePreference } from '@/hooks/useLanguagePreference';
-import { 
-  Dialog, 
-  DialogContent, 
-  DialogHeader, 
-  DialogTitle 
+import { useLocalNewsStation } from '@/hooks/useLocalNews';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle
 } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
 import { TierBadge } from '@/components/TierBadge';
-import { 
-  User, 
-  Youtube, 
-  Globe, 
-  Users, 
-  CreditCard, 
-  Shield, 
+import {
+  User,
+  Youtube,
+  Globe,
+  Users,
+  CreditCard,
+  Shield,
   ChevronRight,
   Crown,
-  Check
+  Check,
+  Tv
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
@@ -29,6 +31,7 @@ interface ProfileSettingsModalProps {
   onOpenChange: (open: boolean) => void;
   onOpenLanguageSettings: () => void;
   onOpenParentalSettings: () => void;
+  onOpenLocalNewsSettings: () => void;
   onConnectYouTube: () => void;
 }
 
@@ -37,11 +40,13 @@ export function ProfileSettingsModal({
   onOpenChange,
   onOpenLanguageSettings,
   onOpenParentalSettings,
+  onOpenLocalNewsSettings,
   onConnectYouTube,
 }: ProfileSettingsModalProps) {
   const { user, session } = useAuth();
   const { tier, isPremium, openUpgradeModal } = useUserTier();
   const { language } = useLanguagePreference();
+  const localStation = useLocalNewsStation();
 
   if (!user) return null;
 
@@ -146,6 +151,14 @@ export function ProfileSettingsModal({
             label="Language"
             description={language.name}
             onClick={() => handleSettingClick(onOpenLanguageSettings)}
+          />
+
+          <SettingsItem
+            icon={<Tv className="w-5 h-5" />}
+            label="Local News"
+            description={localStation ? `${localStation.name}` : "Set your location"}
+            onClick={() => handleSettingClick(onOpenLocalNewsSettings)}
+            status={localStation ? 'connected' : undefined}
           />
 
           <SettingsItem
