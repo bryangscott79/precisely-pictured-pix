@@ -289,7 +289,7 @@ export function ChannelGuide({
   onOpenParentalControls
 }: ChannelGuideProps) {
   const { enabled: parentalControlsEnabled } = useParentalControls();
-  const { isPremium, isConnected } = useUserTier();
+  const { isPremium, isConnected, openUpgradeModal } = useUserTier();
   const {
     channels: customChannels,
     channelsAsChannelFormat: customChannelsAsChannels,
@@ -434,54 +434,61 @@ export function ChannelGuide({
         {(viewMode === 'grid' || typeof window !== 'undefined' && window.innerWidth < 640) ? (
           // Grid view - grouped by category
           <div className="p-2 md:p-3 space-y-3 md:space-y-4 overflow-y-auto h-[calc(100%-110px)] md:h-[calc(100%-130px)]">
-            {/* Custom Channels Section - Show first if user has any */}
-            {(customChannelsAsChannels.length > 0 || isConnected) && (
-              <div>
-                <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 md:mb-2 px-1 flex items-center gap-2">
-                  <Sparkles className="w-3 h-3 text-purple-400" />
-                  Your Channels
-                </h3>
-                <div className="space-y-1.5 md:space-y-2">
-                  {customChannelsAsChannels.map((channel) => (
-                    <ChannelCard
-                      key={channel.id}
-                      channel={channel}
-                      isActive={channel.id === currentChannel.id}
-                      isLocked={false}
-                      isCustom={true}
-                      onDelete={async () => {
-                        const confirmed = window.confirm(`Delete "${channel.name}"? This cannot be undone.`);
-                        if (confirmed) {
-                          const success = await deleteChannel(channel.id);
-                          if (success) {
-                            toast.success(`Deleted "${channel.name}"`);
-                          }
+            {/* Custom Channels Section - Always show to encourage upgrades */}
+            <div>
+              <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 md:mb-2 px-1 flex items-center gap-2">
+                <Sparkles className="w-3 h-3 text-purple-400" />
+                Your Channels
+              </h3>
+              <div className="space-y-1.5 md:space-y-2">
+                {customChannelsAsChannels.map((channel) => (
+                  <ChannelCard
+                    key={channel.id}
+                    channel={channel}
+                    isActive={channel.id === currentChannel.id}
+                    isLocked={false}
+                    isCustom={true}
+                    onDelete={async () => {
+                      const confirmed = window.confirm(`Delete "${channel.name}"? This cannot be undone.`);
+                      if (confirmed) {
+                        const success = await deleteChannel(channel.id);
+                        if (success) {
+                          toast.success(`Deleted "${channel.name}"`);
                         }
-                      }}
-                      onClick={() => {
-                        onChannelSelect(channel);
-                        onClose();
-                      }}
-                    />
-                  ))}
-                  {/* Create Channel Button */}
-                  {isConnected && (
-                    <button
-                      onClick={() => setIsCreatorOpen(true)}
-                      className="w-full p-2 md:p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-purple-400"
-                    >
-                      <Plus className="w-4 h-4" />
-                      <span className="text-xs font-medium">Create Custom Channel</span>
-                      {!isPremium && remainingSlots !== Infinity && (
-                        <span className="text-[10px] text-muted-foreground">
-                          ({remainingSlots} left)
-                        </span>
-                      )}
-                    </button>
-                  )}
-                </div>
+                      }
+                    }}
+                    onClick={() => {
+                      onChannelSelect(channel);
+                      onClose();
+                    }}
+                  />
+                ))}
+                {/* Create Channel Button - Always visible, opens creator or prompts sign-in/upgrade */}
+                <button
+                  onClick={() => {
+                    if (!isConnected) {
+                      // Not signed in - open upgrade modal which will prompt sign-in
+                      openUpgradeModal();
+                    } else {
+                      setIsCreatorOpen(true);
+                    }
+                  }}
+                  className="w-full p-2 md:p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-purple-400"
+                >
+                  <Plus className="w-4 h-4" />
+                  <span className="text-xs font-medium">Create Custom Channel</span>
+                  {!isConnected ? (
+                    <span className="text-[10px] px-1.5 py-0.5 rounded bg-purple-500/20 text-purple-400 border border-purple-500/30">
+                      Sign In
+                    </span>
+                  ) : !isPremium && remainingSlots !== Infinity ? (
+                    <span className="text-[10px] text-muted-foreground">
+                      ({remainingSlots} left)
+                    </span>
+                  ) : null}
+                </button>
               </div>
-            )}
+            </div>
 
             {categoryOrder.map((category) => {
               // Filter out custom channels from regular categories

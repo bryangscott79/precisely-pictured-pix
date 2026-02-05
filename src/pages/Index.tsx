@@ -401,11 +401,15 @@ export default function Index() {
           youtubeId={currentVideoId}
           visible={showUI && !isGuideOpen && !isChannelLocked}
           onAuthRequired={() => setIsAuthModalOpen(true)}
+          channelId={currentChannel.id}
+          videoTitle={currentVideoTitle}
         />
         <FeedbackMenu
           videoId={currentVideoId}
           visible={showUI && !isGuideOpen && !isChannelLocked}
           onAuthRequired={() => setIsAuthModalOpen(true)}
+          channelId={currentChannel.id}
+          videoTitle={currentVideoTitle}
         />
       </div>
 
