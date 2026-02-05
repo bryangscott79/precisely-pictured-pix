@@ -18,13 +18,13 @@ export interface MetroArea {
 
 // Major metro areas with their local news stations
 export const METRO_AREAS: Record<string, MetroArea> = {
-  // Atlanta, GA
+  // Atlanta, GA - VERIFIED channel IDs Feb 2025
   'atlanta': {
     name: 'Atlanta',
     stations: [
       {
         name: 'FOX 5 Atlanta',
-        youtubeChannelId: 'UCYVpHvvCjNfV-iFqFN5s3JA',
+        youtubeChannelId: 'UCjHWv2DU5-HLpogAAr386DQ', // @fox5atlanta - VERIFIED
         youtubeSearchQuery: 'FOX 5 Atlanta live news',
         callSign: 'WAGA-TV',
         network: 'FOX',
@@ -33,7 +33,7 @@ export const METRO_AREAS: Record<string, MetroArea> = {
       },
       {
         name: 'WSB-TV Atlanta',
-        youtubeChannelId: 'UC6uVXQjfY3U46zVE1e5X-Yg',
+        youtubeChannelId: 'UCEwi0mSAsUp8V31Re0QgfHQ', // @wsaborgtv - VERIFIED
         youtubeSearchQuery: 'WSB-TV Atlanta live news',
         callSign: 'WSB-TV',
         network: 'ABC',
@@ -42,7 +42,7 @@ export const METRO_AREAS: Record<string, MetroArea> = {
       },
       {
         name: '11Alive Atlanta',
-        youtubeChannelId: 'UCu0ILb8qz0Q3Y7IH2YBWT0Q',
+        youtubeChannelId: 'UCfplIIwkmmfMWYbMlgL3fbA', // @11alive - VERIFIED
         youtubeSearchQuery: '11Alive Atlanta live news',
         callSign: 'WXIA-TV',
         network: 'NBC',
