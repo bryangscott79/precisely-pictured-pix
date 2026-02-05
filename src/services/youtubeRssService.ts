@@ -19,9 +19,15 @@ import { FetchedVideo } from './youtubeService';
 
 const YOUTUBE_RSS_BASE = 'https://www.youtube.com/feeds/videos.xml';
 
-// CORS proxy for client-side RSS fetching
-// In production, you'd want to use a Supabase Edge Function for this
-const CORS_PROXY = 'https://api.allorigins.win/raw?url=';
+// Multiple CORS proxies for reliability (fallback chain)
+const CORS_PROXIES = [
+  'https://api.allorigins.win/raw?url=',
+  'https://corsproxy.io/?',
+  'https://api.codetabs.com/v1/proxy?quest=',
+];
+
+// Track which proxy is working best
+let currentProxyIndex = 0;
 
 export interface RssVideo {
   id: string;
@@ -78,37 +84,74 @@ function parseRssFeed(xml: string): RssVideo[] {
 
 /**
  * Fetch videos from a YouTube channel using RSS feed (no API quota!)
+ * Tries multiple CORS proxies for reliability
  */
 export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVideo[]> {
   const feedUrl = `${YOUTUBE_RSS_BASE}?channel_id=${channelId}`;
 
-  try {
-    // Use CORS proxy for client-side fetching
-    const response = await fetch(`${CORS_PROXY}${encodeURIComponent(feedUrl)}`);
+  // Try each proxy in order, starting from the last successful one
+  for (let i = 0; i < CORS_PROXIES.length; i++) {
+    const proxyIndex = (currentProxyIndex + i) % CORS_PROXIES.length;
+    const proxy = CORS_PROXIES[proxyIndex];
 
-    if (!response.ok) {
-      console.error(`[RSS] Failed to fetch feed for ${channelId}: ${response.status}`);
-      return [];
+    try {
+      const response = await fetch(`${proxy}${encodeURIComponent(feedUrl)}`, {
+        signal: AbortSignal.timeout(8000), // 8 second timeout per proxy
+      });
+
+      if (!response.ok) {
+        console.warn(`[RSS] Proxy ${proxyIndex} failed for ${channelId}: ${response.status}`);
+        continue;
+      }
+
+      const xml = await response.text();
+
+      // Validate it's actually XML
+      if (!xml.includes('<feed') && !xml.includes('<entry>')) {
+        console.warn(`[RSS] Proxy ${proxyIndex} returned invalid data for ${channelId}`);
+        continue;
+      }
+
+      const videos = parseRssFeed(xml);
+
+      // Remember which proxy worked
+      currentProxyIndex = proxyIndex;
+      console.log(`[RSS] Fetched ${videos.length} videos from channel ${channelId} (proxy ${proxyIndex})`);
+      return videos;
+    } catch (error) {
+      console.warn(`[RSS] Proxy ${proxyIndex} error for ${channelId}:`, error);
+      continue;
     }
-
-    const xml = await response.text();
-    const videos = parseRssFeed(xml);
-
-    console.log(`[RSS] Fetched ${videos.length} videos from channel ${channelId}`);
-    return videos;
-  } catch (error) {
-    console.error(`[RSS] Error fetching channel ${channelId}:`, error);
-    return [];
   }
+
+  // All proxies failed
+  console.error(`[RSS] All proxies failed for channel ${channelId}`);
+  return [];
 }
 
 /**
  * Fetch videos from multiple YouTube channels and combine them
+ * Uses staggered requests to avoid rate limiting
  */
 export async function fetchMultipleChannelsViaRss(channelIds: string[]): Promise<RssVideo[]> {
-  const results = await Promise.all(
-    channelIds.map(id => fetchChannelVideosViaRss(id))
-  );
+  const results: RssVideo[][] = [];
+
+  // Fetch channels in small batches with delay to avoid rate limiting
+  const BATCH_SIZE = 2;
+  const BATCH_DELAY = 500; // 500ms between batches
+
+  for (let i = 0; i < channelIds.length; i += BATCH_SIZE) {
+    const batch = channelIds.slice(i, i + BATCH_SIZE);
+    const batchResults = await Promise.all(
+      batch.map(id => fetchChannelVideosViaRss(id))
+    );
+    results.push(...batchResults);
+
+    // Small delay between batches (but not after the last batch)
+    if (i + BATCH_SIZE < channelIds.length) {
+      await new Promise(resolve => setTimeout(resolve, BATCH_DELAY));
+    }
+  }
 
   // Flatten and sort by publish date (newest first)
   const allVideos = results.flat();
