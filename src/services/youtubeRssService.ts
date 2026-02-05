@@ -400,9 +400,13 @@ export const CURATED_CHANNELS: Record<string, string[]> = {
     'UCkfSY35R4y1JXs9tXxPwPew', // Home RenoVision DIY
   ],
 
-  // Collecting
+  // Collecting - Sports Cards, Trading Cards, Coins
   collecting: [
-    'UCTyMzKBK-9aYv6bBnVbD4cg', // Grand Poobear (card collecting)
+    'UC4PooJDVVYqWPxPfqRmB-7A', // Jabs Family (sports cards)
+    'UCqU-KyxhvL1_xJQF_Bq7fdQ', // Sports Card Radio
+    'UC8Zbrk6kZ-R_WYUojwD1rSg', // Packman (card breaks)
+    'UCwS9TZTJFSrGJZ45Dsg4uNQ', // Gary Vee (cards)
+    'UCNRGRm_5VJe0R7_R0MeKvQA', // Stacking Slabs
   ],
 };
 
