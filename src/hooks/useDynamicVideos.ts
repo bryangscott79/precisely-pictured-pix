@@ -295,58 +295,87 @@ export function useDynamicVideos(channelId: string) {
       // ============================================
       if (channelId === 'localnews') {
         const station = getSavedLocalNewsStation();
-        if (station?.youtubeChannelId) {
-          console.log(`[localnews] Checking for live stream from ${station.name}...`);
+        console.log(`[localnews] Station config:`, station);
 
-          try {
-            // First, get recent videos via RSS
-            const rssVideos = await fetchMultipleChannelsViaRss([station.youtubeChannelId]);
-            const recentVideos = rssToFetchedVideos(rssVideos, {
-              excludeShorts: true,
-              minViews: 0, // Local news may have low views
-              limit: 15,
-              estimatedDuration: 1800, // 30 min default for news
-            });
+        if (!station) {
+          console.warn('[localnews] No station configured - user needs to set up local news in settings');
+          setVideos([]);
+          setUsingFallback(true);
+          setLoading(false);
+          return;
+        }
 
-            // Then, try to build a playlist with live stream at the top
-            const playlist = await buildNewsPlaylist(station.youtubeChannelId, recentVideos);
+        if (!station.youtubeChannelId) {
+          console.warn('[localnews] Station has no YouTube channel ID:', station.name);
+          setVideos([]);
+          setUsingFallback(true);
+          setLoading(false);
+          return;
+        }
 
-            if (playlist.length > 0) {
-              const hasLiveStream = playlist[0]?.isLive;
-              console.log(`[localnews] Built playlist with ${playlist.length} videos${hasLiveStream ? ' (LIVE STREAM FOUND!)' : ''}`);
+        console.log(`[localnews] Fetching from ${station.name} (channel: ${station.youtubeChannelId})...`);
 
-              videoCache[cacheKey] = {
-                videos: playlist,
-                timestamp: Date.now(),
-                timeBlock: currentTimeBlock
-              };
-              // Update shared cache for guide
-              updateChannelCache(channelId, playlist, 'rss');
-              setVideos(playlist);
-              setUsingFallback(false);
-              setLoading(false);
-              return;
-            }
+        try {
+          // First, get recent videos via RSS
+          console.log(`[localnews] Fetching RSS for channel ${station.youtubeChannelId}...`);
+          const rssVideos = await fetchMultipleChannelsViaRss([station.youtubeChannelId]);
+          console.log(`[localnews] RSS returned ${rssVideos.length} raw videos`);
 
-            // If playlist building failed but we have RSS videos, use those
-            if (recentVideos.length > 0) {
-              console.log(`[localnews] Using ${recentVideos.length} RSS videos (no live stream)`);
-              videoCache[cacheKey] = {
-                videos: recentVideos,
-                timestamp: Date.now(),
-                timeBlock: currentTimeBlock
-              };
-              updateChannelCache(channelId, recentVideos, 'rss');
-              setVideos(recentVideos);
-              setUsingFallback(false);
-              setLoading(false);
-              return;
-            }
-          } catch (error) {
-            console.error('[localnews] Error fetching news content:', error);
+          const recentVideos = rssToFetchedVideos(rssVideos, {
+            excludeShorts: true,
+            minViews: 0, // Local news may have low views
+            limit: 15,
+            estimatedDuration: 1800, // 30 min default for news
+          });
+          console.log(`[localnews] After filtering: ${recentVideos.length} videos`);
+
+          // Then, try to build a playlist with live stream at the top
+          const playlist = await buildNewsPlaylist(station.youtubeChannelId, recentVideos);
+          console.log(`[localnews] Playlist built: ${playlist.length} videos`);
+
+          if (playlist.length > 0) {
+            const hasLiveStream = playlist[0]?.isLive;
+            console.log(`[localnews] ✅ Using playlist with ${playlist.length} videos${hasLiveStream ? ' (LIVE!)' : ''}`);
+
+            videoCache[cacheKey] = {
+              videos: playlist,
+              timestamp: Date.now(),
+              timeBlock: currentTimeBlock
+            };
+            updateChannelCache(channelId, playlist, 'rss');
+            setVideos(playlist);
+            setUsingFallback(false);
+            setLoading(false);
+            return;
           }
-        } else {
-          console.warn('[localnews] No station configured - user needs to set up local news');
+
+          // If playlist building failed but we have RSS videos, use those
+          if (recentVideos.length > 0) {
+            console.log(`[localnews] ✅ Using ${recentVideos.length} RSS videos`);
+            videoCache[cacheKey] = {
+              videos: recentVideos,
+              timestamp: Date.now(),
+              timeBlock: currentTimeBlock
+            };
+            updateChannelCache(channelId, recentVideos, 'rss');
+            setVideos(recentVideos);
+            setUsingFallback(false);
+            setLoading(false);
+            return;
+          }
+
+          // Both failed - this shouldn't happen but let's handle it
+          console.error('[localnews] ❌ No videos found from RSS or live stream detection');
+          setVideos([]);
+          setUsingFallback(true);
+          setLoading(false);
+          return;
+        } catch (error) {
+          console.error('[localnews] ❌ Error fetching news content:', error);
+          setVideos([]);
+          setUsingFallback(true);
+          setLoading(false);
+          return;
         }
       }
 

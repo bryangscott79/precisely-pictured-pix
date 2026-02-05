@@ -173,11 +173,23 @@ export default function Index() {
       const playback = getCurrentPlayback(currentChannel);
       setCurrentVideoId(playback.video.id);
     };
-    
+
     updateVideoId();
     const interval = setInterval(updateVideoId, 1000);
     return () => clearInterval(interval);
   }, [currentChannel]);
+
+  // Auto-prompt for local news setup when user tunes to local news without configuration
+  useEffect(() => {
+    if (currentChannel.id === 'localnews' && !localStation) {
+      // Give a brief moment for the user to see they're on local news
+      const timer = setTimeout(() => {
+        setIsLocalNewsSettingsOpen(true);
+        toast.info('Set your location to watch local news');
+      }, 500);
+      return () => clearTimeout(timer);
+    }
+  }, [currentChannel.id, localStation]);
 
   // Reset idle timer
   const resetIdleTimer = useCallback(() => {

@@ -21,18 +21,36 @@ export interface UserSubscription {
  */
 export async function getUserSubscriptions(userId: string): Promise<UserSubscription[]> {
   try {
+    // First, try to get selected subscriptions
     const { data, error } = await supabase
       .from('imported_subscriptions')
-      .select('youtube_channel_id, channel_name')
-      .eq('user_id', userId)
-      .eq('is_selected', true); // Only get selected subscriptions
+      .select('youtube_channel_id, channel_name, is_selected')
+      .eq('user_id', userId);
 
     if (error) {
       console.error('[SubscriptionMatcher] Error fetching subscriptions:', error);
       return [];
     }
 
-    return data || [];
+    if (!data || data.length === 0) {
+      console.log('[SubscriptionMatcher] No subscriptions found for user');
+      return [];
+    }
+
+    // Filter to selected ones (handle null as true - default selected)
+    const selected = data.filter(s => s.is_selected !== false);
+    console.log(`[SubscriptionMatcher] Found ${data.length} total subscriptions, ${selected.length} selected`);
+
+    // Log some sample channel names for debugging
+    if (selected.length > 0) {
+      const sampleNames = selected.slice(0, 10).map(s => s.channel_name).join(', ');
+      console.log(`[SubscriptionMatcher] Sample channels: ${sampleNames}...`);
+    }
+
+    return selected.map(s => ({
+      youtube_channel_id: s.youtube_channel_id,
+      channel_name: s.channel_name,
+    }));
   } catch (error) {
     console.error('[SubscriptionMatcher] Error:', error);
     return [];

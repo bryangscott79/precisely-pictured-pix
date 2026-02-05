@@ -97,6 +97,7 @@ function parseRssFeed(xml: string): RssVideo[] {
  */
 export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVideo[]> {
   const feedUrl = `${YOUTUBE_RSS_BASE}?channel_id=${channelId}`;
+  console.log(`[RSS] Starting fetch for channel ${channelId}`);
 
   // Try each proxy in order, starting from the last successful one
   for (let i = 0; i < CORS_PROXIES.length; i++) {
@@ -109,6 +110,8 @@ export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVi
         ? `${proxy.base}${encodeURIComponent(feedUrl)}`
         : `${proxy.base}${feedUrl}`;
 
+      console.log(`[RSS] Trying proxy ${proxyIndex}: ${proxy.base.substring(0, 30)}...`);
+
       const response = await fetch(proxyUrl, {
         signal: AbortSignal.timeout(10000), // 10 second timeout per proxy
         headers: {
@@ -117,15 +120,16 @@ export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVi
       });
 
       if (!response.ok) {
-        console.warn(`[RSS] Proxy ${proxyIndex} failed for ${channelId}: ${response.status}`);
+        console.warn(`[RSS] Proxy ${proxyIndex} failed for ${channelId}: HTTP ${response.status}`);
         continue;
       }
 
       const xml = await response.text();
+      console.log(`[RSS] Proxy ${proxyIndex} returned ${xml.length} chars`);
 
       // Validate it's actually XML (be more lenient with validation)
       if (!xml.includes('<feed') && !xml.includes('<entry') && !xml.includes('<?xml')) {
-        console.warn(`[RSS] Proxy ${proxyIndex} returned invalid data for ${channelId}:`, xml.substring(0, 100));
+        console.warn(`[RSS] Proxy ${proxyIndex} returned non-XML for ${channelId}:`, xml.substring(0, 200));
         continue;
       }
 
@@ -133,22 +137,22 @@ export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVi
 
       // Only accept if we got videos
       if (videos.length === 0) {
-        console.warn(`[RSS] Proxy ${proxyIndex} returned no videos for ${channelId}`);
+        console.warn(`[RSS] Proxy ${proxyIndex} XML parsed but no videos found for ${channelId}`);
         continue;
       }
 
       // Remember which proxy worked
       currentProxyIndex = proxyIndex;
-      console.log(`[RSS] Fetched ${videos.length} videos from channel ${channelId} (proxy ${proxyIndex})`);
+      console.log(`[RSS] ✅ Fetched ${videos.length} videos from channel ${channelId} (proxy ${proxyIndex})`);
       return videos;
     } catch (error) {
-      console.warn(`[RSS] Proxy ${proxyIndex} error for ${channelId}:`, error);
+      console.warn(`[RSS] Proxy ${proxyIndex} error for ${channelId}:`, error instanceof Error ? error.message : error);
       continue;
     }
   }
 
   // All proxies failed
-  console.error(`[RSS] All proxies failed for channel ${channelId}`);
+  console.error(`[RSS] ❌ All ${CORS_PROXIES.length} proxies failed for channel ${channelId}`);
   return [];
 }
 
