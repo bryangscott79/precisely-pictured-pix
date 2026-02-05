@@ -58,31 +58,81 @@ export interface CustomChannel {
 
 /**
  * Generate a YouTube search query from a user-provided topic.
- * Creates broad queries that capture educational/entertaining content.
+ * Creates specific queries that directly match the topic.
  */
 function generateSearchQuery(topic: string): string {
   const normalized = topic.trim().toLowerCase();
+  const cleanTopic = topic.trim();
+
+  // NFL Teams - search for highlights and news
+  const nflTeams = [
+    'broncos', 'chiefs', 'raiders', 'chargers', 'bills', 'dolphins', 'patriots', 'jets',
+    'ravens', 'bengals', 'browns', 'steelers', 'texans', 'colts', 'jaguars', 'titans',
+    'cowboys', 'eagles', 'giants', 'commanders', 'bears', 'lions', 'packers', 'vikings',
+    'falcons', 'panthers', 'saints', 'buccaneers', 'cardinals', 'rams', 'seahawks', '49ers'
+  ];
+
+  for (const team of nflTeams) {
+    if (normalized.includes(team)) {
+      // Extract team name for search
+      return `"${cleanTopic}" highlights 2024 OR "${cleanTopic}" news OR NFL ${team} highlights`;
+    }
+  }
+
+  // NBA Teams
+  const nbaTeams = [
+    'lakers', 'celtics', 'warriors', 'bulls', 'heat', 'nets', 'knicks', 'nuggets',
+    'suns', 'mavericks', 'bucks', 'sixers', '76ers', 'clippers', 'spurs', 'raptors'
+  ];
+
+  for (const team of nbaTeams) {
+    if (normalized.includes(team)) {
+      return `"${cleanTopic}" highlights 2024 OR "${cleanTopic}" news OR NBA ${team} highlights`;
+    }
+  }
+
+  // MLB Teams
+  const mlbTeams = [
+    'yankees', 'red sox', 'dodgers', 'cubs', 'mets', 'braves', 'astros', 'phillies',
+    'cardinals', 'giants', 'padres', 'rangers', 'mariners', 'twins', 'guardians'
+  ];
+
+  for (const team of mlbTeams) {
+    if (normalized.includes(team)) {
+      return `"${cleanTopic}" highlights 2024 OR "${cleanTopic}" news OR MLB ${team} highlights`;
+    }
+  }
+
+  // Sports keywords
+  if (normalized.includes('sports') || normalized.includes('football') ||
+      normalized.includes('basketball') || normalized.includes('baseball') ||
+      normalized.includes('soccer') || normalized.includes('hockey')) {
+    return `"${cleanTopic}" highlights 2024 OR "${cleanTopic}" best plays`;
+  }
+
+  // Trading cards / collectibles
+  if (normalized.includes('cards') || normalized.includes('trading') ||
+      normalized.includes('collectible') || normalized.includes('collecting')) {
+    return `"${cleanTopic}" OR sports cards breaks OR card collecting`;
+  }
 
   // Common topic patterns with optimized queries
   const topicPatterns: Record<string, string> = {
-    'art history': 'art history documentary OR famous paintings explained OR art movement history',
-    'pokemon': 'pokemon explained OR pokemon guide OR pokemon lore documentary',
+    'art history': 'art history documentary OR famous paintings explained',
+    'pokemon': 'pokemon explained OR pokemon strategy OR pokemon lore',
     'cooking': 'cooking tutorial chef OR recipe how to make',
-    'space': 'space documentary OR NASA universe exploration astronomy',
-    'cars': 'car review OR automotive explained OR vehicle documentary',
-    'anime': 'anime explained OR anime breakdown OR anime documentary',
-    'history': 'history documentary OR historical explained',
-    'science': 'science explained OR scientific discovery documentary',
-    'music theory': 'music theory explained OR music lessons tutorial',
-    'philosophy': 'philosophy explained OR philosophical ideas documentary',
-    'psychology': 'psychology explained OR human behavior documentary',
-    'economics': 'economics explained OR financial markets documentary',
-    'programming': 'programming tutorial OR coding explained developer',
-    'photography': 'photography tutorial OR camera techniques explained',
-    'architecture': 'architecture documentary OR building design explained',
-    'nature': 'nature documentary OR wildlife animals planet',
+    'space': 'space documentary OR NASA OR astronomy explained',
+    'cars': 'car review 2024 OR automotive news OR vehicle test drive',
+    'anime': 'anime explained OR anime analysis OR anime review',
+    'history': 'history documentary OR historical events explained',
+    'science': 'science explained OR scientific discovery',
+    'music theory': 'music theory explained OR music lessons',
+    'philosophy': 'philosophy explained OR philosophical ideas',
+    'programming': 'programming tutorial OR coding explained',
+    'photography': 'photography tutorial OR camera techniques',
+    'nature': 'nature documentary 4K OR wildlife',
     'true crime': 'true crime documentary OR criminal investigation',
-    'mythology': 'mythology explained OR ancient myths documentary',
+    'gaming': 'gaming news OR game review 2024 OR gameplay',
   };
 
   // Check for matching pattern
@@ -92,16 +142,52 @@ function generateSearchQuery(topic: string): string {
     }
   }
 
-  // Default: generate a broad query from the topic
-  // Format: "{topic} explained OR {topic} documentary OR {topic} guide"
-  const cleanTopic = topic.trim().replace(/[^\w\s]/g, '');
-  return `${cleanTopic} explained OR ${cleanTopic} documentary OR ${cleanTopic} guide tutorial`;
+  // Default: search directly for the topic with quotes for exact match
+  // This ensures "Denver Broncos" searches for exactly that, not random content
+  return `"${cleanTopic}" OR ${cleanTopic} 2024`;
 }
 
 /**
  * Get a SearchConfig for fetching videos for a custom channel.
  */
 export function getCustomChannelSearchConfig(channel: CustomChannel): SearchConfig {
+  const topicLower = channel.topic.toLowerCase();
+
+  // Sports topics need recent content and shorter highlights
+  const isSports = topicLower.includes('broncos') || topicLower.includes('sports') ||
+    topicLower.includes('nfl') || topicLower.includes('nba') || topicLower.includes('mlb') ||
+    topicLower.includes('football') || topicLower.includes('basketball') ||
+    topicLower.includes('baseball') || topicLower.includes('highlights');
+
+  // Trading cards need different parameters
+  const isCards = topicLower.includes('cards') || topicLower.includes('trading') ||
+    topicLower.includes('collectible');
+
+  if (isSports) {
+    return {
+      query: channel.searchQuery,
+      duration: 'medium',
+      uploadDate: 'week',    // Recent sports content
+      order: 'date',         // Most recent first
+      minDuration: 60,       // Highlights can be short
+      maxDuration: 3600,
+      minViews: 1000,        // Lower threshold for recent content
+    };
+  }
+
+  if (isCards) {
+    return {
+      query: channel.searchQuery,
+      duration: 'medium',
+      uploadDate: 'week',
+      order: 'date',
+      minDuration: 300,
+      maxDuration: 7200,     // Card breaks can be long
+      minViews: 500,         // Niche content
+    };
+  }
+
+  // Default config for other topics
   return {
     query: channel.searchQuery,
     duration: 'medium',
@@ -109,7 +195,7 @@ export function getCustomChannelSearchConfig(channel: CustomChannel): SearchConf
     order: 'relevance',
     minDuration: 300,     // At least 5 minutes
     maxDuration: 3600,    // Max 1 hour
-    minViews: 10000,      // Some quality threshold
+    minViews: 5000,       // Lower threshold
   };
 }
 
