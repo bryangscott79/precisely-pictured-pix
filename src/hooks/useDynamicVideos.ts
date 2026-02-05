@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchVideosFromSearch, fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
 import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS, fetchChannelVideosViaRss } from '@/services/youtubeRssService';
+import { buildNewsPlaylist, detectLiveStream } from '@/services/youtubeLiveService';
 import { fetchVideosFromMatchedSubscriptions } from '@/services/subscriptionMatcher';
 import { updateChannelCache } from '@/services/channelVideoCache';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
@@ -216,7 +217,48 @@ export function useDynamicVideos(channelId: string) {
       }
 
       // ============================================
-      // STRATEGY 1: RSS feeds (FREE - no API quota!)
+      // STRATEGY 0: User's YouTube Subscriptions (FREE via RSS!)
+      // Try this FIRST for all channels to personalize content
+      // ============================================
+      if (!isCustomChannel(channelId) && channelId !== 'localnews') {
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log(`[${channelId}] Trying user subscriptions first (personalized, FREE)`);
+
+          try {
+            // Use the channel ID as the topic for matching
+            const subscriptionVideos = await fetchVideosFromMatchedSubscriptions(user.id, channelId);
+
+            if (subscriptionVideos.length >= 5) { // Need enough videos to be useful
+              const guarded = subscriptionVideos.filter((v) => isAllowedVideoTitle(channelId, v.title));
+              const tuned = applyTuningToVideos(guarded, channelId);
+              const shuffled = deterministicShuffle(tuned, Date.now() / (1000 * 60 * 60));
+
+              if (shuffled.length >= 5) {
+                videoCache[cacheKey] = {
+                  videos: shuffled,
+                  timestamp: Date.now(),
+                  programName: currentProgram || undefined,
+                  timeBlock: currentTimeBlock
+                };
+                updateChannelCache(channelId, shuffled, 'rss');
+                setVideos(shuffled);
+                setUsingFallback(false);
+                setLoading(false);
+                console.log(`[${channelId}] Using ${shuffled.length} videos from user subscriptions! 🎯`);
+                return;
+              }
+            }
+            console.log(`[${channelId}] Not enough subscription matches, trying curated channels...`);
+          } catch (error) {
+            console.error(`[${channelId}] Subscription matching error:`, error);
+          }
+        }
+      }
+
+      // ============================================
+      // STRATEGY 1: Curated RSS feeds (FREE - no API quota!)
+      // Falls back here if user doesn't have matching subscriptions
       // ============================================
       if (hasCuratedChannels(channelId) && !isCustomChannel(channelId) && channelId !== 'localnews') {
         const rssVideos = await fetchViaRss(channelId);
@@ -247,38 +289,64 @@ export function useDynamicVideos(channelId: string) {
       }
 
       // ============================================
-      // STRATEGY 2: Local News (RSS from specific channel)
+      // STRATEGY 2: Local News (Live Stream + RSS)
+      // Priority: 1) Detect live stream (FREE!)
+      //           2) Fall back to RSS recent videos
       // ============================================
       if (channelId === 'localnews') {
         const station = getSavedLocalNewsStation();
         if (station?.youtubeChannelId) {
-          console.log(`[localnews] Fetching via RSS from ${station.name}`);
+          console.log(`[localnews] Checking for live stream from ${station.name}...`);
 
           try {
+            // First, get recent videos via RSS
             const rssVideos = await fetchMultipleChannelsViaRss([station.youtubeChannelId]);
-            const videos = rssToFetchedVideos(rssVideos, {
+            const recentVideos = rssToFetchedVideos(rssVideos, {
               excludeShorts: true,
               minViews: 0, // Local news may have low views
-              limit: 20,
+              limit: 15,
               estimatedDuration: 1800, // 30 min default for news
             });
 
-            if (videos.length > 0) {
+            // Then, try to build a playlist with live stream at the top
+            const playlist = await buildNewsPlaylist(station.youtubeChannelId, recentVideos);
+
+            if (playlist.length > 0) {
+              const hasLiveStream = playlist[0]?.isLive;
+              console.log(`[localnews] Built playlist with ${playlist.length} videos${hasLiveStream ? ' (LIVE STREAM FOUND!)' : ''}`);
+
               videoCache[cacheKey] = {
-                videos,
+                videos: playlist,
                 timestamp: Date.now(),
                 timeBlock: currentTimeBlock
               };
               // Update shared cache for guide
-              updateChannelCache(channelId, videos, 'rss');
-              setVideos(videos);
+              updateChannelCache(channelId, playlist, 'rss');
+              setVideos(playlist);
+              setUsingFallback(false);
+              setLoading(false);
+              return;
+            }
+
+            // If playlist building failed but we have RSS videos, use those
+            if (recentVideos.length > 0) {
+              console.log(`[localnews] Using ${recentVideos.length} RSS videos (no live stream)`);
+              videoCache[cacheKey] = {
+                videos: recentVideos,
+                timestamp: Date.now(),
+                timeBlock: currentTimeBlock
+              };
+              updateChannelCache(channelId, recentVideos, 'rss');
+              setVideos(recentVideos);
               setUsingFallback(false);
               setLoading(false);
               return;
             }
           } catch (error) {
-            console.error('[localnews] RSS fetch error:', error);
+            console.error('[localnews] Error fetching news content:', error);
           }
+        } else {
+          console.warn('[localnews] No station configured - user needs to set up local news');
         }
       }
 

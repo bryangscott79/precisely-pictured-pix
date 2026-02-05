@@ -86,8 +86,17 @@ export function matchSubscriptionsToTopic(
   // Sort by score (highest first) and return channel IDs
   matches.sort((a, b) => b.score - a.score);
 
-  // Return top 5 matches
-  return matches.slice(0, 5).map(m => m.channelId);
+  // Return top 8 matches for more variety
+  const topMatches = matches.slice(0, 8);
+
+  // Log matches for debugging
+  if (topMatches.length > 0) {
+    console.log(`[SubscriptionMatcher] Top matches for "${topic}":`,
+      topMatches.map(m => `${subscriptions.find(s => s.youtube_channel_id === m.channelId)?.channel_name} (score: ${m.score})`).join(', ')
+    );
+  }
+
+  return topMatches.map(m => m.channelId);
 }
 
 /**
@@ -134,18 +143,39 @@ function generateKeywordsForTopic(topic: string): string[] {
     keywords.push('mlb', 'baseball');
   }
 
-  // General interest topics
-  const topicKeywords: Record<string, string[]> = {
-    'pokemon': ['pokemon', 'pokémon', 'tcg', 'cards', 'nintendo'],
-    'art': ['art', 'drawing', 'painting', 'creative', 'artist'],
-    'cooking': ['cooking', 'recipe', 'chef', 'food', 'kitchen'],
-    'gaming': ['gaming', 'game', 'gameplay', 'gamer', 'playthrough'],
-    'music': ['music', 'song', 'artist', 'band', 'concert'],
-    'tech': ['tech', 'technology', 'gadget', 'review', 'unboxing'],
+  // Channel-specific keywords for EpiShow channels
+  const channelKeywords: Record<string, string[]> = {
+    // Collecting channel - sports cards, trading cards, etc.
+    'collecting': [
+      'sports cards', 'trading cards', 'card collecting', 'hobby', 'breaks',
+      'panini', 'topps', 'upper deck', 'prizm', 'optic', 'select', 'mosaic',
+      'baseball cards', 'football cards', 'basketball cards', 'hockey cards',
+      'wax', 'rip', 'case break', 'box break', 'graded', 'psa', 'bgs', 'sgc',
+      'rookie', 'auto', 'patch', 'memorabilia', 'vintage', 'coins', 'numismatic',
+      'comics', 'funko', 'pokemon cards', 'tcg', 'magic gathering',
+    ],
+    // Other channels
+    'pokemon': ['pokemon', 'pokémon', 'tcg', 'cards', 'nintendo', 'pikachu'],
+    'art': ['art', 'drawing', 'painting', 'creative', 'artist', 'sketch', 'illustration'],
+    'cooking': ['cooking', 'recipe', 'chef', 'food', 'kitchen', 'baking', 'cuisine'],
+    'gaming': ['gaming', 'game', 'gameplay', 'gamer', 'playthrough', 'lets play', 'esports'],
+    'music': ['music', 'song', 'artist', 'band', 'concert', 'album', 'cover'],
+    'tech': ['tech', 'technology', 'gadget', 'review', 'unboxing', 'phone', 'computer'],
+    'science': ['science', 'physics', 'chemistry', 'biology', 'space', 'experiment'],
+    'maker': ['maker', 'diy', 'build', 'project', 'engineering', 'workshop', 'tools'],
+    'automotive': ['car', 'auto', 'vehicle', 'motor', 'racing', 'truck', 'motorcycle'],
+    'fitness': ['fitness', 'workout', 'gym', 'exercise', 'training', 'muscle', 'health'],
+    'travel': ['travel', 'adventure', 'explore', 'destination', 'vacation', 'trip'],
+    'nature': ['nature', 'wildlife', 'animal', 'documentary', 'planet', 'environment'],
+    'comedy': ['comedy', 'funny', 'humor', 'sketch', 'stand-up', 'parody'],
+    'sports': ['sports', 'nfl', 'nba', 'mlb', 'nhl', 'soccer', 'football', 'basketball'],
+    'history': ['history', 'historical', 'ancient', 'war', 'civilization', 'documentary'],
+    'diy': ['diy', 'home improvement', 'renovation', 'repair', 'woodworking', 'craft'],
   };
 
-  for (const [key, values] of Object.entries(topicKeywords)) {
-    if (normalized.includes(key)) {
+  // Apply channel-specific keywords
+  for (const [key, values] of Object.entries(channelKeywords)) {
+    if (normalized.includes(key) || normalized === key) {
       keywords.push(...values);
     }
   }
