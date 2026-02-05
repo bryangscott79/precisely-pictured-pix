@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { fetchVideosFromSearch, fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
-import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS } from '@/services/youtubeRssService';
+import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS, fetchChannelVideosViaRss } from '@/services/youtubeRssService';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
@@ -109,6 +109,7 @@ function hasCuratedChannels(channelId: string): boolean {
 
 /**
  * Fetch videos via RSS feeds (free, no API quota!)
+ * Uses a tiered approach: first try multiple channels, if that fails try individual channels
  */
 async function fetchViaRss(channelId: string): Promise<FetchedVideo[]> {
   const curatedChannels = getCuratedChannelsForCategory(channelId);
@@ -120,17 +121,32 @@ async function fetchViaRss(channelId: string): Promise<FetchedVideo[]> {
   console.log(`[${channelId}] Fetching via RSS from ${curatedChannels.length} channels (FREE - no API quota)`);
 
   try {
-    const rssVideos = await fetchMultipleChannelsViaRss(curatedChannels);
+    // Try batch fetch first
+    let rssVideos = await fetchMultipleChannelsViaRss(curatedChannels);
 
-    // Convert to FetchedVideo format, excluding shorts and with reasonable defaults
+    // If batch failed, try individual channels
+    if (rssVideos.length === 0) {
+      console.log(`[${channelId}] Batch fetch returned 0 videos, trying individual channels`);
+      for (const ytChannelId of curatedChannels.slice(0, 3)) {
+        const videos = await fetchChannelVideosViaRss(ytChannelId);
+        if (videos.length > 0) {
+          rssVideos = videos;
+          console.log(`[${channelId}] Got ${videos.length} videos from individual channel ${ytChannelId}`);
+          break;
+        }
+      }
+    }
+
+    // Convert to FetchedVideo format, excluding shorts
+    // Lower view threshold to get more content variety
     const videos = rssToFetchedVideos(rssVideos, {
       excludeShorts: true,
-      minViews: 10000, // Quality filter
-      limit: 30,
+      minViews: 1000, // Lower threshold for more variety
+      limit: 40,
       estimatedDuration: 600, // 10 min default
     });
 
-    console.log(`[${channelId}] RSS returned ${videos.length} videos`);
+    console.log(`[${channelId}] RSS returned ${videos.length} videos after filtering`);
     return videos;
   } catch (error) {
     console.error(`[${channelId}] RSS fetch error:`, error);

@@ -20,10 +20,12 @@ import { FetchedVideo } from './youtubeService';
 const YOUTUBE_RSS_BASE = 'https://www.youtube.com/feeds/videos.xml';
 
 // Multiple CORS proxies for reliability (fallback chain)
+// Each proxy has slightly different URL format requirements
 const CORS_PROXIES = [
-  'https://api.allorigins.win/raw?url=',
-  'https://corsproxy.io/?',
-  'https://api.codetabs.com/v1/proxy?quest=',
+  { base: 'https://api.allorigins.win/raw?url=', encode: true },
+  { base: 'https://corsproxy.io/?', encode: true },
+  { base: 'https://api.codetabs.com/v1/proxy?quest=', encode: true },
+  { base: 'https://cors-anywhere.herokuapp.com/', encode: false },
 ];
 
 // Track which proxy is working best
@@ -62,8 +64,15 @@ function parseRssFeed(xml: string): RssVideo[] {
     const stats = entry.querySelector('media\\:statistics, statistics');
     const views = parseInt(stats?.getAttribute('views') || '0');
 
-    // Check if it's a Short (URL contains /shorts/)
-    const isShort = link.includes('/shorts/');
+    // Check if it's a Short:
+    // 1. URL contains /shorts/
+    // 2. Title contains #shorts or #short
+    // 3. Title is very short (less than 30 chars) and has hashtags
+    const titleLower = (title || '').toLowerCase();
+    const isShort = link.includes('/shorts/') ||
+      titleLower.includes('#shorts') ||
+      titleLower.includes('#short') ||
+      (title && title.length < 30 && title.includes('#'));
 
     if (videoId && title) {
       videos.push({
@@ -95,8 +104,16 @@ export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVi
     const proxy = CORS_PROXIES[proxyIndex];
 
     try {
-      const response = await fetch(`${proxy}${encodeURIComponent(feedUrl)}`, {
-        signal: AbortSignal.timeout(8000), // 8 second timeout per proxy
+      // Build URL based on proxy requirements
+      const proxyUrl = proxy.encode
+        ? `${proxy.base}${encodeURIComponent(feedUrl)}`
+        : `${proxy.base}${feedUrl}`;
+
+      const response = await fetch(proxyUrl, {
+        signal: AbortSignal.timeout(10000), // 10 second timeout per proxy
+        headers: {
+          'Accept': 'application/xml, text/xml, */*',
+        },
       });
 
       if (!response.ok) {
@@ -106,13 +123,19 @@ export async function fetchChannelVideosViaRss(channelId: string): Promise<RssVi
 
       const xml = await response.text();
 
-      // Validate it's actually XML
-      if (!xml.includes('<feed') && !xml.includes('<entry>')) {
-        console.warn(`[RSS] Proxy ${proxyIndex} returned invalid data for ${channelId}`);
+      // Validate it's actually XML (be more lenient with validation)
+      if (!xml.includes('<feed') && !xml.includes('<entry') && !xml.includes('<?xml')) {
+        console.warn(`[RSS] Proxy ${proxyIndex} returned invalid data for ${channelId}:`, xml.substring(0, 100));
         continue;
       }
 
       const videos = parseRssFeed(xml);
+
+      // Only accept if we got videos
+      if (videos.length === 0) {
+        console.warn(`[RSS] Proxy ${proxyIndex} returned no videos for ${channelId}`);
+        continue;
+      }
 
       // Remember which proxy worked
       currentProxyIndex = proxyIndex;
@@ -158,6 +181,37 @@ export async function fetchMultipleChannelsViaRss(channelIds: string[]): Promise
   allVideos.sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime());
 
   return allVideos;
+}
+
+/**
+ * Check if a video is embeddable using YouTube's oEmbed endpoint (free, no API quota)
+ * Returns true if video can be embedded, false otherwise
+ */
+export async function isVideoEmbeddable(videoId: string): Promise<boolean> {
+  try {
+    const response = await fetch(
+      `https://www.youtube.com/oembed?url=https://www.youtube.com/watch?v=${videoId}&format=json`,
+      { signal: AbortSignal.timeout(3000) }
+    );
+    return response.ok;
+  } catch {
+    // If we can't check, assume it's embeddable
+    return true;
+  }
+}
+
+/**
+ * Validate a batch of videos for embeddability (checks in parallel)
+ * Returns only embeddable video IDs
+ */
+export async function filterEmbeddableVideos(videoIds: string[]): Promise<Set<string>> {
+  const results = await Promise.all(
+    videoIds.map(async (id) => ({
+      id,
+      embeddable: await isVideoEmbeddable(id),
+    }))
+  );
+  return new Set(results.filter(r => r.embeddable).map(r => r.id));
 }
 
 /**
