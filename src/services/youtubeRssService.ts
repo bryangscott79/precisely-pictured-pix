@@ -1,11 +1,11 @@
 /**
- * YouTube RSS Feed Service
+ * YouTube RSS Feed Service v2
  *
  * Fetches videos from YouTube channels using RSS feeds (completely free, no API quota).
  * Each channel has an RSS feed at: https://www.youtube.com/feeds/videos.xml?channel_id=CHANNEL_ID
  *
  * Benefits:
- * - No API quota usage
+ * - No API quota usage (unlimited requests!)
  * - Always up-to-date (YouTube updates feeds in real-time)
  * - Returns latest 15 videos per channel
  *
