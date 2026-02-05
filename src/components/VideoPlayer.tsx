@@ -2,6 +2,7 @@ import { useEffect, useRef, useState, forwardRef, useImperativeHandle } from 're
 import { Channel, Video } from '@/data/channels';
 import { useDynamicVideos, getDynamicVideosForChannel } from '@/hooks/useDynamicVideos';
 import { isAllowedVideoTitle } from '@/lib/contentGuards';
+import { isCustomChannel } from '@/hooks/useCustomChannels';
 
 interface VideoPlayerProps {
   channel: Channel;
@@ -869,6 +870,27 @@ export const VideoPlayer = forwardRef<VideoPlayerHandle, VideoPlayerProps>(
             <div className="flex flex-col items-center gap-4">
               <div className="w-12 h-12 border-4 border-muted border-t-foreground rounded-full animate-spin" />
               <p className="text-muted-foreground font-medium">Loading a playable video…</p>
+            </div>
+          </div>
+        )}
+
+        {/* Empty state for custom channels when API quota exceeded */}
+        {!videosLoading && dynamicVideos.length === 0 && channel.videos.length === 0 && isCustomChannel(channel.id) && (
+          <div className="absolute inset-0 flex items-center justify-center bg-background z-20">
+            <div className="flex flex-col items-center gap-4 text-center px-8">
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center text-3xl">
+                ⚠️
+              </div>
+              <div className="space-y-2">
+                <h3 className="text-lg font-semibold text-foreground">Unable to Load Content</h3>
+                <p className="text-muted-foreground text-sm max-w-md">
+                  Custom channels require YouTube's API, which has daily limits.
+                  The limit has been reached for today.
+                </p>
+                <p className="text-muted-foreground text-xs">
+                  Try again tomorrow, or switch to a regular channel which uses unlimited RSS feeds.
+                </p>
+              </div>
             </div>
           </div>
         )}

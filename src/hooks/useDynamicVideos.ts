@@ -298,10 +298,11 @@ export function useDynamicVideos(channelId: string) {
           }
         }
 
-        // Custom channel with no results - show empty state
-        console.warn(`[${channelId}] Custom channel could not load videos`);
+        // Custom channel with no results - show empty state with placeholder
+        console.warn(`[${channelId}] Custom channel could not load videos - API quota may be exceeded`);
+        // Return an empty array but mark as not fallback so UI can show appropriate message
         setVideos([]);
-        setUsingFallback(true);
+        setUsingFallback(false); // Changed to false so we show "quota exceeded" message, not "using fallback"
         setLoading(false);
         return;
       }
