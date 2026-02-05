@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
-import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
+import { fetchVideosFromSearch, fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
+import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS } from '@/services/youtubeRssService';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
@@ -9,9 +10,9 @@ import { applyTuningToVideos, augmentQueryWithTuning, isVideoBlockedById } from 
 import { isCustomChannel, CUSTOM_CHANNEL_PREFIX } from '@/hooks/useCustomChannels';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string; timeBlock?: string }> = {};
-const CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour - shorter for TV-like freshness (content still varies by time block)
-const LOCAL_NEWS_CACHE_DURATION = 15 * 60 * 1000; // 15 minutes for local news
-const CUSTOM_CHANNEL_CACHE_DURATION = 1 * 60 * 60 * 1000; // 1 hour for custom channels
+const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours for RSS-based content (RSS is free!)
+const LOCAL_NEWS_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for local news
+const CUSTOM_CHANNEL_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours for custom channels
 
 // Get current time block name for cache invalidation
 function getCurrentTimeBlockName(): string {
@@ -99,6 +100,44 @@ function getRotatedFallback(channelId: string): FetchedVideo[] {
   return deterministicShuffle(videos, seed);
 }
 
+/**
+ * Check if a channel has curated YouTube channels (for RSS-based fetching)
+ */
+function hasCuratedChannels(channelId: string): boolean {
+  return channelId in CURATED_CHANNELS;
+}
+
+/**
+ * Fetch videos via RSS feeds (free, no API quota!)
+ */
+async function fetchViaRss(channelId: string): Promise<FetchedVideo[]> {
+  const curatedChannels = getCuratedChannelsForCategory(channelId);
+  if (curatedChannels.length === 0) {
+    console.log(`[${channelId}] No curated channels for RSS fetching`);
+    return [];
+  }
+
+  console.log(`[${channelId}] Fetching via RSS from ${curatedChannels.length} channels (FREE - no API quota)`);
+
+  try {
+    const rssVideos = await fetchMultipleChannelsViaRss(curatedChannels);
+
+    // Convert to FetchedVideo format, excluding shorts and with reasonable defaults
+    const videos = rssToFetchedVideos(rssVideos, {
+      excludeShorts: true,
+      minViews: 10000, // Quality filter
+      limit: 30,
+      estimatedDuration: 600, // 10 min default
+    });
+
+    console.log(`[${channelId}] RSS returned ${videos.length} videos`);
+    return videos;
+  } catch (error) {
+    console.error(`[${channelId}] RSS fetch error:`, error);
+    return [];
+  }
+}
+
 export function useDynamicVideos(channelId: string) {
   const [videos, setVideos] = useState<FetchedVideo[]>(() => getRotatedFallback(channelId));
   const [loading, setLoading] = useState(true);
@@ -108,18 +147,18 @@ export function useDynamicVideos(channelId: string) {
   useEffect(() => {
     async function loadVideos() {
       setLoading(true);
-      
+
       // Immediately provide rotated fallback so player can start
       const fallbackVideos = getRotatedFallback(channelId);
       if (fallbackVideos.length > 0 && videos.length === 0) {
         setVideos(fallbackVideos);
       }
-      
+
       // Check for scheduled programming
       const program = getCurrentProgram(channelId);
       const currentProgram = program?.name || null;
       setCurrentProgramName(currentProgram);
-      
+
       // Create a cache key that includes the program name for scheduled channels
       const cacheKey = currentProgram ? `${channelId}:${currentProgram}` : channelId;
       const currentTimeBlock = getCurrentTimeBlockName();
@@ -137,119 +176,126 @@ export function useDynamicVideos(channelId: string) {
         cached.timeBlock === currentTimeBlock;
 
       if (cacheValid) {
+        console.log(`[${channelId}] Using cached videos (${cached.videos.length} videos)`);
         setVideos(cached.videos);
         setUsingFallback(false);
         setLoading(false);
         return;
       }
 
-      // If YouTube API not configured, use rotated fallback
-      if (!isYouTubeConfigured()) {
-        console.log(`[${channelId}] YouTube API not configured, using rotated fallback`);
-        setVideos(fallbackVideos);
-        setUsingFallback(true);
-        setLoading(false);
-        return;
-      }
+      // ============================================
+      // STRATEGY 1: RSS feeds (FREE - no API quota!)
+      // ============================================
+      if (hasCuratedChannels(channelId) && !isCustomChannel(channelId) && channelId !== 'localnews') {
+        const rssVideos = await fetchViaRss(channelId);
 
-      // Get base search config
-      let baseConfig: SearchConfig | null = CHANNEL_SEARCH_CONFIG[channelId] || null;
+        if (rssVideos.length > 0) {
+          // Filter and shuffle for variety
+          const guarded = rssVideos.filter((v) => isAllowedVideoTitle(channelId, v.title));
+          const tuned = applyTuningToVideos(guarded, channelId);
+          const shuffled = deterministicShuffle(tuned, Date.now() / (1000 * 60 * 60)); // Shuffle hourly
 
-      // Special handling for custom channels
-      if (isCustomChannel(channelId)) {
-        const customConfig = getCustomChannelConfig(channelId);
-        if (customConfig) {
-          baseConfig = customConfig;
-          console.log(`[${channelId}] Using custom channel config - Query: "${customConfig.query}"`);
-        } else {
-          console.warn(`[${channelId}] Custom channel config not found`);
-          setVideos([]);
-          setUsingFallback(true);
-          setLoading(false);
-          return;
-        }
-      }
-      // Special handling for local news channel
-      else if (channelId === 'localnews') {
-        const station = getSavedLocalNewsStation();
-        if (station) {
-          // If we have a YouTube channel ID, fetch from that channel directly
-          if (station.youtubeChannelId) {
-            console.log(`[localnews] Using station: ${station.name} - Channel ID: ${station.youtubeChannelId}`);
-            baseConfig = {
-              query: `channel:${station.youtubeChannelId}`, // Special marker for channel-based fetch
-              youtubeChannelId: station.youtubeChannelId,
-              duration: 'any',
-              uploadDate: 'week',
-              order: 'date',
-              minDuration: 60,
-              maxDuration: 7200, // Up to 2 hours for news
-              minViews: 0, // Local news may not have high view counts
-            } as SearchConfig & { youtubeChannelId: string };
-          } else if (baseConfig) {
-            // Fallback to search query
-            baseConfig = {
-              ...baseConfig,
-              query: station.youtubeSearchQuery,
+          if (shuffled.length > 0) {
+            videoCache[cacheKey] = {
+              videos: shuffled,
+              timestamp: Date.now(),
+              programName: currentProgram || undefined,
+              timeBlock: currentTimeBlock
             };
-            console.log(`[localnews] Using station: ${station.name} - Query: "${station.youtubeSearchQuery}"`);
+            setVideos(shuffled);
+            setUsingFallback(false);
+            setLoading(false);
+            return;
+          }
+        }
+        // If RSS failed, fall through to fallback (don't use API to save quota)
+        console.log(`[${channelId}] RSS returned no videos, using fallback`);
+      }
+
+      // ============================================
+      // STRATEGY 2: Local News (RSS from specific channel)
+      // ============================================
+      if (channelId === 'localnews') {
+        const station = getSavedLocalNewsStation();
+        if (station?.youtubeChannelId) {
+          console.log(`[localnews] Fetching via RSS from ${station.name}`);
+
+          try {
+            const rssVideos = await fetchMultipleChannelsViaRss([station.youtubeChannelId]);
+            const videos = rssToFetchedVideos(rssVideos, {
+              excludeShorts: true,
+              minViews: 0, // Local news may have low views
+              limit: 20,
+              estimatedDuration: 1800, // 30 min default for news
+            });
+
+            if (videos.length > 0) {
+              videoCache[cacheKey] = {
+                videos,
+                timestamp: Date.now(),
+                timeBlock: currentTimeBlock
+              };
+              setVideos(videos);
+              setUsingFallback(false);
+              setLoading(false);
+              return;
+            }
+          } catch (error) {
+            console.error('[localnews] RSS fetch error:', error);
           }
         }
       }
 
-      if (!baseConfig) {
-        // No search config for this channel, use rotated fallback
-        setVideos(fallbackVideos);
+      // ============================================
+      // STRATEGY 3: Custom channels (use API sparingly)
+      // ============================================
+      if (isCustomChannel(channelId)) {
+        const customConfig = getCustomChannelConfig(channelId);
+        if (customConfig && isYouTubeConfigured()) {
+          console.log(`[${channelId}] Custom channel - trying API (may fail if quota exceeded)`);
+
+          try {
+            const fetched = await fetchVideosFromSearch({
+              ...customConfig,
+              channelType: channelId,
+              limit: 15
+            });
+
+            if (fetched.length > 0) {
+              const guarded = fetched.filter((v) => isAllowedVideoTitle(channelId, v.title));
+              const tuned = applyTuningToVideos(guarded, channelId);
+
+              if (tuned.length > 0) {
+                videoCache[cacheKey] = {
+                  videos: tuned,
+                  timestamp: Date.now(),
+                  timeBlock: currentTimeBlock
+                };
+                setVideos(tuned);
+                setUsingFallback(false);
+                setLoading(false);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error(`[${channelId}] API error (quota likely exceeded):`, error);
+          }
+        }
+
+        // Custom channel with no results - show empty state
+        console.warn(`[${channelId}] Custom channel could not load videos`);
+        setVideos([]);
         setUsingFallback(true);
         setLoading(false);
         return;
       }
 
-      // Apply scheduled programming if available
-      const searchConfig = getChannelSearchConfig(channelId, baseConfig);
-
-      // Apply algorithm tuning to augment the search query with user preferences
-      const tunedQuery = augmentQueryWithTuning(searchConfig.query);
-      const tunedConfig = { ...searchConfig, query: tunedQuery };
-
-      try {
-        console.log(`[${channelId}] Fetching videos with query: "${tunedConfig.query}"${currentProgram ? ` (Program: ${currentProgram})` : ''}`);
-        // Use YouTube Search API with topic-based queries
-        // Pass channelType to enable content-type-specific filtering (e.g., podcasts vs music)
-        const fetched = await fetchVideosFromSearch({
-          ...tunedConfig,
-          channelType: channelId, // Pass channel ID for content type validation
-          limit: 15 // Reduced from 25 to save API quota
-        });
-
-        // Final title-only guard (catches cases where search/metadata filtering misses).
-        const guarded = fetched.filter((v) => isAllowedVideoTitle(channelId, v.title));
-
-        // Apply algorithm tuning: filter blocked videos and reorder by preferences
-        const tuned = applyTuningToVideos(guarded, channelId);
-
-        if (tuned.length > 0) {
-          videoCache[cacheKey] = {
-            videos: tuned,
-            timestamp: Date.now(),
-            programName: currentProgram || undefined,
-            timeBlock: currentTimeBlock
-          };
-          setVideos(tuned);
-          setUsingFallback(false);
-        } else {
-          // API returned nothing, use rotated fallback
-          console.warn(`No videos fetched for ${channelId}, using rotated fallback`);
-          setVideos(fallbackVideos);
-          setUsingFallback(true);
-        }
-      } catch (error) {
-        console.error('Error fetching videos:', error);
-        // Error occurred, use rotated fallback
-        setVideos(fallbackVideos);
-        setUsingFallback(true);
-      }
-      
+      // ============================================
+      // FALLBACK: Use static video list
+      // ============================================
+      console.log(`[${channelId}] Using rotated fallback videos`);
+      setVideos(fallbackVideos);
+      setUsingFallback(fallbackVideos.length > 0);
       setLoading(false);
     }
 
@@ -271,21 +317,17 @@ export function getDynamicVideosForChannel(channelId: string): FetchedVideo[] {
 }
 
 // Preload videos for a channel (useful for preloading next channel)
-// DISABLED to reduce API quota usage - rely on cache from loadVideos instead
+// Now uses RSS which is free, so we can enable preloading again
 export async function preloadChannelVideos(channelId: string): Promise<void> {
   // Check if already cached - if so, skip entirely
   const cached = videoCache[channelId];
   if (cached && Date.now() - cached.timestamp < CACHE_DURATION) {
-    return; // Already cached, no API call needed
+    return; // Already cached, no need to fetch
   }
-  
-  // Don't preload if not configured
-  if (!isYouTubeConfigured()) {
-    return;
+
+  // Only preload channels with curated RSS sources (free)
+  if (hasCuratedChannels(channelId)) {
+    console.log(`[${channelId}] Preloading via RSS (free)`);
+    await fetchViaRss(channelId);
   }
-  
-  // Skip preloading entirely to save quota - videos will load when user switches
-  // This saves ~150 API units per channel that would otherwise be preloaded
-  console.log(`[${channelId}] Skipping preload to save API quota`);
-  return;
 }
