@@ -1,3 +1,5 @@
+import { getVideosForSchedule } from '@/services/channelVideoCache';
+
 export interface Video {
   id: string;
   title: string;
@@ -633,47 +635,59 @@ const LOADING_VIDEO: Video = {
   duration: 60,
 };
 
-// Calculate total duration for a channel
+// Calculate total duration for a channel (uses cached RSS videos if available)
 export function getChannelDuration(channel: Channel): number {
-  if (!channel.videos || channel.videos.length === 0) {
+  const videos = getVideosForSchedule(channel.id, channel.videos);
+  if (!videos || videos.length === 0) {
     return 60; // Return minimal duration to prevent divide-by-zero
   }
-  const total = channel.videos.reduce((acc, video) => acc + (video.duration || 0), 0);
+  const total = videos.reduce((acc, video) => acc + (video.duration || 600), 0);
   return total > 0 ? total : 60; // Ensure we never return 0
 }
 
-// Get current video and position based on time
+// Get current video and position based on time (uses cached RSS videos if available)
 export function getCurrentPlayback(channel: Channel): {
   video: Video;
   videoIndex: number;
   positionInVideo: number;
   progress: number;
 } {
+  const videos = getVideosForSchedule(channel.id, channel.videos);
+
   // Handle empty/loading channels
-  if (!channel.videos || channel.videos.length === 0) {
-    return { 
-      video: LOADING_VIDEO, 
-      videoIndex: 0, 
-      positionInVideo: 0, 
-      progress: 0 
+  if (!videos || videos.length === 0) {
+    return {
+      video: LOADING_VIDEO,
+      videoIndex: 0,
+      positionInVideo: 0,
+      progress: 0
     };
   }
 
-  const totalDuration = getChannelDuration(channel);
+  const totalDuration = videos.reduce((acc, video) => acc + (video.duration || 600), 0);
+  if (totalDuration === 0) {
+    return {
+      video: videos[0] || LOADING_VIDEO,
+      videoIndex: 0,
+      positionInVideo: 0,
+      progress: 0
+    };
+  }
+
   const now = new Date();
-  const secondsSinceMidnight = 
-    now.getHours() * 3600 + 
-    now.getMinutes() * 60 + 
+  const secondsSinceMidnight =
+    now.getHours() * 3600 +
+    now.getMinutes() * 60 +
     now.getSeconds();
-  
+
   // Position in the loop
   let positionInLoop = secondsSinceMidnight % totalDuration;
-  
+
   // Find current video
   let accumulated = 0;
-  for (let i = 0; i < channel.videos.length; i++) {
-    const video = channel.videos[i];
-    const videoDuration = video.duration || 60;
+  for (let i = 0; i < videos.length; i++) {
+    const video = videos[i];
+    const videoDuration = video.duration || 600;
     if (accumulated + videoDuration > positionInLoop) {
       const positionInVideo = positionInLoop - accumulated;
       const progress = (positionInVideo / videoDuration) * 100;
@@ -681,24 +695,25 @@ export function getCurrentPlayback(channel: Channel): {
     }
     accumulated += videoDuration;
   }
-  
+
   // Fallback to first video
-  const firstVideo = channel.videos[0];
-  return { 
-    video: firstVideo, 
-    videoIndex: 0, 
-    positionInVideo: 0, 
-    progress: 0 
+  const firstVideo = videos[0];
+  return {
+    video: firstVideo,
+    videoIndex: 0,
+    positionInVideo: 0,
+    progress: 0
   };
 }
 
-// Get next video
+// Get next video (uses cached RSS videos if available)
 export function getNextVideo(channel: Channel, currentIndex: number): Video {
-  if (!channel.videos || channel.videos.length === 0) {
+  const videos = getVideosForSchedule(channel.id, channel.videos);
+  if (!videos || videos.length === 0) {
     return LOADING_VIDEO;
   }
-  const nextIndex = (currentIndex + 1) % channel.videos.length;
-  return channel.videos[nextIndex] || LOADING_VIDEO;
+  const nextIndex = (currentIndex + 1) % videos.length;
+  return videos[nextIndex] || LOADING_VIDEO;
 }
 
 // Get schedule for the next N hours
@@ -710,8 +725,11 @@ export interface ScheduleItem {
 }
 
 export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): ScheduleItem[] {
+  // Get videos from cache (RSS) or fall back to static videos
+  const videos = getVideosForSchedule(channel.id, channel.videos);
+
   // Handle empty/loading channels
-  if (!channel.videos || channel.videos.length === 0) {
+  if (!videos || videos.length === 0) {
     const now = new Date();
     return [{
       video: LOADING_VIDEO,
@@ -724,59 +742,69 @@ export function getChannelSchedule(channel: Channel, hoursAhead: number = 3): Sc
   const schedule: ScheduleItem[] = [];
   const now = new Date();
   const endTime = new Date(now.getTime() + hoursAhead * 60 * 60 * 1000);
-  
-  const totalDuration = getChannelDuration(channel);
-  const secondsSinceMidnight = 
-    now.getHours() * 3600 + 
-    now.getMinutes() * 60 + 
+
+  // Calculate total duration of all videos
+  const totalDuration = videos.reduce((sum, v) => sum + (v.duration || 600), 0);
+  if (totalDuration === 0) {
+    return [{
+      video: LOADING_VIDEO,
+      startTime: now,
+      endTime: new Date(now.getTime() + 60000),
+      isNowPlaying: true,
+    }];
+  }
+
+  const secondsSinceMidnight =
+    now.getHours() * 3600 +
+    now.getMinutes() * 60 +
     now.getSeconds();
-  
+
   // Find the current position in the loop
   let positionInLoop = secondsSinceMidnight % totalDuration;
-  
+
   // Find which video is currently playing and when it started
   let accumulated = 0;
   let currentVideoIndex = 0;
-  for (let i = 0; i < channel.videos.length; i++) {
-    const video = channel.videos[i];
-    const videoDuration = video.duration || 60;
+  for (let i = 0; i < videos.length; i++) {
+    const video = videos[i];
+    const videoDuration = video.duration || 600;
     if (accumulated + videoDuration > positionInLoop) {
       currentVideoIndex = i;
       break;
     }
     accumulated += videoDuration;
   }
-  
+
   // Calculate when the current video started
   const positionInCurrentVideo = positionInLoop - accumulated;
   let currentTime = new Date(now.getTime() - positionInCurrentVideo * 1000);
-  
+
   // Build schedule
   let videoIndex = currentVideoIndex;
   while (currentTime < endTime) {
-    const video = channel.videos[videoIndex];
+    const video = videos[videoIndex];
     if (!video) break; // Safety check
-    
-    const videoDuration = video.duration || 60;
+
+    const videoDuration = video.duration || 600;
     const videoStartTime = new Date(currentTime);
     const videoEndTime = new Date(currentTime.getTime() + videoDuration * 1000);
-    
+
     const isNowPlaying = videoStartTime <= now && now < videoEndTime;
-    
+
     schedule.push({
       video,
       startTime: videoStartTime,
       endTime: videoEndTime,
       isNowPlaying,
     });
-    
+
     currentTime = videoEndTime;
-    videoIndex = (videoIndex + 1) % channel.videos.length;
-    
+    videoIndex = (videoIndex + 1) % videos.length;
+
     // Safety: prevent infinite loops
     if (schedule.length > 100) break;
   }
-  
+
   return schedule;
 }
 

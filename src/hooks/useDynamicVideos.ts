@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { fetchVideosFromSearch, fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
 import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS, fetchChannelVideosViaRss } from '@/services/youtubeRssService';
 import { fetchVideosFromMatchedSubscriptions } from '@/services/subscriptionMatcher';
+import { updateChannelCache } from '@/services/channelVideoCache';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
@@ -233,6 +234,8 @@ export function useDynamicVideos(channelId: string) {
               programName: currentProgram || undefined,
               timeBlock: currentTimeBlock
             };
+            // Update shared cache for guide
+            updateChannelCache(channelId, shuffled, 'rss');
             setVideos(shuffled);
             setUsingFallback(false);
             setLoading(false);
@@ -266,6 +269,8 @@ export function useDynamicVideos(channelId: string) {
                 timestamp: Date.now(),
                 timeBlock: currentTimeBlock
               };
+              // Update shared cache for guide
+              updateChannelCache(channelId, videos, 'rss');
               setVideos(videos);
               setUsingFallback(false);
               setLoading(false);
@@ -308,6 +313,8 @@ export function useDynamicVideos(channelId: string) {
                   timestamp: Date.now(),
                   timeBlock: currentTimeBlock
                 };
+                // Update shared cache for guide
+                updateChannelCache(channelId, shuffled, 'rss');
                 setVideos(shuffled);
                 setUsingFallback(false);
                 setLoading(false);
@@ -341,6 +348,8 @@ export function useDynamicVideos(channelId: string) {
                   timestamp: Date.now(),
                   timeBlock: currentTimeBlock
                 };
+                // Update shared cache for guide
+                updateChannelCache(channelId, tuned, 'rss');
                 setVideos(tuned);
                 setUsingFallback(false);
                 setLoading(false);
