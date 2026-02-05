@@ -21,6 +21,8 @@ export type Database = {
           icon: string
           id: string
           name: string
+          search_query: string | null
+          topic: string | null
           updated_at: string
           user_id: string
           video_ids: string[]
@@ -32,6 +34,8 @@ export type Database = {
           icon?: string
           id?: string
           name: string
+          search_query?: string | null
+          topic?: string | null
           updated_at?: string
           user_id: string
           video_ids?: string[]
@@ -43,6 +47,8 @@ export type Database = {
           icon?: string
           id?: string
           name?: string
+          search_query?: string | null
+          topic?: string | null
           updated_at?: string
           user_id?: string
           video_ids?: string[]

@@ -1,0 +1,3 @@
+ALTER TABLE public.custom_channels
+ADD COLUMN IF NOT EXISTS topic TEXT,
+ADD COLUMN IF NOT EXISTS search_query TEXT;
