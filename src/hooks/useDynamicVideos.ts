@@ -1,14 +1,42 @@
 import { useState, useEffect } from 'react';
-import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo } from '@/services/youtubeService';
+import { fetchVideosFromSearch, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
 import { isAllowedVideoTitle } from '@/lib/contentGuards';
 import { getSavedLocalNewsStation } from '@/hooks/useLocalNews';
+import { applyTuningToVideos, augmentQueryWithTuning, isVideoBlockedById } from '@/hooks/useAlgorithmTuning';
+import { isCustomChannel, CUSTOM_CHANNEL_PREFIX } from '@/hooks/useCustomChannels';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string }> = {};
 const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours - longer cache to reduce API calls
 const LOCAL_NEWS_CACHE_DURATION = 30 * 60 * 1000; // 30 minutes for local news
+const CUSTOM_CHANNEL_CACHE_DURATION = 2 * 60 * 60 * 1000; // 2 hours for custom channels
+
+// Storage for custom channel search configs (set by components that have access to useCustomChannels)
+let customChannelConfigs: Record<string, SearchConfig> = {};
+
+/**
+ * Register a custom channel's search config for use by useDynamicVideos.
+ * This is called by ChannelGuide or other components that have access to useCustomChannels.
+ */
+export function registerCustomChannelConfig(channelId: string, config: SearchConfig): void {
+  customChannelConfigs[channelId] = config;
+}
+
+/**
+ * Clear a custom channel's search config (e.g., when deleted).
+ */
+export function unregisterCustomChannelConfig(channelId: string): void {
+  delete customChannelConfigs[channelId];
+}
+
+/**
+ * Get a custom channel's search config.
+ */
+function getCustomChannelConfig(channelId: string): SearchConfig | null {
+  return customChannelConfigs[channelId] || null;
+}
 
 // Clear cache when language changes
 if (typeof window !== 'undefined') {
@@ -41,16 +69,23 @@ function deterministicShuffle<T>(arr: T[], seed: number): T[] {
 
 // Rotate fallback videos so they differ by time block
 function getRotatedFallback(channelId: string): FetchedVideo[] {
+  // Custom channels don't have static fallback videos
+  if (isCustomChannel(channelId)) {
+    return [];
+  }
+
   const staticChannel = channels.find(c => c.id === channelId);
   if (!staticChannel || staticChannel.videos.length === 0) return [];
-  
+
   const today = new Date();
   const dayOfYear = Math.floor((today.getTime() - new Date(today.getFullYear(), 0, 0).getTime()) / 86400000);
   const blockIndex = ['early', 'morning', 'afternoon', 'primetime', 'latenight'].indexOf(getCurrentTimeBlock());
   const seed = dayOfYear * 10 + blockIndex;
-  
-  // Map Video to FetchedVideo (they're compatible)
-  const videos: FetchedVideo[] = staticChannel.videos.map(v => ({ id: v.id, title: v.title, duration: v.duration }));
+
+  // Map Video to FetchedVideo (they're compatible) and filter out blocked videos
+  const videos: FetchedVideo[] = staticChannel.videos
+    .filter(v => !isVideoBlockedById(v.id))
+    .map(v => ({ id: v.id, title: v.title, duration: v.duration }));
   return deterministicShuffle(videos, seed);
 }
 
@@ -78,9 +113,13 @@ export function useDynamicVideos(channelId: string) {
       // Create a cache key that includes the program name for scheduled channels
       const cacheKey = currentProgram ? `${channelId}:${currentProgram}` : channelId;
       
-      // Check cache first (use shorter cache for local news)
+      // Check cache first (use shorter cache for local news, custom channels)
       const cached = videoCache[cacheKey];
-      const cacheDuration = channelId === 'localnews' ? LOCAL_NEWS_CACHE_DURATION : CACHE_DURATION;
+      const cacheDuration = channelId === 'localnews'
+        ? LOCAL_NEWS_CACHE_DURATION
+        : isCustomChannel(channelId)
+          ? CUSTOM_CHANNEL_CACHE_DURATION
+          : CACHE_DURATION;
       if (cached && Date.now() - cached.timestamp < cacheDuration) {
         setVideos(cached.videos);
         setUsingFallback(false);
@@ -98,12 +137,26 @@ export function useDynamicVideos(channelId: string) {
       }
 
       // Get base search config
-      let baseConfig = CHANNEL_SEARCH_CONFIG[channelId];
-      
+      let baseConfig: SearchConfig | null = CHANNEL_SEARCH_CONFIG[channelId] || null;
+
+      // Special handling for custom channels
+      if (isCustomChannel(channelId)) {
+        const customConfig = getCustomChannelConfig(channelId);
+        if (customConfig) {
+          baseConfig = customConfig;
+          console.log(`[${channelId}] Using custom channel config - Query: "${customConfig.query}"`);
+        } else {
+          console.warn(`[${channelId}] Custom channel config not found`);
+          setVideos([]);
+          setUsingFallback(true);
+          setLoading(false);
+          return;
+        }
+      }
       // Special handling for local news channel
-      if (channelId === 'localnews') {
+      else if (channelId === 'localnews') {
         const station = getSavedLocalNewsStation();
-        if (station) {
+        if (station && baseConfig) {
           // Override the search query with the user's selected station
           baseConfig = {
             ...baseConfig,
@@ -112,7 +165,7 @@ export function useDynamicVideos(channelId: string) {
           console.log(`[localnews] Using station: ${station.name} - Query: "${station.youtubeSearchQuery}"`);
         }
       }
-      
+
       if (!baseConfig) {
         // No search config for this channel, use rotated fallback
         setVideos(fallbackVideos);
@@ -124,12 +177,16 @@ export function useDynamicVideos(channelId: string) {
       // Apply scheduled programming if available
       const searchConfig = getChannelSearchConfig(channelId, baseConfig);
 
+      // Apply algorithm tuning to augment the search query with user preferences
+      const tunedQuery = augmentQueryWithTuning(searchConfig.query);
+      const tunedConfig = { ...searchConfig, query: tunedQuery };
+
       try {
-        console.log(`[${channelId}] Fetching videos with query: "${searchConfig.query}"${currentProgram ? ` (Program: ${currentProgram})` : ''}`);
+        console.log(`[${channelId}] Fetching videos with query: "${tunedConfig.query}"${currentProgram ? ` (Program: ${currentProgram})` : ''}`);
         // Use YouTube Search API with topic-based queries
         // Pass channelType to enable content-type-specific filtering (e.g., podcasts vs music)
         const fetched = await fetchVideosFromSearch({
-          ...searchConfig,
+          ...tunedConfig,
           channelType: channelId, // Pass channel ID for content type validation
           limit: 15 // Reduced from 25 to save API quota
         });
@@ -137,9 +194,12 @@ export function useDynamicVideos(channelId: string) {
         // Final title-only guard (catches cases where search/metadata filtering misses).
         const guarded = fetched.filter((v) => isAllowedVideoTitle(channelId, v.title));
 
-        if (guarded.length > 0) {
-          videoCache[cacheKey] = { videos: guarded, timestamp: Date.now(), programName: currentProgram || undefined };
-          setVideos(guarded);
+        // Apply algorithm tuning: filter blocked videos and reorder by preferences
+        const tuned = applyTuningToVideos(guarded, channelId);
+
+        if (tuned.length > 0) {
+          videoCache[cacheKey] = { videos: tuned, timestamp: Date.now(), programName: currentProgram || undefined };
+          setVideos(tuned);
           setUsingFallback(false);
         } else {
           // API returned nothing, use rotated fallback

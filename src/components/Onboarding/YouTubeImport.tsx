@@ -1,11 +1,19 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Button } from '@/components/ui/button';
 import { useOnboarding } from '@/contexts/OnboardingContext';
 import { useYouTubeSubscriptions } from '@/hooks/useYouTubeSubscriptions';
 import { useAuth } from '@/hooks/useAuth';
-import { Youtube, Loader2, Check, SkipForward, RefreshCw } from 'lucide-react';
+import { Youtube, Loader2, Check, SkipForward, RefreshCw, ChevronDown } from 'lucide-react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Checkbox } from '@/components/ui/checkbox';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
+import { getEpiShowChannelIds, getChannelDisplayName } from '@/services/subscriptionCategorizer';
 
 export function YouTubeImport() {
   const { setStep } = useOnboarding();
@@ -17,6 +25,7 @@ export function YouTubeImport() {
     fetchSubscriptions,
     loadStoredSubscriptions,
     toggleSubscriptionSelection,
+    updateSubscriptionCategory,
     signInWithYouTubeAccess,
   } = useYouTubeSubscriptions();
 
@@ -25,6 +34,37 @@ export function YouTubeImport() {
 
   // Check if we have a provider token (YouTube access)
   const hasYouTubeAccess = session?.provider_token !== undefined;
+
+  // Get available EpiShow channels for the dropdown
+  const epiShowChannels = useMemo(() => getEpiShowChannelIds(), []);
+
+  // Group subscriptions by their matched channel
+  const groupedSubscriptions = useMemo(() => {
+    const groups: Record<string, typeof subscriptions> = {
+      uncategorized: [],
+    };
+
+    subscriptions.forEach((sub) => {
+      const category = sub.matched_epishow_channel || 'uncategorized';
+      if (!groups[category]) {
+        groups[category] = [];
+      }
+      groups[category].push(sub);
+    });
+
+    // Sort groups: categorized first, then uncategorized
+    const sortedEntries = Object.entries(groups).sort(([a], [b]) => {
+      if (a === 'uncategorized') return 1;
+      if (b === 'uncategorized') return -1;
+      return getChannelDisplayName(a).localeCompare(getChannelDisplayName(b));
+    });
+
+    return sortedEntries;
+  }, [subscriptions]);
+
+  // Stats
+  const categorizedCount = subscriptions.filter((s) => s.matched_epishow_channel).length;
+  const selectedCount = subscriptions.filter((s) => s.is_selected).length;
 
   // Load stored subscriptions on mount
   useEffect(() => {
@@ -37,6 +77,13 @@ export function YouTubeImport() {
       handleImport();
     }
   }, [hasYouTubeAccess]);
+
+  // Show list if we have subscriptions loaded
+  useEffect(() => {
+    if (subscriptions.length > 0 && !showList) {
+      setShowList(true);
+    }
+  }, [subscriptions.length]);
 
   const handleImport = async () => {
     setHasAttemptedFetch(true);
@@ -54,7 +101,9 @@ export function YouTubeImport() {
     setStep('lineup');
   };
 
-  const selectedCount = subscriptions.filter((s) => s.is_selected).length;
+  const handleCategoryChange = (subscriptionId: string, channelId: string) => {
+    updateSubscriptionCategory(subscriptionId, channelId === 'none' ? null : channelId);
+  };
 
   return (
     <div className="flex flex-col h-full min-h-0">
@@ -66,7 +115,7 @@ export function YouTubeImport() {
         <h2 className="text-2xl font-bold mb-2">Import YouTube Subscriptions</h2>
         <p className="text-muted-foreground">
           {showList
-            ? `Select the channels you'd like to see content from`
+            ? `We matched ${categorizedCount} of ${subscriptions.length} subscriptions to EpiShow channels`
             : `Connect your YouTube to personalize your experience`}
         </p>
       </div>
@@ -118,25 +167,64 @@ export function YouTubeImport() {
           </div>
         ) : (
           <ScrollArea className="h-full pr-4">
-            <div className="space-y-2">
-              {subscriptions.map((sub) => (
-                <label
-                  key={sub.id}
-                  className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted cursor-pointer transition-colors"
-                >
-                  <Checkbox
-                    checked={sub.is_selected}
-                    onCheckedChange={(checked) =>
-                      toggleSubscriptionSelection(sub.id, checked as boolean)
-                    }
-                  />
-                  <span className="flex-1 truncate">{sub.channel_name}</span>
-                  {sub.matched_epishow_channel && (
-                    <span className="text-xs bg-primary/10 text-primary px-2 py-1 rounded">
-                      Matched
-                    </span>
-                  )}
-                </label>
+            <div className="space-y-6">
+              {groupedSubscriptions.map(([category, subs]) => (
+                <div key={category}>
+                  {/* Category Header */}
+                  <div className="sticky top-0 bg-background/95 backdrop-blur-sm py-2 mb-2 z-10">
+                    <h3 className="text-sm font-semibold text-muted-foreground flex items-center gap-2">
+                      {category === 'uncategorized' ? (
+                        <>
+                          <span className="w-2 h-2 rounded-full bg-muted-foreground/50" />
+                          Not Matched ({subs.length})
+                        </>
+                      ) : (
+                        <>
+                          <span className={`w-2 h-2 rounded-full bg-channel-${category}`} />
+                          {getChannelDisplayName(category)} ({subs.length})
+                        </>
+                      )}
+                    </h3>
+                  </div>
+
+                  {/* Subscriptions in this category */}
+                  <div className="space-y-2">
+                    {subs.map((sub) => (
+                      <div
+                        key={sub.id}
+                        className="flex items-center gap-3 p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                      >
+                        <Checkbox
+                          checked={sub.is_selected}
+                          onCheckedChange={(checked) =>
+                            toggleSubscriptionSelection(sub.id, checked as boolean)
+                          }
+                        />
+                        <span className="flex-1 truncate text-sm">{sub.channel_name}</span>
+
+                        {/* Category Selector */}
+                        <Select
+                          value={sub.matched_epishow_channel || 'none'}
+                          onValueChange={(value) => handleCategoryChange(sub.id, value)}
+                        >
+                          <SelectTrigger className="w-[140px] h-8 text-xs">
+                            <SelectValue placeholder="Select channel" />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="none">
+                              <span className="text-muted-foreground">No match</span>
+                            </SelectItem>
+                            {epiShowChannels.map((channelId) => (
+                              <SelectItem key={channelId} value={channelId}>
+                                {getChannelDisplayName(channelId)}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    ))}
+                  </div>
+                </div>
               ))}
             </div>
           </ScrollArea>

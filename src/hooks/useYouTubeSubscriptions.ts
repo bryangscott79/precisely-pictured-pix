@@ -116,6 +116,31 @@ export function useYouTubeSubscriptions() {
     }
   }, [user]);
 
+  const updateSubscriptionCategory = useCallback(async (subscriptionId: string, channelId: string | null) => {
+    if (!user) return;
+
+    try {
+      const { error } = await supabase
+        .from('imported_subscriptions')
+        .update({ matched_epishow_channel: channelId })
+        .eq('id', subscriptionId)
+        .eq('user_id', user.id);
+
+      if (error) {
+        console.error('Error updating subscription category:', error);
+        return;
+      }
+
+      setSubscriptions((prev) =>
+        prev.map((sub) =>
+          sub.id === subscriptionId ? { ...sub, matched_epishow_channel: channelId } : sub
+        )
+      );
+    } catch (error) {
+      console.error('Error:', error);
+    }
+  }, [user]);
+
   const signInWithYouTubeAccess = useCallback(async () => {
     // Re-authenticate with YouTube scopes
     const { error } = await supabase.auth.signInWithOAuth({
@@ -143,6 +168,7 @@ export function useYouTubeSubscriptions() {
     fetchSubscriptions,
     loadStoredSubscriptions,
     toggleSubscriptionSelection,
+    updateSubscriptionCategory,
     signInWithYouTubeAccess,
   };
 }

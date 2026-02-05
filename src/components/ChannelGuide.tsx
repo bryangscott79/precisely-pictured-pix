@@ -1,12 +1,12 @@
 import { useEffect, useMemo, useState } from 'react';
-import { X, Shield, Lock, Clock, Grid3X3, Crown } from 'lucide-react';
-import { 
-  Channel, 
+import { X, Shield, Lock, Clock, Grid3X3, Crown, Plus, Trash2, Sparkles } from 'lucide-react';
+import {
+  Channel,
   ChannelCategory,
   ChannelColor,
-  categoryNames, 
-  getCurrentPlayback, 
-  getNextVideo, 
+  categoryNames,
+  getCurrentPlayback,
+  getNextVideo,
   formatTime,
   formatTimeSlot,
   getChannelSchedule,
@@ -16,6 +16,10 @@ import {
 import { useParentalControls } from '@/hooks/useParentalControls';
 import { useUserTier } from '@/contexts/UserTierContext';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { useCustomChannels, toChannelFormat, getCustomChannelSearchConfig, isCustomChannel } from '@/hooks/useCustomChannels';
+import { registerCustomChannelConfig, unregisterCustomChannelConfig } from '@/hooks/useDynamicVideos';
+import { CustomChannelCreator } from '@/components/CustomChannelCreator';
+import { toast } from 'sonner';
 
 interface ChannelGuideProps {
   isOpen: boolean;
@@ -61,16 +65,20 @@ const colorClasses: Record<ChannelColor, { bg: string; border: string; text: str
 
 type ViewMode = 'grid' | 'schedule';
 
-function ChannelCard({ 
-  channel, 
-  isActive, 
+function ChannelCard({
+  channel,
+  isActive,
   onClick,
   isLocked,
-}: { 
-  channel: Channel; 
-  isActive: boolean; 
+  isCustom,
+  onDelete,
+}: {
+  channel: Channel;
+  isActive: boolean;
   onClick: () => void;
   isLocked: boolean;
+  isCustom?: boolean;
+  onDelete?: () => void;
 }) {
   const [playback, setPlayback] = useState(() => getCurrentPlayback(channel));
   const [nextVideo, setNextVideo] = useState(() => getNextVideo(channel, playback.videoIndex));
@@ -104,6 +112,12 @@ function ChannelCard({
         <div className="flex-1 min-w-0 space-y-1 md:space-y-1.5">
           <div className="flex items-center gap-2">
             <h3 className="font-display font-bold text-xs md:text-sm">{channel.name}</h3>
+            {isCustom && (
+              <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-semibold bg-gradient-to-r from-purple-500/20 to-pink-500/20 text-purple-400 border border-purple-500/30">
+                <Sparkles className="w-2.5 h-2.5" />
+                Custom
+              </span>
+            )}
             {isLocked && (
               <span className="inline-flex items-center gap-1 px-1.5 py-0.5 rounded text-[8px] font-semibold bg-gradient-to-r from-amber-500/20 to-yellow-500/20 text-amber-400 border border-amber-500/30">
                 <Crown className="w-2.5 h-2.5" />
@@ -115,6 +129,18 @@ function ChannelCard({
                 <span className="w-1 h-1 rounded-full bg-white animate-pulse" />
                 Watching
               </span>
+            )}
+            {isCustom && onDelete && (
+              <button
+                onClick={(e) => {
+                  e.stopPropagation();
+                  onDelete();
+                }}
+                className="ml-auto p-1 rounded hover:bg-destructive/20 text-muted-foreground hover:text-destructive transition-colors"
+                title="Delete channel"
+              >
+                <Trash2 className="w-3 h-3" />
+              </button>
             )}
           </div>
           
@@ -254,24 +280,51 @@ function TimeHeader() {
 
 const categoryOrder: ChannelCategory[] = ['family', 'education', 'entertainment', 'lifestyle', 'hobbies'];
 
-export function ChannelGuide({ 
-  isOpen, 
-  onClose, 
-  currentChannel, 
+export function ChannelGuide({
+  isOpen,
+  onClose,
+  currentChannel,
   channels,
   onChannelSelect,
-  onOpenParentalControls 
+  onOpenParentalControls
 }: ChannelGuideProps) {
   const { enabled: parentalControlsEnabled } = useParentalControls();
-  const { isPremium } = useUserTier();
-  // Memoize so `availableChannels` doesn't change identity every render.
-  // This prevents schedule update effects from re-running continuously.
-  const availableChannels = useMemo(
-    () => channels ?? getAvailableChannels(parentalControlsEnabled),
-    [channels, parentalControlsEnabled]
-  );
+  const { isPremium, isConnected } = useUserTier();
+  const {
+    channels: customChannels,
+    channelsAsChannelFormat: customChannelsAsChannels,
+    deleteChannel,
+    canCreateChannel,
+    remainingSlots,
+  } = useCustomChannels();
+
   const [viewMode, setViewMode] = useState<ViewMode>('grid');
   const [schedules, setSchedules] = useState<Map<string, ScheduleItem[]>>(new Map());
+  const [isCreatorOpen, setIsCreatorOpen] = useState(false);
+
+  // Register custom channel configs for useDynamicVideos
+  useEffect(() => {
+    customChannels.forEach((ch) => {
+      const config = getCustomChannelSearchConfig(ch);
+      registerCustomChannelConfig(ch.channelId, config);
+    });
+
+    // Cleanup on unmount or when custom channels change
+    return () => {
+      customChannels.forEach((ch) => {
+        unregisterCustomChannelConfig(ch.channelId);
+      });
+    };
+  }, [customChannels]);
+
+  // Memoize so `availableChannels` doesn't change identity every render.
+  // This prevents schedule update effects from re-running continuously.
+  // Include custom channels in the list
+  const availableChannels = useMemo(() => {
+    const base = channels ?? getAvailableChannels(parentalControlsEnabled);
+    // Add custom channels to the hobbies category (they'll be shown separately)
+    return [...base, ...customChannelsAsChannels];
+  }, [channels, parentalControlsEnabled, customChannelsAsChannels]);
 
   // Update schedules
   useEffect(() => {
@@ -381,8 +434,60 @@ export function ChannelGuide({
         {(viewMode === 'grid' || typeof window !== 'undefined' && window.innerWidth < 640) ? (
           // Grid view - grouped by category
           <div className="p-2 md:p-3 space-y-3 md:space-y-4 overflow-y-auto h-[calc(100%-110px)] md:h-[calc(100%-130px)]">
+            {/* Custom Channels Section - Show first if user has any */}
+            {(customChannelsAsChannels.length > 0 || isConnected) && (
+              <div>
+                <h3 className="text-[10px] md:text-xs font-semibold text-muted-foreground uppercase tracking-wider mb-1.5 md:mb-2 px-1 flex items-center gap-2">
+                  <Sparkles className="w-3 h-3 text-purple-400" />
+                  Your Channels
+                </h3>
+                <div className="space-y-1.5 md:space-y-2">
+                  {customChannelsAsChannels.map((channel) => (
+                    <ChannelCard
+                      key={channel.id}
+                      channel={channel}
+                      isActive={channel.id === currentChannel.id}
+                      isLocked={false}
+                      isCustom={true}
+                      onDelete={async () => {
+                        const confirmed = window.confirm(`Delete "${channel.name}"? This cannot be undone.`);
+                        if (confirmed) {
+                          const success = await deleteChannel(channel.id);
+                          if (success) {
+                            toast.success(`Deleted "${channel.name}"`);
+                          }
+                        }
+                      }}
+                      onClick={() => {
+                        onChannelSelect(channel);
+                        onClose();
+                      }}
+                    />
+                  ))}
+                  {/* Create Channel Button */}
+                  {isConnected && (
+                    <button
+                      onClick={() => setIsCreatorOpen(true)}
+                      className="w-full p-2 md:p-3 rounded-lg border border-dashed border-muted-foreground/30 hover:border-purple-500/50 hover:bg-purple-500/5 transition-all flex items-center justify-center gap-2 text-muted-foreground hover:text-purple-400"
+                    >
+                      <Plus className="w-4 h-4" />
+                      <span className="text-xs font-medium">Create Custom Channel</span>
+                      {!isPremium && remainingSlots !== Infinity && (
+                        <span className="text-[10px] text-muted-foreground">
+                          ({remainingSlots} left)
+                        </span>
+                      )}
+                    </button>
+                  )}
+                </div>
+              </div>
+            )}
+
             {categoryOrder.map((category) => {
-              const categoryChannels = channelsByCategory[category];
+              // Filter out custom channels from regular categories
+              const categoryChannels = channelsByCategory[category]?.filter(
+                (ch) => !isCustomChannel(ch.id)
+              );
               if (!categoryChannels || categoryChannels.length === 0) return null;
 
               return (
@@ -456,6 +561,21 @@ export function ChannelGuide({
           </div>
         </div>
       </div>
+
+      {/* Custom Channel Creator Modal */}
+      <CustomChannelCreator
+        isOpen={isCreatorOpen}
+        onClose={() => setIsCreatorOpen(false)}
+        onChannelCreated={(channelId) => {
+          // Find the newly created channel and select it
+          const newChannel = customChannelsAsChannels.find(
+            (ch) => ch.id === channelId
+          );
+          if (newChannel) {
+            onChannelSelect(newChannel);
+          }
+        }}
+      />
     </div>
   );
 }

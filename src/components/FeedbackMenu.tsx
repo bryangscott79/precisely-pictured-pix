@@ -1,7 +1,6 @@
 import { useState } from 'react';
 import { MoreHorizontal, ThumbsUp, Ban, Loader2 } from 'lucide-react';
-import { useAuth } from '@/hooks/useAuth';
-import { supabase } from '@/integrations/supabase/client';
+import { useAlgorithmTuning } from '@/hooks/useAlgorithmTuning';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
 import {
@@ -16,56 +15,33 @@ interface FeedbackMenuProps {
   videoId: string;
   visible: boolean;
   onAuthRequired: () => void;
+  channelId?: string; // EpiShow channel ID for algorithm tuning
+  videoTitle?: string; // Video title for keyword extraction
 }
 
-const LOCAL_STORAGE_KEY = 'epishow-preferences';
-
-function getLocalPreferences(): Record<string, string> {
-  try {
-    return JSON.parse(localStorage.getItem(LOCAL_STORAGE_KEY) || '{}');
-  } catch {
-    return {};
-  }
-}
-
-function setLocalPreference(videoId: string, action: string) {
-  const prefs = getLocalPreferences();
-  prefs[videoId] = action;
-  localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(prefs));
-}
-
-export function FeedbackMenu({ videoId, visible, onAuthRequired }: FeedbackMenuProps) {
-  const { user } = useAuth();
+export function FeedbackMenu({ videoId, visible, onAuthRequired, channelId, videoTitle }: FeedbackMenuProps) {
+  const { recordPreference } = useAlgorithmTuning();
   const [isLoading, setIsLoading] = useState(false);
 
   const handleAction = async (action: 'more' | 'never') => {
-    // Always save to localStorage for free users
-    setLocalPreference(videoId, action);
+    setIsLoading(true);
 
-    if (user) {
-      // Sync to database for connected users
-      setIsLoading(true);
-      try {
-        const { error } = await supabase
-          .from('user_preferences')
-          .upsert(
-            { user_id: user.id, video_id: videoId, action },
-            { onConflict: 'user_id,video_id,action' }
-          );
+    try {
+      // Record preference using the algorithm tuning hook
+      // This handles both localStorage (anonymous) and Supabase (signed-in) storage
+      await recordPreference(videoId, action, { channelId, title: videoTitle });
 
-        if (error) throw error;
-      } catch (error) {
-        console.error('Error saving preference:', error);
-      } finally {
-        setIsLoading(false);
-      }
+      toast.success(
+        action === 'more'
+          ? 'We\'ll show you more content like this!'
+          : 'You won\'t see this video again'
+      );
+    } catch (error) {
+      console.error('Error saving preference:', error);
+      toast.error('Failed to save preference');
+    } finally {
+      setIsLoading(false);
     }
-
-    toast.success(
-      action === 'more' 
-        ? 'We\'ll show you more content like this!' 
-        : 'You won\'t see this video again'
-    );
   };
 
   return (

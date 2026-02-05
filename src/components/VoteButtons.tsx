@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { ThumbsUp, ThumbsDown } from 'lucide-react';
 import { useAuth } from '@/hooks/useAuth';
+import { useAlgorithmTuning } from '@/hooks/useAlgorithmTuning';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { cn } from '@/lib/utils';
@@ -10,10 +11,13 @@ interface VoteButtonsProps {
   youtubeId: string;
   visible: boolean;
   onAuthRequired: () => void;
+  channelId?: string; // EpiShow channel ID for algorithm tuning
+  videoTitle?: string; // Video title for keyword extraction
 }
 
-export function VoteButtons({ videoId, youtubeId, visible, onAuthRequired }: VoteButtonsProps) {
+export function VoteButtons({ videoId, youtubeId, visible, onAuthRequired, channelId, videoTitle }: VoteButtonsProps) {
   const { user } = useAuth();
+  const { recordPreference } = useAlgorithmTuning();
   const [userVote, setUserVote] = useState<1 | -1 | null>(null);
   const [upvotes, setUpvotes] = useState(0);
   const [downvotes, setDownvotes] = useState(0);
@@ -151,6 +155,14 @@ export function VoteButtons({ videoId, youtubeId, visible, onAuthRequired }: Vot
         else setDownvotes((p) => p + 1);
 
         setUserVote(voteType);
+
+        // Record preference for algorithm tuning
+        // This works for both anonymous and signed-in users
+        recordPreference(
+          youtubeId,
+          voteType === 1 ? 'up' : 'down',
+          { channelId, title: videoTitle }
+        );
       }
     } catch (error) {
       console.error('Vote error:', error);

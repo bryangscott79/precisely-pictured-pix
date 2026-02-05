@@ -581,3 +581,77 @@ export function getMetroNameFromZip(zipCode: string): string | null {
   const metro = getMetroFromZip(zipCode);
   return metro?.name || null;
 }
+
+// ============================================
+// Fallback for Uncovered Areas
+// ============================================
+
+export interface FallbackStation extends LocalNewsStation {
+  isFallback: true;
+}
+
+export interface ZipCodeLookupResult {
+  city: string;
+  state: string;
+  stateAbbr: string;
+}
+
+/**
+ * Look up city/state from a zip code using the Zippopotam API
+ * This is used for zip codes not in our curated database
+ */
+export async function lookupZipCode(zipCode: string): Promise<ZipCodeLookupResult | null> {
+  try {
+    const response = await fetch(`https://api.zippopotam.us/us/${zipCode}`);
+
+    if (!response.ok) {
+      console.warn(`Zip code lookup failed for ${zipCode}: ${response.status}`);
+      return null;
+    }
+
+    const data = await response.json();
+    const place = data.places?.[0];
+
+    if (!place) {
+      console.warn(`No place data found for zip code ${zipCode}`);
+      return null;
+    }
+
+    return {
+      city: place['place name'],
+      state: place.state,
+      stateAbbr: place['state abbreviation'],
+    };
+  } catch (error) {
+    console.error('Error looking up zip code:', error);
+    return null;
+  }
+}
+
+/**
+ * Create a fallback station for areas not in our curated database.
+ * This generates a YouTube search query based on the city name.
+ */
+export function createFallbackStation(
+  city: string,
+  state: string,
+  stateAbbr: string
+): FallbackStation {
+  return {
+    name: `${city} Local News`,
+    youtubeChannelId: '', // Not used for fallback - we search instead
+    youtubeSearchQuery: `"${city}" "${state}" local news live today 2025`,
+    callSign: 'LOCAL',
+    network: 'Independent',
+    city,
+    state: stateAbbr,
+    isFallback: true,
+  };
+}
+
+/**
+ * Check if a station is a fallback station
+ */
+export function isFallbackStation(station: LocalNewsStation): station is FallbackStation {
+  return 'isFallback' in station && (station as FallbackStation).isFallback === true;
+}
