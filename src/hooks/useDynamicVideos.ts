@@ -172,13 +172,28 @@ export function useDynamicVideos(channelId: string) {
       // Special handling for local news channel
       else if (channelId === 'localnews') {
         const station = getSavedLocalNewsStation();
-        if (station && baseConfig) {
-          // Override the search query with the user's selected station
-          baseConfig = {
-            ...baseConfig,
-            query: station.youtubeSearchQuery,
-          };
-          console.log(`[localnews] Using station: ${station.name} - Query: "${station.youtubeSearchQuery}"`);
+        if (station) {
+          // If we have a YouTube channel ID, fetch from that channel directly
+          if (station.youtubeChannelId) {
+            console.log(`[localnews] Using station: ${station.name} - Channel ID: ${station.youtubeChannelId}`);
+            baseConfig = {
+              query: `channel:${station.youtubeChannelId}`, // Special marker for channel-based fetch
+              youtubeChannelId: station.youtubeChannelId,
+              duration: 'any',
+              uploadDate: 'week',
+              order: 'date',
+              minDuration: 60,
+              maxDuration: 7200, // Up to 2 hours for news
+              minViews: 0, // Local news may not have high view counts
+            } as SearchConfig & { youtubeChannelId: string };
+          } else if (baseConfig) {
+            // Fallback to search query
+            baseConfig = {
+              ...baseConfig,
+              query: station.youtubeSearchQuery,
+            };
+            console.log(`[localnews] Using station: ${station.name} - Query: "${station.youtubeSearchQuery}"`);
+          }
         }
       }
 

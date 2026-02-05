@@ -304,8 +304,10 @@ export function ChannelGuide({
 
   // Register custom channel configs for useDynamicVideos
   useEffect(() => {
+    console.log('[ChannelGuide] Registering custom channels:', customChannels.length);
     customChannels.forEach((ch) => {
       const config = getCustomChannelSearchConfig(ch);
+      console.log(`[ChannelGuide] Registering config for ${ch.channelId}:`, config);
       registerCustomChannelConfig(ch.channelId, config);
     });
 

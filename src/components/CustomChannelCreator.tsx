@@ -244,7 +244,11 @@ export function CustomChannelCreator({
                 <button
                   key={suggestion}
                   type="button"
-                  onClick={() => handleTopicChange(suggestion)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    handleTopicChange(suggestion);
+                  }}
                   className="px-2 py-0.5 text-xs rounded-full bg-muted hover:bg-muted/80 text-muted-foreground hover:text-foreground transition-colors"
                 >
                   {suggestion}
@@ -272,7 +276,11 @@ export function CustomChannelCreator({
                 <button
                   key={emoji}
                   type="button"
-                  onClick={() => setSelectedEmoji(emoji)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedEmoji(emoji);
+                  }}
                   className={cn(
                     'w-9 h-9 rounded-lg text-lg flex items-center justify-center transition-all',
                     selectedEmoji === emoji
@@ -294,7 +302,11 @@ export function CustomChannelCreator({
                 <button
                   key={color.value}
                   type="button"
-                  onClick={() => setSelectedColor(color.value)}
+                  onClick={(e) => {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    setSelectedColor(color.value);
+                  }}
                   className={cn(
                     'w-8 h-8 rounded-full transition-all',
                     color.class,

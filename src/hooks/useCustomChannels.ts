@@ -159,7 +159,10 @@ export function useCustomChannels() {
 
   // Load custom channels from Supabase
   const loadChannels = useCallback(async () => {
+    console.log('[CustomChannels] loadChannels called, user:', user?.id);
+
     if (!user) {
+      console.log('[CustomChannels] No user, clearing channels');
       setChannels([]);
       setIsLoading(false);
       return;
@@ -169,6 +172,7 @@ export function useCustomChannels() {
     setError(null);
 
     try {
+      console.log('[CustomChannels] Fetching channels for user:', user.id);
       const { data, error: fetchError } = await supabase
         .from('custom_channels')
         .select('*')
@@ -176,10 +180,11 @@ export function useCustomChannels() {
         .order('created_at', { ascending: true });
 
       if (fetchError) {
-        console.error('Error loading custom channels:', fetchError);
+        console.error('[CustomChannels] Error loading custom channels:', fetchError);
         setError('Failed to load custom channels');
         setChannels([]);
       } else if (data) {
+        console.log('[CustomChannels] Loaded channels from DB:', data);
         const customChannels: CustomChannel[] = data.map((row: CustomChannelRow) => ({
           id: row.id,
           channelId: `${CUSTOM_CHANNEL_PREFIX}${row.id}`,
@@ -191,10 +196,11 @@ export function useCustomChannels() {
           createdAt: new Date(row.created_at),
           updatedAt: new Date(row.updated_at),
         }));
+        console.log('[CustomChannels] Processed channels:', customChannels);
         setChannels(customChannels);
       }
     } catch (err) {
-      console.error('Error loading custom channels:', err);
+      console.error('[CustomChannels] Error loading custom channels:', err);
       setError('Failed to load custom channels');
     }
 
@@ -220,10 +226,17 @@ export function useCustomChannels() {
 
   // Create a new custom channel
   const createChannel = useCallback(async (input: CreateChannelInput): Promise<CustomChannel | null> => {
+    console.log('[CustomChannels] createChannel called with:', input);
+
     if (!user) {
+      console.error('[CustomChannels] No user found');
       setError('You must be signed in to create channels');
       return null;
     }
+
+    console.log('[CustomChannels] User ID:', user.id);
+    console.log('[CustomChannels] canCreateChannel:', canCreateChannel);
+    console.log('[CustomChannels] isConnected:', isConnected);
 
     if (!canCreateChannel) {
       if (!isConnected) {
@@ -236,32 +249,89 @@ export function useCustomChannels() {
     }
 
     const searchQuery = generateSearchQuery(input.topic);
+    console.log('[CustomChannels] Generated search query:', searchQuery);
 
     try {
+      // First, try inserting with topic and search_query (new schema)
+      // If that fails due to missing columns, fall back to basic insert
+      const insertData: Record<string, unknown> = {
+        user_id: user.id,
+        name: input.name,
+        icon: input.icon || '📺',
+        color: input.color || 'tech',
+        video_ids: [], // Required field
+      };
+
+      // Try to include topic and search_query (may fail if migration hasn't run)
+      insertData.topic = input.topic;
+      insertData.search_query = searchQuery;
+
+      console.log('[CustomChannels] Inserting data:', insertData);
+
       const { data, error: insertError } = await supabase
         .from('custom_channels')
-        .insert({
-          user_id: user.id,
-          name: input.name,
-          topic: input.topic,
-          search_query: searchQuery,
-          icon: input.icon || '📺',
-          color: input.color || 'tech',
-        })
+        .insert(insertData)
         .select()
         .single();
 
       if (insertError) {
-        console.error('Error creating custom channel:', insertError);
-        setError('Failed to create channel');
+        console.error('[CustomChannels] Supabase insert error:', insertError);
+        console.error('[CustomChannels] Error code:', insertError.code);
+        console.error('[CustomChannels] Error message:', insertError.message);
+        console.error('[CustomChannels] Error details:', insertError.details);
+
+        // If error is about missing columns, try without topic/search_query
+        if (insertError.message?.includes('topic') || insertError.message?.includes('search_query')) {
+          console.log('[CustomChannels] Retrying without topic/search_query columns');
+          const basicInsert = {
+            user_id: user.id,
+            name: input.name,
+            icon: input.icon || '📺',
+            color: input.color || 'tech',
+            video_ids: [],
+          };
+
+          const { data: fallbackData, error: fallbackError } = await supabase
+            .from('custom_channels')
+            .insert(basicInsert)
+            .select()
+            .single();
+
+          if (fallbackError) {
+            console.error('[CustomChannels] Fallback insert also failed:', fallbackError);
+            setError(`Failed to create channel: ${fallbackError.message}`);
+            return null;
+          }
+
+          const newChannel: CustomChannel = {
+            id: fallbackData.id,
+            channelId: `${CUSTOM_CHANNEL_PREFIX}${fallbackData.id}`,
+            name: fallbackData.name,
+            topic: input.topic, // Use input topic since DB doesn't have it
+            searchQuery: searchQuery, // Use generated query
+            icon: fallbackData.icon,
+            color: fallbackData.color as ChannelColor,
+            createdAt: new Date(fallbackData.created_at),
+            updatedAt: new Date(fallbackData.updated_at),
+          };
+
+          console.log('[CustomChannels] Channel created (fallback):', newChannel);
+          setChannels(prev => [...prev, newChannel]);
+          setError(null);
+          return newChannel;
+        }
+
+        setError(`Failed to create channel: ${insertError.message}`);
         return null;
       }
+
+      console.log('[CustomChannels] Insert successful, data:', data);
 
       const newChannel: CustomChannel = {
         id: data.id,
         channelId: `${CUSTOM_CHANNEL_PREFIX}${data.id}`,
         name: data.name,
-        topic: data.topic || data.name,
+        topic: data.topic || input.topic,
         searchQuery: data.search_query || searchQuery,
         icon: data.icon,
         color: data.color as ChannelColor,
@@ -269,11 +339,12 @@ export function useCustomChannels() {
         updatedAt: new Date(data.updated_at),
       };
 
+      console.log('[CustomChannels] Channel created:', newChannel);
       setChannels(prev => [...prev, newChannel]);
       setError(null);
       return newChannel;
     } catch (err) {
-      console.error('Error creating custom channel:', err);
+      console.error('[CustomChannels] Unexpected error creating custom channel:', err);
       setError('Failed to create channel');
       return null;
     }

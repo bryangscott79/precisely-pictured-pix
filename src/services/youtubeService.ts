@@ -34,6 +34,7 @@ export interface SearchConfig {
   maxDuration?: number; // Additional filter in seconds
   minViews?: number; // Minimum view count for quality filtering
   channelType?: string; // Channel ID for content type validation
+  youtubeChannelId?: string; // Specific YouTube channel ID to fetch from
 }
 
 // Quality control: Terms to exclude from all searches (UGC, vertical, amateur content)
@@ -417,19 +418,31 @@ function isProfessionalContent(video: any): boolean {
 
 // Main function: search videos using YouTube Search API with filters
 export async function fetchVideosFromSearch(config: SearchConfig): Promise<FetchedVideo[]> {
-  const { 
-    minDuration = 60, 
-    maxDuration = 3600, 
+  const {
+    minDuration = 60,
+    maxDuration = 3600,
     limit = 25,
     minViews = 50000, // Default minimum 50K views for quality
-    channelType
+    channelType,
+    youtubeChannelId
   } = config;
-  
+
   try {
+    // If we have a specific YouTube channel ID, fetch from that channel
+    if (youtubeChannelId) {
+      console.log(`[YouTube] Fetching from channel: ${youtubeChannelId}`);
+      return await fetchVideosFromChannel(youtubeChannelId, {
+        minDuration: minDuration || 0,
+        maxDuration: maxDuration || 7200,
+        minViews: 0, // Don't filter by views for specific channels
+        limit: limit || 25
+      });
+    }
+
     // Fetch fewer videos to save API quota (each video detail costs 1 unit)
     const videoIds = await searchVideos({ ...config, limit: 25 });
     if (!videoIds.length) return [];
-    
+
     const details = await getVideoDetails(videoIds);
 
     const filtered = details
@@ -492,45 +505,98 @@ export async function fetchVideosFromSearch(config: SearchConfig): Promise<Fetch
   }
 }
 
-// Legacy function for backward compatibility with channel-based fetching
+// Fetch videos directly from a specific YouTube channel
 export async function fetchVideosFromChannel(
   channelId: string,
-  options: { minDuration?: number; maxDuration?: number; minViews?: number; limit?: number } = {}
+  options: { minDuration?: number; maxDuration?: number; minViews?: number; limit?: number; skipFilters?: boolean } = {}
 ): Promise<FetchedVideo[]> {
-  const { minDuration = 60, maxDuration = 3600, minViews = 50000, limit = 25 } = options;
-  
+  const { minDuration = 60, maxDuration = 3600, minViews = 0, limit = 25, skipFilters = false } = options;
+
+  console.log(`[YouTube] fetchVideosFromChannel: ${channelId}, options:`, options);
+
   try {
     // Get channel's uploads playlist ID
     const channelRes = await fetch(
-      `${BASE_URL}/channels?part=contentDetails&id=${channelId}&key=${YOUTUBE_API_KEY}`
+      `${BASE_URL}/channels?part=contentDetails,snippet&id=${channelId}&key=${YOUTUBE_API_KEY}`
     );
     const channelData = await channelRes.json();
-    const playlistId = channelData.items?.[0]?.contentDetails?.relatedPlaylists?.uploads;
-    if (!playlistId) return [];
-    
-    // Get video IDs from playlist
+
+    if (channelData.error) {
+      console.error('[YouTube] Channel API error:', channelData.error);
+      return [];
+    }
+
+    const channelInfo = channelData.items?.[0];
+    if (!channelInfo) {
+      console.error('[YouTube] Channel not found:', channelId);
+      return [];
+    }
+
+    console.log(`[YouTube] Found channel: ${channelInfo.snippet?.title}`);
+    const playlistId = channelInfo.contentDetails?.relatedPlaylists?.uploads;
+    if (!playlistId) {
+      console.error('[YouTube] No uploads playlist for channel:', channelId);
+      return [];
+    }
+
+    // Get video IDs from playlist (most recent first)
     const playlistRes = await fetch(
-      `${BASE_URL}/playlistItems?part=contentDetails&playlistId=${playlistId}&maxResults=50&key=${YOUTUBE_API_KEY}`
+      `${BASE_URL}/playlistItems?part=contentDetails,snippet&playlistId=${playlistId}&maxResults=50&key=${YOUTUBE_API_KEY}`
     );
     const playlistData = await playlistRes.json();
+
+    if (playlistData.error) {
+      console.error('[YouTube] Playlist API error:', playlistData.error);
+      return [];
+    }
+
     const videoIds = playlistData.items?.map((item: any) => item.contentDetails.videoId) || [];
-    
+    console.log(`[YouTube] Found ${videoIds.length} videos in channel`);
+
+    if (!videoIds.length) return [];
+
     const details = await getVideoDetails(videoIds);
-    
-    return details
-      .filter(v => isLandscapeVideo(v) && isProfessionalContent(v))
+
+    // For local news and specific channels, apply minimal filtering
+    // (just duration, landscape check)
+    let filteredVideos = details;
+
+    if (!skipFilters) {
+      filteredVideos = details.filter(v => {
+        // Always check for landscape
+        if (!isLandscapeVideo(v)) {
+          console.log(`[Filter] Skipping vertical video: ${v.snippet?.title}`);
+          return false;
+        }
+        return true;
+      });
+    }
+
+    const result = filteredVideos
       .map(v => ({
         id: v.id,
         title: v.snippet.title,
         duration: parseDuration(v.contentDetails.duration),
-        views: parseInt(v.statistics?.viewCount || '0')
+        views: parseInt(v.statistics?.viewCount || '0'),
+        publishedAt: new Date(v.snippet.publishedAt)
       }))
-      .filter(v => v.duration >= minDuration && v.duration <= maxDuration && v.views >= minViews)
-      .sort((a, b) => b.views - a.views)
+      .filter(v => {
+        // Apply duration filters (0 = no limit)
+        if (minDuration > 0 && v.duration < minDuration) return false;
+        if (maxDuration > 0 && v.duration > maxDuration) return false;
+        // Apply view filter only if set
+        if (minViews > 0 && v.views < minViews) return false;
+        return true;
+      })
+      // Sort by publish date (most recent first) for news content
+      .sort((a, b) => b.publishedAt.getTime() - a.publishedAt.getTime())
       .slice(0, limit)
       .map(({ id, title, duration }) => ({ id, title, duration }));
+
+    console.log(`[YouTube] Returning ${result.length} videos from channel`);
+    return result;
   } catch (error) {
-    console.error('YouTube API error:', error);
+    console.error('[YouTube] Channel fetch error:', error);
     return [];
   }
 }
