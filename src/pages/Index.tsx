@@ -63,8 +63,8 @@ export default function Index() {
     console.log('[Index] Registering custom channels:', customChannels.length);
     customChannels.forEach((ch) => {
       const config = getCustomChannelSearchConfig(ch);
-      console.log(`[Index] Registering config for ${ch.channelId}:`, config);
-      registerCustomChannelConfig(ch.channelId, config);
+      console.log(`[Index] Registering config for ${ch.channelId}:`, config, 'topic:', ch.topic);
+      registerCustomChannelConfig(ch.channelId, config, ch.topic);
     });
 
     return () => {

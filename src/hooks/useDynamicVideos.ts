@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { fetchVideosFromSearch, fetchVideosFromChannel, isYouTubeConfigured, FetchedVideo, SearchConfig } from '@/services/youtubeService';
 import { fetchMultipleChannelsViaRss, rssToFetchedVideos, getCuratedChannelsForCategory, CURATED_CHANNELS, fetchChannelVideosViaRss } from '@/services/youtubeRssService';
+import { fetchVideosFromMatchedSubscriptions } from '@/services/subscriptionMatcher';
 import { CHANNEL_SEARCH_CONFIG } from '@/data/channelSources';
 import { getChannelSearchConfig, getCurrentProgram } from '@/data/scheduledProgramming';
 import { channels, Video } from '@/data/channels';
@@ -8,6 +9,7 @@ import { isAllowedVideoTitle } from '@/lib/contentGuards';
 import { getSavedLocalNewsStation } from '@/hooks/useLocalNews';
 import { applyTuningToVideos, augmentQueryWithTuning, isVideoBlockedById } from '@/hooks/useAlgorithmTuning';
 import { isCustomChannel, CUSTOM_CHANNEL_PREFIX } from '@/hooks/useCustomChannels';
+import { supabase } from '@/integrations/supabase/client';
 
 let videoCache: Record<string, { videos: FetchedVideo[]; timestamp: number; programName?: string; timeBlock?: string }> = {};
 const CACHE_DURATION = 4 * 60 * 60 * 1000; // 4 hours for RSS-based content (RSS is free!)
@@ -26,13 +28,18 @@ function getCurrentTimeBlockName(): string {
 
 // Storage for custom channel search configs (set by components that have access to useCustomChannels)
 let customChannelConfigs: Record<string, SearchConfig> = {};
+// Storage for custom channel topics (for subscription matching)
+let customChannelTopics: Record<string, string> = {};
 
 /**
  * Register a custom channel's search config for use by useDynamicVideos.
  * This is called by ChannelGuide or other components that have access to useCustomChannels.
  */
-export function registerCustomChannelConfig(channelId: string, config: SearchConfig): void {
+export function registerCustomChannelConfig(channelId: string, config: SearchConfig, topic?: string): void {
   customChannelConfigs[channelId] = config;
+  if (topic) {
+    customChannelTopics[channelId] = topic;
+  }
 }
 
 /**
@@ -40,6 +47,7 @@ export function registerCustomChannelConfig(channelId: string, config: SearchCon
  */
 export function unregisterCustomChannelConfig(channelId: string): void {
   delete customChannelConfigs[channelId];
+  delete customChannelTopics[channelId];
 }
 
 /**
@@ -47,6 +55,13 @@ export function unregisterCustomChannelConfig(channelId: string): void {
  */
 function getCustomChannelConfig(channelId: string): SearchConfig | null {
   return customChannelConfigs[channelId] || null;
+}
+
+/**
+ * Get a custom channel's topic for subscription matching.
+ */
+function getCustomChannelTopic(channelId: string): string | null {
+  return customChannelTopics[channelId] || null;
 }
 
 // Clear cache when language changes
@@ -263,12 +278,51 @@ export function useDynamicVideos(channelId: string) {
       }
 
       // ============================================
-      // STRATEGY 3: Custom channels (use API sparingly)
+      // STRATEGY 3: Custom channels
+      // Priority: 1) User's subscriptions via RSS (FREE!)
+      //           2) YouTube Search API (quota limited)
       // ============================================
       if (isCustomChannel(channelId)) {
         const customConfig = getCustomChannelConfig(channelId);
+
+        // STRATEGY 3A: Try user's subscriptions first (FREE via RSS!)
+        const { data: { user } } = await supabase.auth.getUser();
+        if (user) {
+          console.log(`[${channelId}] Custom channel - trying subscription matching (FREE)`);
+
+          try {
+            // Get topic from registered config or extract from query
+            const topic = getCustomChannelTopic(channelId) ||
+              customConfig?.query?.replace(/["']/g, '').split(' OR ')[0] ||
+              channelId;
+            const subscriptionVideos = await fetchVideosFromMatchedSubscriptions(user.id, topic);
+
+            if (subscriptionVideos.length > 0) {
+              const guarded = subscriptionVideos.filter((v) => isAllowedVideoTitle(channelId, v.title));
+              const tuned = applyTuningToVideos(guarded, channelId);
+              const shuffled = deterministicShuffle(tuned, Date.now() / (1000 * 60 * 60));
+
+              if (shuffled.length > 0) {
+                videoCache[cacheKey] = {
+                  videos: shuffled,
+                  timestamp: Date.now(),
+                  timeBlock: currentTimeBlock
+                };
+                setVideos(shuffled);
+                setUsingFallback(false);
+                setLoading(false);
+                console.log(`[${channelId}] Loaded ${shuffled.length} videos from user subscriptions (FREE!)`);
+                return;
+              }
+            }
+          } catch (error) {
+            console.error(`[${channelId}] Subscription matching error:`, error);
+          }
+        }
+
+        // STRATEGY 3B: Fall back to YouTube Search API (quota limited)
         if (customConfig && isYouTubeConfigured()) {
-          console.log(`[${channelId}] Custom channel - trying API (may fail if quota exceeded)`);
+          console.log(`[${channelId}] Custom channel - falling back to API (may fail if quota exceeded)`);
 
           try {
             const fetched = await fetchVideosFromSearch({
@@ -299,10 +353,9 @@ export function useDynamicVideos(channelId: string) {
         }
 
         // Custom channel with no results - show empty state with placeholder
-        console.warn(`[${channelId}] Custom channel could not load videos - API quota may be exceeded`);
-        // Return an empty array but mark as not fallback so UI can show appropriate message
+        console.warn(`[${channelId}] Custom channel could not load videos`);
         setVideos([]);
-        setUsingFallback(false); // Changed to false so we show "quota exceeded" message, not "using fallback"
+        setUsingFallback(true);
         setLoading(false);
         return;
       }
